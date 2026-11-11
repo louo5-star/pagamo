@@ -14,6 +14,11 @@
         <div class="match-dropdown" title="PaGamO 城堡爭奪戰 - 中排灣語決賽">
           <span>望嘉族語盃 城堡爭奪戰 ▾</span>
         </div>
+        <div class="nav-pill room-pill" onclick="promptChangeRoomId()" title="點擊更換競賽房號（所有裝置輸入相同房號即可跨螢幕同場即時計分與競賽）">
+          <span style="color:#ffd166; font-size:12px; font-weight:bold;">🏟️ 競賽房:</span>
+          <strong id="navRoomId" style="color:#2ecc71; margin-left:2px; font-size:13px;">wangjia2026</strong>
+          <span style="font-size:11px; color:#f1c40f; margin-left:4px; text-decoration:underline; cursor:pointer;">[換房]</span>
+        </div>
         <div class="nav-pill">
           <span style="color:#ffd166; font-size:12px; font-weight:bold;">賽制:</span>
           <select id="matchModeSelect" class="wood-select" onchange="switchMatchMode(this.value)">
@@ -21,8 +26,8 @@
             <option value="4TEAMS">🏰 四隊爭霸 (4隊 · 12人)</option>
           </select>
         </div>
-        <div class="sync-badge" id="syncStatusBadge" title="已開啟多視窗/多分頁/區域網路即時同步">
-          🟢 多人連線中
+        <div class="sync-badge" id="syncStatusBadge" title="已開啟跨裝置雲端即時連線同步競賽">
+          🟢 雲端競賽中
         </div>
       </div>
 
@@ -43,8 +48,8 @@
       </div>
 
       <div class="nav-right">
-        <button id="playPauseBtn" class="wood-btn btn-gold" onclick="togglePlayPause()">
-          ▶️ 開始計時
+        <button id="playPauseBtn" class="wood-btn btn-gold" onclick="togglePlayPause()" title="裁判/老師點擊可同步啟動或暫停全體選手倒數計時">
+          ▶️ 開始比賽 (同步發令)
         </button>
         <button class="wood-btn" onclick="openTeamLoginModal()">👤 選隊入座</button>
         <button class="wood-btn" onclick="focusMyIsland()" title="將地圖視角對準我方起始島嶼">🎯 定位我隊</button>
@@ -370,6 +375,7 @@
   </div>
 
   <!-- Scripts -->
+  <script src="mqtt.min.js"></script>
   <script src="audio.js"></script>
   <script src="questions_data.js"></script>
   <script src="map_preset.js"></script>

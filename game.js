@@ -28,6 +28,11 @@ const Game = {
     isRunning: false,
     gameSpeed: 1,
 
+    // Real-Time Room & Networking
+    roomId: 'wangjia2026',
+    floatingTexts: [],
+    mqttClient: null,
+
     // Match Mode: '2TEAMS' (2隊6人, 一隊3人) or '4TEAMS' (4隊12人, 一隊3人)
     matchMode: '2TEAMS',
     activeTeamIds: ['T1', 'T4'], // Default: 望嘉小尖兵 vs 族夢團
@@ -192,79 +197,238 @@ const Game = {
     sprites: {}
 };
 
-// ==================== Cross-Tab / LAN Multiplayer Sync ====================
+// ==================== Cross-Device Real-Time Sync (MQTT over WebSocket + BroadcastChannel) ====================
 const myClientId = 'C_' + Math.random().toString(36).substring(2, 9);
 let syncChannel = null;
-try {
-    syncChannel = new BroadcastChannel('pagamo_finals_sync');
-    syncChannel.onmessage = (event) => {
-        if (event.data && event.data.senderId !== myClientId) {
-            handleIncomingSync(event.data);
+
+function addFloatingText(x, y, text, color = '#f1c40f', isBig = false) {
+    if (!Game.floatingTexts) Game.floatingTexts = [];
+    Game.floatingTexts.push({
+        x: x,
+        y: y,
+        text: text,
+        color: color,
+        alpha: 1.0,
+        scale: isBig ? 1.35 : 1.0,
+        isBig: isBig,
+        vy: -1.4,
+        life: 65
+    });
+}
+
+function updateSyncBadge(status, brokerName = '') {
+    const badge = document.getElementById('syncStatusBadge');
+    if (!badge) return;
+    if (status === 'connected') {
+        badge.innerHTML = `🟢 雲端競賽中 (${brokerName})`;
+        badge.title = `已連線至雲端競賽伺服器 (${brokerName})，所有裝置即時同步！`;
+        badge.style.background = 'rgba(46, 204, 113, 0.2)';
+        badge.style.borderColor = '#2ecc71';
+        badge.style.color = '#2ecc71';
+    } else if (status === 'connecting') {
+        badge.innerHTML = `🟡 連線伺服器中...`;
+        badge.title = '正在連線雲端競賽伺服器...';
+        badge.style.background = 'rgba(243, 156, 18, 0.2)';
+        badge.style.borderColor = '#f39c12';
+        badge.style.color = '#f1c40f';
+    } else {
+        badge.innerHTML = `🟠 區域/分頁模式`;
+        badge.title = '目前處於本機/同網域分頁模式';
+        badge.style.background = 'rgba(230, 126, 34, 0.2)';
+        badge.style.borderColor = '#e67e22';
+        badge.style.color = '#f39c12';
+    }
+}
+
+function connectMQTT() {
+    if (typeof mqtt === 'undefined') {
+        console.warn('MQTT library not loaded, falling back to local BroadcastChannel.');
+        updateSyncBadge('local');
+        return;
+    }
+
+    const brokers = [
+        { url: 'wss://broker.emqx.io:8084/mqtt', name: 'EMQX' },
+        { url: 'wss://broker.hivemq.com:8884/mqtt', name: 'HiveMQ' }
+    ];
+    let brokerIdx = 0;
+
+    function tryConnect() {
+        const target = brokers[brokerIdx];
+        updateSyncBadge('connecting');
+
+        try {
+            const client = mqtt.connect(target.url, {
+                clientId: 'pagamo_' + myClientId,
+                clean: true,
+                connectTimeout: 5000,
+                reconnectPeriod: 4000
+            });
+
+            Game.mqttClient = client;
+
+            client.on('connect', () => {
+                console.log('Connected to MQTT Broker:', target.name, target.url);
+                updateSyncBadge('connected', target.name);
+                const topic = `pagamo/room/${Game.roomId}`;
+                client.subscribe(topic, { qos: 0 }, (err) => {
+                    if (!err) {
+                        // Request state from peers in the room
+                        broadcastSync({ type: 'REQUEST_SYNC_STATE' });
+                    }
+                });
+            });
+
+            client.on('message', (topic, message) => {
+                try {
+                    const payload = JSON.parse(message.toString());
+                    if (payload && payload.senderId !== myClientId) {
+                        handleIncomingSync(payload);
+                    }
+                } catch (e) {
+                    console.error('MQTT message parse error:', e);
+                }
+            });
+
+            client.on('error', (err) => {
+                console.warn(`MQTT error on ${target.name}:`, err);
+                client.end(true);
+                if (brokerIdx < brokers.length - 1) {
+                    brokerIdx++;
+                    setTimeout(tryConnect, 1200);
+                } else {
+                    updateSyncBadge('offline');
+                }
+            });
+
+            client.on('offline', () => {
+                updateSyncBadge('offline');
+            });
+        } catch (e) {
+            console.error('MQTT initialization error:', e);
+            updateSyncBadge('offline');
         }
-    };
-} catch (e) {
-    console.warn('BroadcastChannel not supported in this environment');
+    }
+
+    tryConnect();
+}
+
+function initNetworkSync() {
+    // 1. BroadcastChannel for fast local inter-tab sync
+    try {
+        if (syncChannel) {
+            try { syncChannel.close(); } catch(e){}
+        }
+        syncChannel = new BroadcastChannel('pagamo_finals_' + Game.roomId);
+        syncChannel.onmessage = (event) => {
+            if (event.data && event.data.senderId !== myClientId) {
+                handleIncomingSync(event.data);
+            }
+        };
+    } catch (e) {
+        console.warn('BroadcastChannel not supported in this environment');
+    }
+
+    // 2. Storage event listener for legacy tab sync
+    window.addEventListener('storage', (e) => {
+        if (e.key === 'pagamo_sync_action' && e.newValue) {
+            try {
+                const data = JSON.parse(e.newValue);
+                if (data && data.senderId !== myClientId && (!data.roomId || data.roomId === Game.roomId)) {
+                    handleIncomingSync(data);
+                }
+            } catch (err) {}
+        }
+    });
+
+    // 3. Connect to MQTT Cloud for cross-device live tournament
+    connectMQTT();
 }
 
 function broadcastSync(data) {
-    const payload = { ...data, senderId: myClientId };
+    const payload = {
+        ...data,
+        senderId: myClientId,
+        roomId: Game.roomId,
+        ts: Date.now()
+    };
+
+    // 1. MQTT Publish
+    if (Game.mqttClient && Game.mqttClient.connected) {
+        try {
+            const topic = `pagamo/room/${Game.roomId}`;
+            Game.mqttClient.publish(topic, JSON.stringify(payload));
+        } catch (e) {
+            console.warn('MQTT publish error:', e);
+        }
+    }
+
+    // 2. BroadcastChannel
     if (syncChannel) {
         try {
             syncChannel.postMessage(payload);
-        } catch (e) {
-            console.error('Broadcast sync error:', e);
-        }
+        } catch (e) {}
     }
-    // LocalStorage sync for cross-tab fallback
-    try {
-        localStorage.setItem('pagamo_sync_action', JSON.stringify({ ...payload, _ts: Date.now() }));
-    } catch (e) {}
 
-    // Send to LAN server if running via http
-    if (typeof window !== 'undefined' && window.location && window.location.protocol.startsWith('http')) {
-        fetch('./api/sync', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        }).catch(() => {});
+    // 3. LocalStorage
+    try {
+        localStorage.setItem('pagamo_sync_action', JSON.stringify(payload));
+    } catch (e) {}
+}
+
+function promptChangeRoomId() {
+    const cur = Game.roomId || 'wangjia2026';
+    const newRoom = prompt('請輸入競賽房間代碼 (所有選手與裁判輸入相同代碼即可跨裝置即時比賽與計分)：', cur);
+    if (newRoom && newRoom.trim() && newRoom.trim() !== cur) {
+        switchRoom(newRoom.trim());
     }
 }
 
-window.addEventListener('storage', (e) => {
-    if (e.key === 'pagamo_sync_action' && e.newValue) {
-        try {
-            const data = JSON.parse(e.newValue);
-            if (data.senderId !== myClientId) {
-                handleIncomingSync(data);
-            }
-        } catch (err) {}
-    }
-});
+function switchRoom(newRoomId) {
+    if (!newRoomId || newRoomId === Game.roomId) return;
+    const oldTopic = `pagamo/room/${Game.roomId}`;
+    Game.roomId = newRoomId;
 
-let lastSyncSeq = 0;
-if (typeof window !== 'undefined' && window.location && window.location.protocol.startsWith('http')) {
-    setInterval(() => {
-        fetch(`./api/sync?since=${lastSyncSeq}`)
-            .then(res => res.json())
-            .then(events => {
-                if (Array.isArray(events)) {
-                    events.forEach(evt => {
-                        if (evt.seq > lastSyncSeq) lastSyncSeq = evt.seq;
-                        if (evt.senderId !== myClientId) {
-                            handleIncomingSync(evt.data);
-                        }
-                    });
-                }
-            })
-            .catch(() => {});
-    }, 700);
+    try {
+        localStorage.setItem('pagamo_room_id', newRoomId);
+        const url = new URL(window.location.href);
+        url.searchParams.set('room', newRoomId);
+        window.history.replaceState({}, '', url.toString());
+    } catch (e) {}
+
+    const navRoomEl = document.getElementById('navRoomId');
+    if (navRoomEl) navRoomEl.textContent = newRoomId;
+
+    if (Game.mqttClient && Game.mqttClient.connected) {
+        try { Game.mqttClient.unsubscribe(oldTopic); } catch(e){}
+        const newTopic = `pagamo/room/${Game.roomId}`;
+        Game.mqttClient.subscribe(newTopic, () => {
+            broadcastSync({ type: 'REQUEST_SYNC_STATE' });
+        });
+    }
+
+    if (syncChannel) {
+        try { syncChannel.close(); } catch(e){}
+    }
+    try {
+        syncChannel = new BroadcastChannel('pagamo_finals_' + Game.roomId);
+        syncChannel.onmessage = (event) => {
+            if (event.data && event.data.senderId !== myClientId) {
+                handleIncomingSync(event.data);
+            }
+        };
+    } catch(e){}
+
+    logBattle(`🏟️ 已切換進入競賽房間：【${newRoomId}】`);
+    broadcastSync({ type: 'REQUEST_SYNC_STATE' });
 }
 
 function handleIncomingSync(data) {
     if (!data || !data.type) return;
+    if (data.roomId && data.roomId !== Game.roomId) return;
 
     if (data.type === 'CAPTURE') {
-        const { teamId, tileKey, energy, correctCount, playerName } = data;
+        const { teamId, tileKey, energy, correctCount, playerName, pointsAdded } = data;
         if (Game.teams[teamId]) {
             Game.teams[teamId].energy = energy;
             Game.teams[teamId].correctCount = correctCount;
@@ -276,20 +440,64 @@ function handleIncomingSync(data) {
         if (tile) {
             if (tile.type === 'castle') {
                 typeName = '👑 核心城堡';
-                showCastleCaptureBanner(team.name, playerName || '選手');
-            } else if (tile.type === 'bunker') typeName = '🏯 碉堡';
-            else if (tile.type === 'cannon') typeName = '🎯 砲台';
+                window.soundManager.playCaptureCastle();
+                showCastleCaptureBanner(team ? team.name : teamId, playerName || '選手');
+            } else if (tile.type === 'bunker') {
+                typeName = '🏯 碉堡';
+                window.soundManager.playCorrect();
+            } else if (tile.type === 'cannon') {
+                typeName = '🎯 砲台';
+                window.soundManager.playCorrect();
+            } else {
+                window.soundManager.playCorrect();
+            }
+            const [tq, tr] = tileKey.split(',').map(Number);
+            const worldPos = hexToWorld(tq, tr);
+            const pts = pointsAdded || (tile.type === 'castle' ? 107 : (tile.type === 'bunker' ? 87 : (tile.type === 'cannon' ? 57 : 10)));
+            addFloatingText(worldPos.x, worldPos.y - 20, `+${pts}分!`, team ? team.lightColor : '#f1c40f', pts >= 50);
         }
-        logBattle(`🌐【${team ? team.name : teamId}】${playerName ? `(${playerName})` : ''} 佔領了 ${typeName}！`);
+        logBattle(`⚔️【${team ? team.name : teamId}】${playerName ? `(${playerName})` : ''} 攻佔了 ${typeName}！`);
         updateUI();
     } else if (data.type === 'WRONG_ANSWER') {
-        const { teamId, energy, wrongCount, playerName } = data;
+        const { teamId, energy, wrongCount, playerName, tileKey } = data;
         if (Game.teams[teamId]) {
             Game.teams[teamId].energy = energy;
             Game.teams[teamId].wrongCount = wrongCount;
         }
-        logBattle(`🌐【${Game.teams[teamId].name}】${playerName ? `(${playerName})` : ''} 答錯題目 (-15能量)`);
+        if (tileKey && Game.map && Game.map.tiles[tileKey]) {
+            const [tq, tr] = tileKey.split(',').map(Number);
+            const worldPos = hexToWorld(tq, tr);
+            addFloatingText(worldPos.x, worldPos.y - 15, '⚡ -15 答錯', '#ff7675', false);
+        }
+        window.soundManager.playWrong();
+        logBattle(`❌【${Game.teams[teamId] ? Game.teams[teamId].name : teamId}】${playerName ? `(${playerName})` : ''} 答錯題目 (-15能量)`);
         updateUI();
+    } else if (data.type === 'START_MATCH') {
+        if (!Game.isRunning) {
+            startMatch(false);
+        }
+        if (typeof data.timeRemaining === 'number') {
+            Game.timeRemaining = data.timeRemaining;
+            updateTimerDisplay();
+        }
+        window.soundManager.playCorrect();
+        logBattle('📢 比賽正式開始！全體選手同步倒數！');
+    } else if (data.type === 'PAUSE_MATCH') {
+        if (Game.isRunning) {
+            pauseMatch(false);
+        }
+        if (typeof data.timeRemaining === 'number') {
+            Game.timeRemaining = data.timeRemaining;
+            updateTimerDisplay();
+        }
+        logBattle('⏸️ 比賽由裁判暫停');
+    } else if (data.type === 'TIMER_TICK') {
+        if (typeof data.timeRemaining === 'number') {
+            if (Math.abs(Game.timeRemaining - data.timeRemaining) > 1) {
+                Game.timeRemaining = data.timeRemaining;
+                updateTimerDisplay();
+            }
+        }
     } else if (data.type === 'JOIN_SLOT') {
         const { teamId, slot, playerName } = data;
         if (Game.teams[teamId] && Game.teams[teamId].members[slot - 1]) {
@@ -300,13 +508,64 @@ function handleIncomingSync(data) {
         updateUI();
     } else if (data.type === 'MODE_CHANGE') {
         switchMatchMode(data.mode, false);
-    } else if (data.type === 'TIMER_TICK') {
-        if (Math.abs(Game.timeRemaining - data.timeRemaining) > 3) {
-            Game.timeRemaining = data.timeRemaining;
-            updateTimerDisplay();
-        }
     } else if (data.type === 'RESET_MATCH') {
         restartMatch(false);
+    } else if (data.type === 'END_MATCH') {
+        endMatch(false);
+    } else if (data.type === 'REQUEST_SYNC_STATE') {
+        const snapshot = {
+            matchMode: Game.matchMode,
+            activeTeamIds: Game.activeTeamIds,
+            isRunning: Game.isRunning,
+            timeRemaining: Game.timeRemaining,
+            tileOwners: Game.tileOwners,
+            teams: {}
+        };
+        Object.entries(Game.teams).forEach(([id, t]) => {
+            snapshot.teams[id] = {
+                energy: t.energy,
+                correctCount: t.correctCount,
+                wrongCount: t.wrongCount,
+                members: t.members
+            };
+        });
+        broadcastSync({
+            type: 'SYNC_STATE_RESPONSE',
+            targetId: data.senderId,
+            snapshot: snapshot
+        });
+    } else if (data.type === 'SYNC_STATE_RESPONSE') {
+        if (data.targetId && data.targetId !== myClientId) return;
+        const s = data.snapshot;
+        if (!s) return;
+        if (s.matchMode && s.matchMode !== Game.matchMode) {
+            switchMatchMode(s.matchMode, false);
+        }
+        if (s.tileOwners) {
+            Game.tileOwners = { ...s.tileOwners };
+        }
+        if (s.teams) {
+            Object.entries(s.teams).forEach(([id, tData]) => {
+                if (Game.teams[id]) {
+                    Game.teams[id].energy = tData.energy;
+                    Game.teams[id].correctCount = tData.correctCount;
+                    Game.teams[id].wrongCount = tData.wrongCount;
+                    if (tData.members) Game.teams[id].members = tData.members;
+                }
+            });
+        }
+        if (typeof s.timeRemaining === 'number') {
+            Game.timeRemaining = s.timeRemaining;
+            updateTimerDisplay();
+        }
+        if (s.isRunning && !Game.isRunning) {
+            startMatch(false);
+        } else if (!s.isRunning && Game.isRunning) {
+            pauseMatch(false);
+        }
+        renderTeamSelectCards();
+        updateUI();
+        logBattle('🌐 已成功與同房間比賽進度即時同步！');
     }
 }
 
@@ -530,43 +789,57 @@ function computeTeamStats(teamId) {
 }
 
 // ==================== Game Loop & Timer ====================
-function startMatch() {
+function startMatch(shouldBroadcast = true) {
     if (Game.isRunning) return;
     Game.isRunning = true;
     window.soundManager.init();
 
-    document.getElementById('playPauseBtn').innerHTML = '⏸️ 暫停計時';
+    const btn = document.getElementById('playPauseBtn');
+    if (btn) btn.innerHTML = '⏸️ 暫停計時';
 
     if (Game.timerInterval) clearInterval(Game.timerInterval);
     Game.timerInterval = setInterval(() => {
         if (!Game.isRunning) return;
 
         Game.timeRemaining -= 1;
-        if (Game.timeRemaining % 5 === 0) {
+        if (Game.timeRemaining % 3 === 0) {
             broadcastSync({ type: 'TIMER_TICK', timeRemaining: Game.timeRemaining });
         }
 
         if (Game.timeRemaining <= 0) {
             Game.timeRemaining = 0;
             updateTimerDisplay();
-            endMatch();
+            endMatch(true);
             return;
         }
         updateTimerDisplay();
     }, 1000);
+
+    if (shouldBroadcast) {
+        broadcastSync({ type: 'START_MATCH', timeRemaining: Game.timeRemaining });
+        logBattle('▶️ 比賽正式開始！全體選手倒數計時啟動！');
+    }
 }
 
-function pauseMatch() {
+function pauseMatch(shouldBroadcast = true) {
     Game.isRunning = false;
-    document.getElementById('playPauseBtn').innerHTML = '▶️ 繼續比賽';
-    if (Game.timerInterval) clearInterval(Game.timerInterval);
+    const btn = document.getElementById('playPauseBtn');
+    if (btn) btn.innerHTML = '▶️ 繼續比賽';
+    if (Game.timerInterval) {
+        clearInterval(Game.timerInterval);
+        Game.timerInterval = null;
+    }
+    if (shouldBroadcast) {
+        broadcastSync({ type: 'PAUSE_MATCH', timeRemaining: Game.timeRemaining });
+        logBattle('⏸️ 比賽由裁判暫停');
+    }
 }
 
 function togglePlayPause() {
     if (Game.isRunning) {
-        pauseMatch();
+        pauseMatch(true);
     } else {
-        startMatch();
+        startMatch(true);
     }
 }
 
@@ -673,21 +946,29 @@ function submitPlayerAnswer(selectedIdx) {
         };
 
         let typeName = '領地';
+        let pts = 10;
         if (targetTile.type === 'castle') {
             typeName = '👑 核心城堡';
+            pts = 107;
             window.soundManager.playCaptureCastle();
             showCastleCaptureBanner(team.name, Game.myPlayer.name);
         } else if (targetTile.type === 'bunker') {
             typeName = '🏯 碉堡';
+            pts = 87;
         } else if (targetTile.type === 'cannon') {
             typeName = '🎯 砲台';
+            pts = 57;
         }
+
+        const [tq, tr] = targetKey.split(',').map(Number);
+        const worldPos = hexToWorld(tq, tr);
+        addFloatingText(worldPos.x, worldPos.y - 20, `+${pts}分!`, team.lightColor || '#f1c40f', pts >= 50);
 
         if (prevOwner) {
             const opponent = Game.teams[prevOwner.teamId];
-            logBattle(`⚔️ 【${team.name}】(${Game.myPlayer.name}) 奪取了【${opponent ? opponent.name : prevOwner.teamId}】的${typeName}！`);
+            logBattle(`⚔️ 【${team.name}】(${Game.myPlayer.name}) 奪取了【${opponent ? opponent.name : prevOwner.teamId}】的${typeName}！(+${pts}分)`);
         } else {
-            logBattle(`🎉 【${team.name}】(${Game.myPlayer.name}) 答對題目，佔領了${typeName}！(-6能量)`);
+            logBattle(`🎉 【${team.name}】(${Game.myPlayer.name}) 答對題目，佔領了${typeName}！(+${pts}分)`);
         }
 
         broadcastSync({
@@ -696,7 +977,8 @@ function submitPlayerAnswer(selectedIdx) {
             tileKey: targetKey,
             energy: team.energy,
             correctCount: team.correctCount,
-            playerName: Game.myPlayer.name
+            playerName: Game.myPlayer.name,
+            pointsAdded: pts
         });
 
         setTimeout(() => {
@@ -710,6 +992,10 @@ function submitPlayerAnswer(selectedIdx) {
         team.energy = Math.max(0, team.energy - Game.config.wrongEnergyCost);
         team.wrongCount++;
 
+        const [tq, tr] = targetKey.split(',').map(Number);
+        const worldPos = hexToWorld(tq, tr);
+        addFloatingText(worldPos.x, worldPos.y - 15, '⚡ -15 答錯', '#ff7675', false);
+
         logBattle(`❌ 【${team.name}】(${Game.myPlayer.name}) 答錯題目！攻打失敗，扣除 15 點能量！`);
 
         broadcastSync({
@@ -717,7 +1003,8 @@ function submitPlayerAnswer(selectedIdx) {
             teamId: team.id,
             energy: team.energy,
             wrongCount: team.wrongCount,
-            playerName: Game.myPlayer.name
+            playerName: Game.myPlayer.name,
+            tileKey: targetKey
         });
 
         setTimeout(() => {
@@ -1025,6 +1312,35 @@ function drawMap() {
         const [hq, hr] = Game.hoveredTileKey.split(',').map(Number);
         const { x, y } = hexToWorld(hq, hr);
         drawShovelPin(ctx, x, y);
+    }
+
+    // 7. Draw Floating Score Numbers & Animations (World Coordinates)
+    if (Game.floatingTexts && Game.floatingTexts.length > 0) {
+        ctx.save();
+        for (let i = Game.floatingTexts.length - 1; i >= 0; i--) {
+            const ft = Game.floatingTexts[i];
+            ft.y += ft.vy;
+            ft.life--;
+            ft.alpha = Math.max(0, ft.life / 65);
+
+            ctx.globalAlpha = ft.alpha;
+            ctx.font = `bold ${Math.round((ft.isBig ? 24 : 17) * ft.scale)}px "Microsoft JhengHei", Arial, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // High-contrast outline
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.9)';
+            ctx.lineWidth = ft.isBig ? 5 : 4;
+            ctx.strokeText(ft.text, ft.x, ft.y);
+
+            ctx.fillStyle = ft.color;
+            ctx.fillText(ft.text, ft.x, ft.y);
+
+            if (ft.life <= 0) {
+                Game.floatingTexts.splice(i, 1);
+            }
+        }
+        ctx.restore();
     }
 
     ctx.restore();
@@ -1593,13 +1909,15 @@ function updateLeaderboard() {
     const scB = document.getElementById('allianceBScore');
 
     if (Game.matchMode === '2TEAMS') {
-        const t1 = activeTeams[0] || Game.teams['T1'];
-        const t2 = activeTeams[1] || Game.teams['T4'];
-        if (asbA) asbA.innerHTML = `${t1.name}: <strong id="allianceAScore">${t1.stats.totalScore}</strong> 分`;
-        if (asbB) asbB.innerHTML = `${t2.name}: <strong id="allianceBScore">${t2.stats.totalScore}</strong> 分`;
+        const tA = Game.teams[Game.activeTeamIds[0]] || Game.teams['T1'];
+        const tB = Game.teams[Game.activeTeamIds[1]] || Game.teams['T4'];
+        const statsA = computeTeamStats(tA.id);
+        const statsB = computeTeamStats(tB.id);
+        if (asbA) asbA.innerHTML = `${tA.name}: <strong id="allianceAScore">${statsA.totalScore}</strong> 分`;
+        if (asbB) asbB.innerHTML = `${tB.name}: <strong id="allianceBScore">${statsB.totalScore}</strong> 分`;
 
-        const total = (t1.stats.totalScore + t2.stats.totalScore);
-        const pctA = total > 0 ? Math.round((t1.stats.totalScore / total) * 100) : 50;
+        const total = (statsA.totalScore + statsB.totalScore);
+        const pctA = total > 0 ? Math.round((statsA.totalScore / total) * 100) : 50;
         document.getElementById('allianceAFill').style.width = `${pctA}%`;
         document.getElementById('allianceBFill').style.width = `${100 - pctA}%`;
     } else {
@@ -1863,8 +2181,8 @@ function toggleFullscreen() {
 }
 
 // ==================== End Match & Ceremony ====================
-function endMatch() {
-    pauseMatch();
+function endMatch(shouldBroadcast = true) {
+    pauseMatch(false);
     window.soundManager.playVictory();
 
     const activeTeams = Game.activeTeamIds.map(id => ({
@@ -1898,6 +2216,10 @@ function endMatch() {
     });
 
     document.getElementById('resultsModal').style.display = 'flex';
+
+    if (shouldBroadcast) {
+        broadcastSync({ type: 'END_MATCH' });
+    }
 }
 
 function restartMatch(shouldBroadcast = true) {
@@ -2039,6 +2361,24 @@ window.addEventListener('DOMContentLoaded', () => {
             Game.teams[Game.currentTeamId].members[savedSlot - 1].name = Game.myPlayer.name;
         }
     } catch (e) {}
+
+    // Initialize Room ID
+    try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const rParam = urlParams.get('room');
+        if (rParam && rParam.trim()) {
+            Game.roomId = rParam.trim();
+        } else {
+            const savedRoom = localStorage.getItem('pagamo_room_id');
+            if (savedRoom && savedRoom.trim()) Game.roomId = savedRoom.trim();
+        }
+    } catch (e) {}
+
+    const navRoomEl = document.getElementById('navRoomId');
+    if (navRoomEl) navRoomEl.textContent = Game.roomId;
+
+    // Connect to MQTT & Local Network Sync
+    initNetworkSync();
 
     // Initialize Map, Canvas, and UI synchronously
     initMapState(false);

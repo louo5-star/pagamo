@@ -93,6 +93,18 @@ body, html {
   gap: 8px;
 }
 
+.room-pill {
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(241, 196, 15, 0.45);
+  transition: all 0.2s ease;
+}
+.room-pill:hover {
+  background: rgba(241, 196, 15, 0.2);
+  border-color: #f1c40f;
+  transform: translateY(-1px);
+}
+
 .nav-pill .team-badge {
   padding: 2px 8px;
   border-radius: 10px;
