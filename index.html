@@ -12,28 +12,28 @@
     <header class="top-nav">
       <div class="nav-left">
         <div class="match-dropdown" title="PaGamO 城堡爭奪戰 - 中排灣語決賽">
-          <span>望嘉族語盃 城堡爭奪戰 ▾</span>
+          <span>🏰 城堡爭奪戰 ▾</span>
         </div>
         <div class="nav-pill room-pill" onclick="promptChangeRoomId()" title="點擊更換競賽房號（所有裝置輸入相同房號即可跨螢幕同場即時計分與競賽）">
-          <span style="color:#ffd166; font-size:12px; font-weight:bold;">🏟️ 競賽房:</span>
+          <span style="color:#ffd166; font-size:12px; font-weight:bold;">🏟️ 房號:</span>
           <strong id="navRoomId" style="color:#2ecc71; margin-left:2px; font-size:13px;">wangjia2026</strong>
-          <span style="font-size:11px; color:#f1c40f; margin-left:4px; text-decoration:underline; cursor:pointer;">[換房]</span>
+          <span style="font-size:11px; color:#f1c40f; margin-left:2px; text-decoration:underline; cursor:pointer;">[換房]</span>
         </div>
-        <div class="nav-pill">
+        <div class="nav-pill nav-mode-pill">
           <span style="color:#ffd166; font-size:12px; font-weight:bold;">賽制:</span>
           <select id="matchModeSelect" class="wood-select" onchange="switchMatchMode(this.value)">
-            <option value="2TEAMS">⚔️ 雙隊對決 (2隊 · 6人)</option>
-            <option value="4TEAMS">🏰 四隊爭霸 (4隊 · 12人)</option>
+            <option value="2TEAMS">⚔️ 雙隊 (6人)</option>
+            <option value="4TEAMS">🏰 四隊 (12人)</option>
           </select>
         </div>
         <div class="sync-badge" id="syncStatusBadge" title="已開啟跨裝置雲端即時連線同步競賽">
-          🟢 雲端競賽中
+          🟢 雲端同步
         </div>
       </div>
 
       <div class="nav-center">
         <!-- Competing Matchup Display -->
-        <div class="nav-pill" id="matchAlliancePill">
+        <div class="nav-pill nav-matchup-pill" id="matchAlliancePill">
           <span class="team-badge badge-t1">望嘉小尖兵 (3人)</span>
           <span style="font-size:12px; font-weight:bold; color:#f1c40f;">VS</span>
           <span class="team-badge badge-t4">族夢團 (3人)</span>
@@ -41,7 +41,7 @@
 
         <!-- Current Active Logged In Player / Team Pill -->
         <div class="team-pill-indicator" onclick="openTeamLoginModal()" title="點擊切換操作隊伍與席位">
-          <span style="font-size:12px; color:#f7e1b5;">👤 選手席位:</span>
+          <span style="font-size:12px; color:#f7e1b5;">👤 席位:</span>
           <strong id="navCurrentPlayerBadge" class="team-badge badge-t1">望嘉小尖兵 · 隊員1</strong>
           <span style="font-size:10px; color:#f1c40f; text-decoration:underline;">[選隊/換位]</span>
         </div>
@@ -49,15 +49,15 @@
 
       <div class="nav-right">
         <button id="playPauseBtn" class="wood-btn btn-gold" onclick="togglePlayPause()" title="裁判/老師點擊可同步啟動或暫停全體選手倒數計時">
-          ▶️ 開始比賽 (同步發令)
+          ▶️ 開始比賽
         </button>
-        <button class="wood-btn" onclick="openTeamLoginModal()">👤 選隊入座</button>
-        <button class="wood-btn" onclick="focusMyIsland()" title="將地圖視角對準我方起始島嶼">🎯 定位我隊</button>
-        <button class="wood-btn" onclick="openQBankModal()">📚 族語題庫 (300題)</button>
-        <button class="wood-btn" id="soundToggleBtn" onclick="toggleSound()" title="音效開關">🔊</button>
-        <button class="wood-btn" onclick="toggleFullscreen()" title="全螢幕切換">⛶</button>
-        <button class="wood-btn" onclick="openSettingsModal()">⚙️ 設定</button>
-        <button class="wood-btn" style="background:#c0392b; border-color:#e74c3c" onclick="endMatch()">🏆 立即結算</button>
+        <button class="wood-btn" onclick="openTeamLoginModal()" title="選擇隊伍與席位">👤 選隊</button>
+        <button class="wood-btn" onclick="focusMyIsland()" title="將地圖視角對準我方起始島嶼">🎯 定位</button>
+        <button class="wood-btn" onclick="openQBankModal()" title="查看中排灣語題庫">📚 題庫(300)</button>
+        <button class="wood-btn icon-btn" id="soundToggleBtn" onclick="toggleSound()" title="音效開關">🔊</button>
+        <button class="wood-btn icon-btn" onclick="toggleFullscreen()" title="全螢幕切換">⛶</button>
+        <button class="wood-btn icon-btn" onclick="openSettingsModal()" title="比賽設定">⚙️</button>
+        <button class="wood-btn btn-danger" onclick="endMatch()" title="立即結算比賽">🏆 結算</button>
       </div>
     </header>
 
@@ -97,14 +97,19 @@
       </div>
 
       <!-- Right Leaderboard Panel -->
-      <aside class="leaderboard-panel">
-        <div class="lb-ribbon-tab">
-          <span class="lb-ribbon-icon">⭐</span>
-          <span>比賽進行中 可以點選查看即時戰況</span>
+      <aside class="leaderboard-panel" id="leaderboardPanel">
+        <div class="lb-ribbon-tab" onclick="toggleLeaderboard()" title="點擊收合或展開排行榜">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span class="lb-ribbon-icon">⭐</span>
+            <span id="lbRibbonText">即時戰況排行榜</span>
+          </div>
+          <button class="lb-collapse-btn" id="lbCollapseBtn" onclick="event.stopPropagation(); toggleLeaderboard();" title="收合/展開排行榜">
+            收合 ▶
+          </button>
         </div>
         <div class="lb-header">
           <span class="lb-title" id="lbHeaderTitle">👑 即時戰況排行榜 (2隊對決)</span>
-          <span style="font-size:11px; color:#a2d2df;" id="lbModeLabel">一隊3人 · 初始0分</span>
+          <span style="font-size:11px; color:#a2d2df;" id="lbModeLabel">一隊3人 (每人500能量) · 初始0分</span>
         </div>
 
         <!-- Alliance / Team Comparison Bar -->
@@ -119,7 +124,7 @@
           </div>
         </div>
 
-        <div style="background:rgba(0,0,0,0.3); padding:4px 10px; font-size:10px; color:#f5b324; text-align:center;">
+        <div class="lb-formula-tip" style="background:rgba(0,0,0,0.3); padding:4px 10px; font-size:10px; color:#f5b324; text-align:center;">
           團隊總積分 = 特殊地形分 + Σ[(答對數×7) + (新領地數×3)]
         </div>
 
@@ -151,7 +156,7 @@
           </div>
           <div class="energy-bar-wrap">
             <div id="hudEnergyFill" class="energy-fill"></div>
-            <div id="hudEnergyLabel" class="energy-label">⚡ 團隊能量: 1000 / 1000</div>
+            <div id="hudEnergyLabel" class="energy-label">⚡ 個人能量: 500 / 500</div>
           </div>
           <div class="hud-stats-mini">
             <span>答對: <strong id="hudCorrectCount" style="color:#2ecc71">0</strong> 題</span>
@@ -215,7 +220,7 @@
               🎙️ 裁判 / 大螢幕觀戰席
             </button>
             <div style="font-size:12px; color:#7f5539; width:100%;">
-              💡 規則：<strong>一隊 3 人</strong>，共享團隊 1000 能量，合力開拓領地！一開始積分為 0 分。
+              💡 規則：<strong>一隊 3 人</strong>，每位隊員各自擁有 <strong>500 點個人能量</strong>（非團隊共用），合力開拓領地！一開始積分為 0 分。
             </div>
           </div>
 
@@ -278,25 +283,27 @@
           </div>
 
           <!-- All Teams Detailed Breakdown Table -->
-          <table class="team-compare-table">
-            <thead>
-              <tr>
-                <th>名次</th>
-                <th>隊伍名稱</th>
-                <th>陣營</th>
-                <th>總積分</th>
-                <th>城堡 (100分)</th>
-                <th>碉堡 (80分)</th>
-                <th>砲台 (50分)</th>
-                <th>答對題數得分 (×7)</th>
-                <th>新領地得分 (×3)</th>
-                <th>剩餘能量</th>
-              </tr>
-            </thead>
-            <tbody id="resTeamsStatsBody">
-              <!-- Dynamically populated -->
-            </tbody>
-          </table>
+          <div class="table-scroll-wrap" style="width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch;">
+            <table class="team-compare-table">
+              <thead>
+                <tr>
+                  <th>名次</th>
+                  <th>隊伍名稱</th>
+                  <th>陣營</th>
+                  <th>總積分</th>
+                  <th>城堡 (100分)</th>
+                  <th>碉堡 (80分)</th>
+                  <th>砲台 (50分)</th>
+                  <th>答對得分 (×7)</th>
+                  <th>新領地得分 (×3)</th>
+                  <th>隊員剩餘能量 (各500)</th>
+                </tr>
+              </thead>
+              <tbody id="resTeamsStatsBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
         </div>
         <div class="modal-footer">
           <button class="wood-btn" onclick="exportResultsCSV()">📥 匯出決賽成績單 CSV</button>
@@ -365,7 +372,7 @@
           </div>
 
           <div style="background: #fdf6e2; border: 1px solid #e2cb93; padding: 10px; border-radius: 8px; font-size: 12px; color: #7f5539;">
-            💡 規則提示：一隊 3 人。總能量 1000 點，答對消耗 6 點能量，答錯消耗 15 點能量。<br>
+            💡 規則提示：一隊 3 人。每位隊員個人能量 500 點（獨立計量），答對消耗 6 點能量，答錯消耗 15 點能量。<br>
             特殊地形積分：城堡 100 分、碉堡 80 分、砲台 50 分。一開始總積分為 0 分！
           </div>
         </div>

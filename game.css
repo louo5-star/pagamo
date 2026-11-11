@@ -51,20 +51,23 @@ body, html {
 .top-nav {
   position: relative;
   z-index: 50;
-  height: 48px;
+  min-height: 48px;
   background: linear-gradient(180deg, var(--wood-light) 0%, var(--wood-med) 50%, var(--wood-dark) 100%);
   border-bottom: 2px solid var(--wood-border);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 16px;
+  padding: 4px 12px;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
 .nav-left, .nav-center, .nav-right {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .match-dropdown {
@@ -72,25 +75,27 @@ body, html {
   color: #f7e1b5;
   border: 1px solid #8d5c31;
   border-radius: 6px;
-  padding: 6px 14px;
-  font-size: 14px;
+  padding: 5px 12px;
+  font-size: 13px;
   font-weight: bold;
   display: flex;
   align-items: center;
   gap: 6px;
   box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+  white-space: nowrap;
 }
 
 .nav-pill {
   background: rgba(0, 0, 0, 0.35);
   border: 1px solid rgba(255, 255, 255, 0.15);
   color: #fff;
-  padding: 4px 12px;
+  padding: 4px 10px;
   border-radius: 20px;
-  font-size: 13px;
+  font-size: 12px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  white-space: nowrap;
 }
 
 .room-pill {
@@ -118,15 +123,18 @@ body, html {
   color: #fff;
   border: 1px solid #c28854;
   border-radius: 6px;
-  padding: 6px 14px;
-  font-size: 13px;
+  padding: 5px 10px;
+  font-size: 12px;
   font-weight: bold;
   cursor: pointer;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255,255,255,0.25);
   transition: all 0.15s ease;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  gap: 4px;
+  white-space: nowrap;
+  touch-action: manipulation;
 }
 .wood-btn:hover {
   filter: brightness(1.15);
@@ -135,6 +143,20 @@ body, html {
 .wood-btn:active {
   transform: translateY(1px);
   filter: brightness(0.95);
+}
+
+.wood-btn.icon-btn {
+  padding: 5px 8px;
+  font-size: 13px;
+  min-width: 32px;
+}
+
+.wood-btn.btn-danger {
+  background: linear-gradient(180deg, #c0392b 0%, #962d22 100%);
+  border-color: #e74c3c;
+}
+.wood-btn.btn-danger:hover {
+  filter: brightness(1.15);
 }
 
 .btn-gold {
@@ -160,8 +182,9 @@ body, html {
 .game-viewport {
   position: relative;
   flex: 1;
+  min-height: 0;
   width: 100%;
-  height: calc(100vh - 48px);
+  height: 100%;
   overflow: hidden;
   background-color: var(--water-bg);
   background-image: radial-gradient(circle at 50% 50%, #44c5c2 0%, #299b98 100%);
@@ -288,11 +311,12 @@ body, html {
 /* ==================== Right Side Leaderboard ==================== */
 .leaderboard-panel {
   position: absolute;
-  top: 16px;
-  right: 16px;
+  top: 14px;
+  right: 14px;
   z-index: 30;
   width: 290px;
-  background: rgba(26, 44, 52, 0.9);
+  max-width: calc(100vw - 28px);
+  background: rgba(26, 44, 52, 0.92);
   border: 2px solid #5798a6;
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
@@ -301,6 +325,22 @@ body, html {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  transition: width 0.2s ease, max-width 0.2s ease, border-color 0.2s ease;
+}
+
+.leaderboard-panel.collapsed {
+  width: auto;
+  max-width: 155px;
+  border-color: #f1c40f;
+  background: rgba(26, 44, 52, 0.96);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+
+.leaderboard-panel.collapsed .lb-header,
+.leaderboard-panel.collapsed .alliance-score-bar,
+.leaderboard-panel.collapsed .lb-formula-tip,
+.leaderboard-panel.collapsed .players-list {
+  display: none !important;
 }
 
 .lb-ribbon-tab {
@@ -312,13 +352,38 @@ body, html {
   padding: 6px 12px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 6px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  cursor: pointer;
 }
+.leaderboard-panel.collapsed .lb-ribbon-tab {
+  border-bottom: none;
+  background: linear-gradient(180deg, #b87b00 0%, #8c5300 100%);
+  padding: 6px 10px;
+}
+
 .lb-ribbon-icon {
   color: #f1c40f;
   font-size: 13px;
+}
+
+.lb-collapse-btn {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #ffd166;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: bold;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.lb-collapse-btn:hover {
+  background: rgba(241, 196, 15, 0.35);
+  color: #fff;
 }
 
 .lb-header {
@@ -727,12 +792,19 @@ body, html {
 /* Question Modal Specific */
 .question-modal {
   width: 580px;
-}
-.question-body {
-  padding: 20px 24px;
+  max-width: 95vw;
+  max-height: 92vh;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+}
+.question-body {
+  padding: 18px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: calc(88vh - 60px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 .q-target-banner {
   background: #ede3cb;
@@ -758,11 +830,12 @@ body, html {
 }
 
 .q-text {
-  font-size: 17px;
+  font-size: clamp(15px, 2vw, 18px);
   font-weight: bold;
   color: #2c3e50;
   line-height: 1.5;
-  padding: 4px 0;
+  word-break: break-word;
+  padding: 2px 0;
 }
 
 .q-options-grid {
@@ -774,8 +847,8 @@ body, html {
   background: #ffffff;
   border: 2px solid #cfc2a7;
   border-radius: 10px;
-  padding: 12px 16px;
-  font-size: 15px;
+  padding: 10px 14px;
+  font-size: clamp(13px, 1.8vw, 15px);
   font-weight: 500;
   text-align: left;
   cursor: pointer;
@@ -784,6 +857,9 @@ body, html {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-height: 48px;
+  touch-action: manipulation;
+  word-break: break-word;
 }
 .q-option-btn:hover {
   background: #fbf5e8;
@@ -1033,9 +1109,13 @@ body, html {
 }
 .team-select-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
   margin-top: 10px;
+  max-height: 60vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 2px;
 }
 .team-select-card {
   background: linear-gradient(180deg, #fbf7ee 0%, #ede3ca 100%);
@@ -1320,4 +1400,178 @@ body, html {
 .wood-select option {
   background: #2a180e;
   color: #fff;
+}
+
+/* ==================== Responsive Layout for Tablets & Small Displays ==================== */
+@media (max-width: 1024px) {
+  .top-nav {
+    padding: 4px 8px;
+    gap: 6px;
+  }
+  .nav-left, .nav-center, .nav-right {
+    gap: 5px;
+  }
+  .wood-btn {
+    padding: 4px 8px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  .nav-pill {
+    padding: 3px 8px;
+    font-size: 11px;
+    gap: 4px;
+  }
+  .match-dropdown {
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+  .leaderboard-panel {
+    width: 260px;
+    top: 10px;
+    right: 10px;
+  }
+  .timer-container {
+    top: 8px;
+    left: 10px;
+  }
+  .map-controls {
+    top: 130px;
+    left: 10px;
+  }
+  .player-hud {
+    bottom: 12px;
+    left: 10px;
+    padding: 8px 12px;
+  }
+  .hud-avatar-wrapper {
+    width: 56px;
+    height: 56px;
+  }
+  .energy-bar-wrap {
+    width: 150px;
+  }
+  .hud-stats-mini {
+    gap: 8px;
+    font-size: 10px;
+  }
+  .battle-log-wrap {
+    width: 260px;
+    bottom: 12px;
+    right: 10px;
+  }
+}
+
+@media (max-width: 768px) {
+  .top-nav {
+    padding: 4px 6px;
+    gap: 4px;
+    justify-content: center;
+  }
+  .nav-left, .nav-center, .nav-right {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
+  }
+  .nav-matchup-pill {
+    display: none;
+  }
+  .leaderboard-panel {
+    width: 250px;
+    max-width: calc(100vw - 16px);
+    right: 8px;
+    top: 8px;
+  }
+  .leaderboard-panel.collapsed {
+    max-width: 135px;
+  }
+  .timer-disc {
+    width: 86px;
+    height: 86px;
+    border-width: 3px;
+  }
+  .timer-disc .timer-title {
+    font-size: 10px;
+    top: -10px;
+    padding: 1px 6px;
+  }
+  .hourglass-graphic {
+    width: 34px;
+    height: 34px;
+  }
+  .timer-digits {
+    font-size: 13px;
+  }
+  .map-controls {
+    top: 105px;
+    left: 8px;
+    gap: 4px;
+  }
+  .ctrl-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+  .player-hud {
+    bottom: 8px;
+    left: 8px;
+    padding: 6px 10px;
+    gap: 8px;
+    border-radius: 14px;
+    max-width: calc(100vw - 16px);
+  }
+  .hud-avatar-wrapper {
+    width: 44px;
+    height: 44px;
+  }
+  .hud-name {
+    font-size: 13px;
+  }
+  .energy-bar-wrap {
+    width: 120px;
+    height: 14px;
+  }
+  .hud-stats-mini {
+    font-size: 10px;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .battle-log-wrap {
+    display: none;
+  }
+  .modal-content {
+    max-width: 96vw;
+    border-width: 2px;
+    border-radius: 12px;
+  }
+  .question-modal {
+    width: 95vw;
+  }
+  .q-options-grid {
+    gap: 8px;
+  }
+  .q-option-btn {
+    padding: 10px 12px;
+    font-size: 14px;
+    min-height: 44px;
+  }
+  .team-select-modal {
+    width: 95vw !important;
+  }
+  .team-select-grid {
+    grid-template-columns: 1fr;
+    max-height: 55vh;
+  }
+}
+
+@media (max-width: 480px) {
+  .match-dropdown {
+    display: none;
+  }
+  .top-nav {
+    padding: 3px;
+  }
+  .wood-btn {
+    padding: 3px 6px;
+    font-size: 10px;
+  }
 }
