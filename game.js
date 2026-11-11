@@ -310,8 +310,18 @@ function handleIncomingSync(data) {
     }
 }
 
-// ==================== Asset Loading ====================
+// ==================== Asset Loading (With Embedded Fallback) ====================
 function initAssets(callback) {
+    // 1. Immediately preload from window.EMBEDDED_SPRITES so sprites are NEVER undefined
+    if (typeof window !== 'undefined' && window.EMBEDDED_SPRITES) {
+        for (const [key, dataUri] of Object.entries(window.EMBEDDED_SPRITES)) {
+            const fbImg = new Image();
+            fbImg.src = dataUri;
+            Game.sprites[key] = fbImg;
+        }
+    }
+
+    // 2. Also attempt loading high-res assets from assets/ if available on server
     const assetsToLoad = {
         'bunker': 'assets/bunker_transparent.png',
         'cannon': 'assets/cannon_transparent.png',
@@ -334,6 +344,12 @@ function initAssets(callback) {
             if (loaded === total && callback) callback();
         };
         img.onerror = () => {
+            // External file 404: use embedded data URI
+            if (!Game.sprites[key] && window.EMBEDDED_SPRITES && window.EMBEDDED_SPRITES[key]) {
+                const fbImg = new Image();
+                fbImg.src = window.EMBEDDED_SPRITES[key];
+                Game.sprites[key] = fbImg;
+            }
             loaded++;
             if (loaded === total && callback) callback();
         };
@@ -729,41 +745,6 @@ function showCastleCaptureBanner(teamName, playerName) {
     setTimeout(() => {
         banner.style.display = 'none';
     }, 3200);
-
-    setBroadcastSubtitle(`👑【${teamName}】${playerName} 成功攻佔了中央核心城堡！(+100分)`, true, 5000);
-}
-
-// ==================== Broadcast Subtitle Ticker ====================
-const BROADCAST_SUBTITLES = [
-    '地圖上散落著城堡、碉堡、以及砲台',
-    '佔領特殊地形加成：砲台 +50分 ｜ 碉堡 +80分 ｜ 城堡 +100分',
-    '團隊總積分 = 特殊地形分 + Σ[(答對數 × 7) + (新領地數 × 3)]',
-    '每隊 3 人協同作戰，總能量 1000 點，答對消耗 6 點，答錯消耗 15 點！',
-    '全題庫 300 題中排灣語句型，答對即刻開拓領地奪得先機！'
-];
-let currentSubtitleIdx = 0;
-let subtitleOverrideTimeout = null;
-
-function setBroadcastSubtitle(text, isTemporary = false, durationMs = 4000) {
-    const el = document.getElementById('pagamoSubtitle');
-    if (!el) return;
-    el.textContent = text;
-    if (isTemporary) {
-        if (subtitleOverrideTimeout) clearTimeout(subtitleOverrideTimeout);
-        subtitleOverrideTimeout = setTimeout(() => {
-            subtitleOverrideTimeout = null;
-            el.textContent = BROADCAST_SUBTITLES[currentSubtitleIdx];
-        }, durationMs);
-    }
-}
-
-function initBroadcastTicker() {
-    setInterval(() => {
-        if (subtitleOverrideTimeout) return;
-        currentSubtitleIdx = (currentSubtitleIdx + 1) % BROADCAST_SUBTITLES.length;
-        const el = document.getElementById('pagamoSubtitle');
-        if (el) el.textContent = BROADCAST_SUBTITLES[currentSubtitleIdx];
-    }, 10000);
 }
 
 // ==================== Canvas Rendering & Controls ====================
@@ -771,15 +752,18 @@ let canvas, ctx;
 
 function initCanvas() {
     canvas = document.getElementById('mapCanvas');
+    if (!canvas) return;
     ctx = canvas.getContext('2d');
 
     function resize() {
-        const rect = canvas.parentElement.getBoundingClientRect();
-        canvas.width = rect.width * window.devicePixelRatio;
-        canvas.height = rect.height * window.devicePixelRatio;
-        canvas.style.width = `${rect.width}px`;
-        canvas.style.height = `${rect.height}px`;
-        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        const p = canvas.parentElement;
+        const w = p && p.clientWidth > 0 ? p.clientWidth : window.innerWidth;
+        const h = p && p.clientHeight > 0 ? p.clientHeight : (window.innerHeight - 48);
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = Math.round(w * dpr);
+        canvas.height = Math.round(h * dpr);
+        canvas.style.width = `${w}px`;
+        canvas.style.height = `${h}px`;
     }
 
     window.addEventListener('resize', resize);
@@ -801,6 +785,7 @@ function initCanvas() {
 }
 
 function initTouchControls() {
+    if (!canvas) return;
     let lastTouchX = 0, lastTouchY = 0;
     canvas.addEventListener('touchstart', (e) => {
         if (e.touches.length === 1) {
@@ -823,9 +808,12 @@ function initTouchControls() {
 
 function resetCamera() {
     if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    Game.camera.x = rect.width / 2;
-    Game.camera.y = rect.height / 2;
+    const p = canvas.parentElement;
+    const w = (p && p.clientWidth > 300) ? p.clientWidth : (window.innerWidth || 1200);
+    const h = (p && p.clientHeight > 300) ? p.clientHeight : (Math.max(600, window.innerHeight - 48));
+    // Center of map (0,0) in playable area (offset slightly for right leaderboard)
+    Game.camera.x = Math.round((w - 200) / 2);
+    Game.camera.y = Math.round(h / 2);
     Game.camera.zoom = 1.0;
 }
 
@@ -957,9 +945,11 @@ function renderLoop() {
 
 function drawMap() {
     if (!canvas || !ctx || !Game.map) return;
-    const width = canvas.width / window.devicePixelRatio;
-    const height = canvas.height / window.devicePixelRatio;
+    const dpr = window.devicePixelRatio || 1;
+    const width = canvas.width / dpr;
+    const height = canvas.height / dpr;
 
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, width, height);
 
     ctx.save();
@@ -1004,26 +994,31 @@ function drawMap() {
     });
 
     // 5. Draw Central 7 Castles Fortress
-    if (Game.sprites['castle_cluster']) {
-        const { x: cx, y: cy } = hexToWorld(0, 0);
-        const cw = R * 5.8;
-        const ch = R * 6.8;
-        ctx.drawImage(Game.sprites['castle_cluster'], cx - cw / 2, cy - ch / 2 - R * 0.45, cw, ch);
+    const { x: cx, y: cy } = hexToWorld(0, 0);
+    const cw = R * 5.8;
+    const ch = R * 6.8;
+    const castleSprite = Game.sprites['castle_cluster'];
 
-        // Draw owner flags for castle cluster
-        const castleHexes = [
-            [0, 0], [0, -1], [1, -1], [1, 0],
-            [0, 1], [-1, 1], [-1, 0]
-        ];
-        castleHexes.forEach(([cq, cr]) => {
-            const ck = `${cq},${cr}`;
-            const castleOwner = Game.tileOwners[ck];
-            if (castleOwner) {
-                const { x, y } = hexToWorld(cq, cr);
-                drawOwnerFlag(ctx, x, y - R * 0.5, castleOwner);
-            }
-        });
+    if (castleSprite && castleSprite.complete && castleSprite.naturalWidth > 0) {
+        ctx.drawImage(castleSprite, cx - cw / 2, cy - ch / 2 - R * 0.45, cw, ch);
+    } else {
+        // High-Quality Procedural 2.5D Castle Fortress Fallback (Never Missing!)
+        drawProceduralCastleFortress(ctx, cx, cy, R);
     }
+
+    // Draw owner flags for castle cluster
+    const castleHexes = [
+        [0, 0], [0, -1], [1, -1], [1, 0],
+        [0, 1], [-1, 1], [-1, 0]
+    ];
+    castleHexes.forEach(([cq, cr]) => {
+        const ck = `${cq},${cr}`;
+        const castleOwner = Game.tileOwners[ck];
+        if (castleOwner) {
+            const { x, y } = hexToWorld(cq, cr);
+            drawOwnerFlag(ctx, x, y - R * 0.5, castleOwner);
+        }
+    });
 
     // 6. Draw Shovel Pin on Target / Hover
     if (Game.hoveredTileKey && expandableTiles.has(Game.hoveredTileKey)) {
@@ -1144,25 +1139,6 @@ function getTileColor(tile, owner) {
     }
 }
 
-function drawSpecialSprite(ctx, x, y, R, type) {
-    let img = null;
-    let sw = R * 1.5;
-    let sh = R * 1.6;
-    let offsetY = -R * 0.35;
-
-    if (type === 'cannon' && Game.sprites['cannon']) {
-        img = Game.sprites['cannon'];
-    } else if (type === 'bunker' && Game.sprites['bunker']) {
-        img = Game.sprites['bunker'];
-        sh = R * 1.8;
-        offsetY = -R * 0.45;
-    }
-
-    if (img) {
-        ctx.drawImage(img, x - sw / 2, y + offsetY, sw, sh);
-    }
-}
-
 function drawOwnerFlag(ctx, x, y, owner) {
     const team = Game.teams[owner.teamId];
     const teamColor = team ? team.color : '#f1c40f';
@@ -1191,21 +1167,348 @@ function drawOwnerFlag(ctx, x, y, owner) {
     ctx.restore();
 }
 
+function drawSpecialSprite(ctx, x, y, R, type) {
+    let img = null;
+    let sw = R * 1.5;
+    let sh = R * 1.6;
+    let offsetY = -R * 0.35;
+
+    if (type === 'cannon' && Game.sprites['cannon']) {
+        img = Game.sprites['cannon'];
+    } else if (type === 'bunker' && Game.sprites['bunker']) {
+        img = Game.sprites['bunker'];
+        sh = R * 1.8;
+        offsetY = -R * 0.45;
+    }
+
+    if (img && img.complete && img.naturalWidth > 0) {
+        ctx.drawImage(img, x - sw / 2, y + offsetY, sw, sh);
+    } else {
+        // High-Quality Procedural 2.5D Fallback for Bunkers & Cannons (Never Missing!)
+        if (type === 'cannon') {
+            drawProceduralCannon(ctx, x, y, R);
+        } else if (type === 'bunker') {
+            drawProceduralBunker(ctx, x, y, R);
+        }
+    }
+}
+
 function drawShovelPin(ctx, x, y) {
-    if (Game.sprites['shovel_pin']) {
-        const img = Game.sprites['shovel_pin'];
+    const img = Game.sprites['shovel_pin'];
+    if (img && img.complete && img.naturalWidth > 0) {
         const sw = 45;
         const sh = 75;
         ctx.drawImage(img, x - 10, y - sh + 15, sw, sh);
     } else {
-        ctx.save();
-        ctx.strokeStyle = '#2ecc71';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.arc(x, y, 16, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.restore();
+        drawProceduralShovelPin(ctx, x, y);
     }
+}
+
+// ==================== High-Quality Procedural 2.5D Graphics (Zero-Dependency) ====================
+function drawProceduralBunker(ctx, x, y, R) {
+    ctx.save();
+    // 1. Base shadow
+    ctx.beginPath();
+    ctx.ellipse(x, y + R * 0.1, R * 0.55, R * 0.25, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+    ctx.fill();
+
+    // 2. Stone Tower Body (cylindrical with gradient)
+    const towerW = R * 0.75;
+    const towerH = R * 0.9;
+    const towerTopY = y - towerH;
+    const grad = ctx.createLinearGradient(x - towerW / 2, 0, x + towerW / 2, 0);
+    grad.addColorStop(0, '#596275');
+    grad.addColorStop(0.3, '#747d8c');
+    grad.addColorStop(0.7, '#a4b0be');
+    grad.addColorStop(1, '#2f3542');
+
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.moveTo(x - towerW / 2, towerTopY);
+    ctx.lineTo(x + towerW / 2, towerTopY);
+    ctx.lineTo(x + towerW / 2, y);
+    ctx.ellipse(x, y, towerW / 2, R * 0.15, 0, 0, Math.PI);
+    ctx.lineTo(x - towerW / 2, towerTopY);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#2f3542';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // 3. Arrow Slits / Windows
+    ctx.fillStyle = '#f1c40f';
+    ctx.fillRect(x - 3, towerTopY + towerH * 0.35, 6, 10);
+    ctx.strokeStyle = '#2c3e50';
+    ctx.strokeRect(x - 3, towerTopY + towerH * 0.35, 6, 10);
+
+    // 4. Conical Roof
+    const roofH = R * 0.6;
+    const roofGrad = ctx.createLinearGradient(x - towerW * 0.6, 0, x + towerW * 0.6, 0);
+    roofGrad.addColorStop(0, '#8e44ad');
+    roofGrad.addColorStop(0.5, '#9b59b6');
+    roofGrad.addColorStop(1, '#5e2776');
+
+    ctx.fillStyle = roofGrad;
+    ctx.beginPath();
+    ctx.moveTo(x, towerTopY - roofH);
+    ctx.lineTo(x + towerW * 0.55, towerTopY + 2);
+    ctx.ellipse(x, towerTopY + 2, towerW * 0.55, R * 0.12, 0, 0, Math.PI);
+    ctx.lineTo(x, towerTopY - roofH);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#341f97';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // 5. Spire & Flag
+    ctx.beginPath();
+    ctx.moveTo(x, towerTopY - roofH);
+    ctx.lineTo(x, towerTopY - roofH - 12);
+    ctx.strokeStyle = '#f1c40f';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(x, towerTopY - roofH - 12);
+    ctx.lineTo(x + 10, towerTopY - roofH - 8);
+    ctx.lineTo(x, towerTopY - roofH - 4);
+    ctx.closePath();
+    ctx.fillStyle = '#e74c3c';
+    ctx.fill();
+
+    ctx.restore();
+}
+
+function drawProceduralCannon(ctx, x, y, R) {
+    ctx.save();
+    // 1. Dirt mount shadow
+    ctx.beginPath();
+    ctx.ellipse(x, y + 2, R * 0.55, R * 0.25, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+    ctx.fill();
+
+    // 2. Wooden carriage wheels
+    ctx.fillStyle = '#795548';
+    ctx.beginPath();
+    ctx.ellipse(x - 10, y - 2, 7, 12, -0.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#4e342e';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.ellipse(x + 10, y - 2, 7, 12, 0.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Wheel hubs
+    ctx.fillStyle = '#d7ccc8';
+    ctx.beginPath();
+    ctx.arc(x - 10, y - 2, 3, 0, Math.PI * 2);
+    ctx.arc(x + 10, y - 2, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 3. Bronze Cannon Barrel (tilted upward)
+    ctx.save();
+    ctx.translate(x, y - 8);
+    ctx.rotate(-Math.PI / 6); // 30 deg up
+
+    const barrelGrad = ctx.createLinearGradient(0, -6, 0, 6);
+    barrelGrad.addColorStop(0, '#f39c12');
+    barrelGrad.addColorStop(0.4, '#f1c40f');
+    barrelGrad.addColorStop(1, '#b7791f');
+
+    ctx.fillStyle = barrelGrad;
+    ctx.beginPath();
+    ctx.moveTo(-16, -5);
+    ctx.lineTo(18, -3.5);
+    ctx.lineTo(18, 3.5);
+    ctx.lineTo(-16, 5);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#78350f';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+
+    // Muzzle ring
+    ctx.fillStyle = '#d97706';
+    ctx.fillRect(17, -4.5, 4, 9);
+    ctx.strokeRect(17, -4.5, 4, 9);
+
+    // Breech sphere
+    ctx.beginPath();
+    ctx.arc(-16, 0, 5, 0, Math.PI * 2);
+    ctx.fillStyle = '#b45309';
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.restore();
+
+    // 4. Cannonballs stack
+    ctx.fillStyle = '#263238';
+    ctx.beginPath();
+    ctx.arc(x + 18, y + 4, 3.5, 0, Math.PI * 2);
+    ctx.arc(x + 24, y + 4, 3.5, 0, Math.PI * 2);
+    ctx.arc(x + 21, y - 1, 3.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+}
+
+function drawProceduralCastleFortress(ctx, cx, cy, R) {
+    ctx.save();
+
+    // 7 connected castle towers
+    const castleOffsets = [
+        [0, 0, 1.4],      // Center Keep (Taller!)
+        [0, -1, 1.0],     // North
+        [1, -1, 1.0],     // Northeast
+        [1, 0, 1.0],      // Southeast
+        [0, 1, 1.0],      // South
+        [-1, 1, 1.0],     // Southwest
+        [-1, 0, 1.0]      // Northwest
+    ];
+
+    const sorted = castleOffsets.map(([dq, dr, scale]) => {
+        const { x, y } = hexToWorld(dq, dr);
+        return { x, y, scale };
+    }).sort((a, b) => a.y - b.y);
+
+    sorted.forEach(({ x, y, scale }) => {
+        const tw = R * 0.9 * scale;
+        const th = R * 1.3 * scale;
+        const topY = y - th;
+
+        // Base shadow
+        ctx.beginPath();
+        ctx.ellipse(x, y + 2, tw * 0.6, R * 0.2, 0, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(0,0,0,0.4)';
+        ctx.fill();
+
+        // Tower walls (sandstone)
+        const wallGrad = ctx.createLinearGradient(x - tw / 2, 0, x + tw / 2, 0);
+        wallGrad.addColorStop(0, '#d4a373');
+        wallGrad.addColorStop(0.3, '#faedcd');
+        wallGrad.addColorStop(0.7, '#fefae0');
+        wallGrad.addColorStop(1, '#ccd5ae');
+        ctx.fillStyle = wallGrad;
+        ctx.fillRect(x - tw / 2, topY, tw, th);
+        ctx.strokeStyle = '#b08968';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(x - tw / 2, topY, tw, th);
+
+        // Crenellations
+        const merlons = 4;
+        const mw = tw / (merlons * 2 - 1);
+        ctx.fillStyle = '#e9edc9';
+        for (let m = 0; m < merlons; m++) {
+            ctx.fillRect(x - tw / 2 + m * mw * 2, topY - 6, mw, 6);
+            ctx.strokeRect(x - tw / 2 + m * mw * 2, topY - 6, mw, 6);
+        }
+
+        // Arched Gate on center keep
+        if (scale > 1.1) {
+            ctx.fillStyle = '#6f1d1b';
+            ctx.beginPath();
+            ctx.arc(x, y - 10, 8, Math.PI, 0);
+            ctx.lineTo(x + 8, y);
+            ctx.lineTo(x - 8, y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = '#ffe6a7';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+        }
+
+        // Conical Roof (Ruby fairytale roof)
+        const roofH = R * 0.9 * scale;
+        const roofGrad = ctx.createLinearGradient(x - tw * 0.6, 0, x + tw * 0.6, 0);
+        roofGrad.addColorStop(0, '#c0392b');
+        roofGrad.addColorStop(0.4, '#e74c3c');
+        roofGrad.addColorStop(0.7, '#ff7675');
+        roofGrad.addColorStop(1, '#962d22');
+
+        ctx.fillStyle = roofGrad;
+        ctx.beginPath();
+        ctx.moveTo(x, topY - roofH);
+        ctx.lineTo(x + tw * 0.58, topY - 3);
+        ctx.lineTo(x - tw * 0.58, topY - 3);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = '#78281f';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Golden Spire & Pennant Flag
+        ctx.beginPath();
+        ctx.moveTo(x, topY - roofH);
+        ctx.lineTo(x, topY - roofH - 14 * scale);
+        ctx.strokeStyle = '#f1c40f';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(x, topY - roofH - 14 * scale);
+        ctx.lineTo(x + 12 * scale, topY - roofH - 9 * scale);
+        ctx.lineTo(x, topY - roofH - 4 * scale);
+        ctx.closePath();
+        ctx.fillStyle = '#f39c12';
+        ctx.fill();
+    });
+
+    ctx.restore();
+}
+
+function drawProceduralShovelPin(ctx, x, y) {
+    ctx.save();
+    // Glowing target circle
+    ctx.beginPath();
+    ctx.arc(x, y, 16, 0, Math.PI * 2);
+    ctx.strokeStyle = '#f1c40f';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(241, 196, 15, 0.25)';
+    ctx.fill();
+
+    // Red Pin
+    ctx.beginPath();
+    ctx.arc(x, y - 28, 8, 0, Math.PI * 2);
+    ctx.fillStyle = '#e74c3c';
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(x, y - 28, 3, 0, Math.PI * 2);
+    ctx.fillStyle = '#fff';
+    ctx.fill();
+
+    // Shovel
+    ctx.save();
+    ctx.translate(x + 8, y - 10);
+    ctx.rotate(Math.PI / 4);
+
+    // Handle
+    ctx.fillStyle = '#8d6e63';
+    ctx.fillRect(-2, -28, 4, 24);
+    // Blade
+    ctx.fillStyle = '#b0bec5';
+    ctx.beginPath();
+    ctx.moveTo(-7, -4);
+    ctx.lineTo(7, -4);
+    ctx.lineTo(5, 12);
+    ctx.lineTo(0, 16);
+    ctx.lineTo(-5, 12);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#37474f';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+
+    ctx.restore();
+    ctx.restore();
 }
 
 // ==================== Tooltip ====================
@@ -1742,7 +2045,6 @@ window.addEventListener('DOMContentLoaded', () => {
     initCanvas();
     updateTimerDisplay();
     updateUI();
-    initBroadcastTicker();
 
     // Load sprite assets asynchronously in background
     initAssets(() => {});
@@ -1773,4 +2075,8 @@ window.addEventListener('DOMContentLoaded', () => {
             openTeamLoginModal();
         }
     }
+});
+
+window.addEventListener('load', () => {
+    resetCamera();
 });

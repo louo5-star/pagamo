@@ -69,7 +69,12 @@
         <div class="timer-disc">
           <div class="timer-title">比賽剩餘</div>
           <div class="hourglass-graphic">
-            <img src="assets/hourglass_timer_transparent.png" alt="Hourglass">
+            <img src="assets/hourglass_timer_transparent.png" alt="Hourglass" id="hudHourglassImg" onerror="if(window.EMBEDDED_SPRITES&&window.EMBEDDED_SPRITES.hourglass){this.src=window.EMBEDDED_SPRITES.hourglass;}else{this.style.display='none';document.getElementById('hudHourglassSvg').style.display='block';}">
+            <svg id="hudHourglassSvg" viewBox="0 0 40 40" style="display:none; width:36px; height:36px; margin:auto;">
+              <path d="M 10 8 L 30 8 L 22 20 L 30 32 L 10 32 L 18 20 Z" fill="#e67e22" stroke="#d35400" stroke-width="2"/>
+              <path d="M 12 10 L 28 10 L 20 19 Z" fill="#f1c40f"/>
+              <path d="M 15 30 L 25 30 L 20 22 Z" fill="#f1c40f"/>
+            </svg>
           </div>
           <div class="timer-digits-box">
             <span id="timerDigits" class="timer-digits">20:00</span>
@@ -122,7 +127,16 @@
       <!-- Bottom-Left Player Status HUD -->
       <div class="player-hud">
         <div class="hud-avatar-wrapper">
-          <img src="assets/player_avatar.png" alt="選手頭像" class="hud-avatar-img">
+          <img src="assets/player_avatar.png" alt="選手頭像" class="hud-avatar-img" id="hudPlayerAvatarImg" onerror="if(window.EMBEDDED_SPRITES&&window.EMBEDDED_SPRITES.player_avatar){this.src=window.EMBEDDED_SPRITES.player_avatar;}else{this.style.display='none';document.getElementById('hudPlayerAvatarSvg').style.display='block';}">
+          <svg id="hudPlayerAvatarSvg" viewBox="0 0 100 100" style="display:none; width:90%; height:90%;">
+            <circle cx="50" cy="50" r="46" fill="#27ae60" id="hudAvatarBg"/>
+            <circle cx="50" cy="40" r="22" fill="#ffe0bd"/>
+            <circle cx="42" cy="38" r="3" fill="#333"/>
+            <circle cx="58" cy="38" r="3" fill="#333"/>
+            <path d="M 45 48 Q 50 54 55 48" stroke="#d35400" stroke-width="2" fill="none"/>
+            <path d="M 28 35 Q 50 15 72 35" fill="#f39c12"/>
+            <path d="M 20 85 Q 50 65 80 85" fill="#2c3e50"/>
+          </svg>
           <div class="hud-avatar-ring"></div>
         </div>
         <div class="hud-details">
@@ -141,11 +155,6 @@
             <span>團隊總分: <strong id="hudTotalScore" style="color:#f39c12">0</strong></span>
           </div>
         </div>
-      </div>
-
-      <!-- PaGamO Broadcast Subtitle Announcement (Bottom Center) -->
-      <div id="pagamoSubtitle" class="pagamo-subtitle-announcement">
-        地圖上散落著城堡、碉堡、以及砲台
       </div>
 
       <!-- Bottom-Right Live Battle Log -->
@@ -364,6 +373,7 @@
   <script src="audio.js"></script>
   <script src="questions_data.js"></script>
   <script src="map_preset.js"></script>
+  <script src="assets_data.js"></script>
   <script src="game.js"></script>
 
   <!-- Question Filter Helper Script -->

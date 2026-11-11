@@ -507,32 +507,6 @@ body, html {
   pointer-events: none;
 }
 
-/* ==================== PaGamO Broadcast Subtitle Announcement ==================== */
-.pagamo-subtitle-announcement {
-  position: absolute;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 25;
-  color: #ffffff;
-  font-size: 26px;
-  font-weight: 800;
-  letter-spacing: 2px;
-  text-shadow:
-    -2px -2px 0 #000,
-     2px -2px 0 #000,
-    -2px  2px 0 #000,
-     2px  2px 0 #000,
-     0 3px 8px rgba(0, 0, 0, 0.85);
-  pointer-events: none;
-  white-space: nowrap;
-  animation: subtitlePulse 4s ease-in-out infinite;
-}
-@keyframes subtitlePulse {
-  0%, 100% { opacity: 0.95; transform: translateX(-50%) scale(1); }
-  50% { opacity: 0.88; transform: translateX(-50%) scale(1.01); }
-}
-
 .hud-details {
   display: flex;
   flex-direction: column;
