@@ -205,13 +205,16 @@
             </button>
           </div>
 
-          <!-- Player Nickname Input -->
-          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; background:#fff; padding:8px 14px; border-radius:8px; border:1px solid #d4c5a0;">
+          <!-- Player Nickname Input & Spectator Toggle -->
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; background:#fff; padding:8px 14px; border-radius:8px; border:1px solid #d4c5a0; flex-wrap:wrap; gap:8px;">
             <div style="display:flex; align-items:center; gap:8px;">
               <label style="font-weight:bold; color:#5c381e;">👤 您的選手姓名：</label>
-              <input type="text" id="playerNameInput" placeholder="請輸入姓名 (如: 小明)" value="選手 1" style="padding:5px 12px; border-radius:6px; border:1px solid #c8ab78; font-size:13px; width:180px;" oninput="updateMyPlayerName(this.value)">
+              <input type="text" id="playerNameInput" placeholder="請輸入姓名 (如: 小明)" value="選手 1" style="padding:5px 12px; border-radius:6px; border:1px solid #c8ab78; font-size:13px; width:160px;" oninput="updateMyPlayerName(this.value)">
             </div>
-            <div style="font-size:12px; color:#7f5539;">
+            <button class="wood-btn" style="background:#2c3e50; border-color:#4a6572; font-size:12px; padding:4px 10px;" onclick="selectSpectatorMode()" title="裁判或投影大螢幕請點此，不佔用選手席位">
+              🎙️ 裁判 / 大螢幕觀戰席
+            </button>
+            <div style="font-size:12px; color:#7f5539; width:100%;">
               💡 規則：<strong>一隊 3 人</strong>，共享團隊 1000 能量，合力開拓領地！一開始積分為 0 分。
             </div>
           </div>

@@ -853,6 +853,10 @@ function updateTimerDisplay() {
 
 // ==================== Interactive Human Answering ====================
 function openQuestionModal(tileKey) {
+    if (Game.isSpectator) {
+        alert('🎙️ 您目前是「裁判 / 大螢幕觀戰席」，僅供全場戰況觀看與發令計時。\n如需親自攻佔領地與答題，請點選上方「選隊入座」選擇您的隊伍席位！');
+        return;
+    }
     const team = Game.teams[Game.currentTeamId];
     if (!team) return;
 
@@ -1988,6 +1992,28 @@ function updateLeaderboard() {
 }
 
 function updatePlayerHUD() {
+    if (Game.isSpectator) {
+        const hudName = document.getElementById('hudPlayerName');
+        if (hudName) hudName.textContent = `🎙️ 裁判 / 大螢幕觀戰中`;
+        const teamBadge = document.getElementById('hudTeamBadge');
+        if (teamBadge) {
+            teamBadge.textContent = '裁判觀戰席';
+            teamBadge.className = 'hud-team-tag';
+            teamBadge.style.background = '#34495e';
+        }
+        const navBadge = document.getElementById('navCurrentPlayerBadge');
+        if (navBadge) {
+            navBadge.textContent = '🎙️ 裁判 / 觀戰席';
+            navBadge.className = 'team-badge';
+            navBadge.style.background = '#34495e';
+        }
+        const energyLabel = document.getElementById('hudEnergyLabel');
+        if (energyLabel) energyLabel.textContent = `⚡ 觀戰全場監控中`;
+        const energyFill = document.getElementById('hudEnergyFill');
+        if (energyFill) energyFill.style.width = '100%';
+        return;
+    }
+
     const t = Game.teams[Game.currentTeamId];
     if (!t) return;
 
@@ -2105,6 +2131,7 @@ function renderTeamSelectCards() {
 
 function selectTeamSlot(teamId, slot) {
     if (!Game.teams[teamId]) return;
+    Game.isSpectator = false;
 
     // Vacate previous slot
     const prevTeam = Game.teams[Game.currentTeamId];
@@ -2140,6 +2167,28 @@ function selectTeamSlot(teamId, slot) {
     updateUI();
     renderTeamSelectCards();
     focusMyIsland();
+}
+
+function selectSpectatorMode() {
+    const prevTeam = Game.teams[Game.currentTeamId];
+    if (prevTeam && prevTeam.members[Game.myPlayer.slot - 1]) {
+        prevTeam.members[Game.myPlayer.slot - 1].isOccupied = false;
+    }
+
+    Game.isSpectator = true;
+    Game.myPlayer.slot = 0;
+    Game.myPlayer.name = '裁判 / 大螢幕觀戰';
+
+    try {
+        localStorage.setItem('pagamo_logged_in_team', 'SPECTATOR');
+        localStorage.setItem('pagamo_logged_in_slot', 0);
+    } catch (e) {}
+
+    logBattle(`🎙️ 您已切換為【裁判 / 觀戰大螢幕模式】，不佔用任何選手席位，可專注全場計分與發令！`);
+    window.soundManager.playClick();
+    renderTeamSelectCards();
+    updateUI();
+    closeTeamLoginModal();
 }
 
 function selectTeam(teamId, slot = 1) {
