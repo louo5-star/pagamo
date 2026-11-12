@@ -153,14 +153,16 @@
           <div class="hud-name-row">
             <span id="hudPlayerName" class="hud-name">選手 1 (隊員1)</span>
             <span id="hudTeamBadge" class="hud-team-tag badge-t1">望嘉小尖兵</span>
+            <button class="wood-btn btn-sm" onclick="focusMyIsland()" style="margin-left:auto; padding:2px 8px; font-size:11px;" title="相機立即飛回自己的初始島嶼基地">🎯 我的基地</button>
           </div>
+          <div id="hudIslandLocation" style="font-size:11px; color:#ffd166; margin:2px 0 4px 0; font-weight:bold;">🏝️ 初始基地：北方海域基地 (7塊地)</div>
           <div class="energy-bar-wrap">
             <div id="hudEnergyFill" class="energy-fill"></div>
             <div id="hudEnergyLabel" class="energy-label">⚡ 個人能量: 500 / 500</div>
           </div>
           <div class="hud-stats-mini">
             <span>答對: <strong id="hudCorrectCount" style="color:#2ecc71">0</strong> 題</span>
-            <span>領地: <strong id="hudTerritoryCount" style="color:#4ea8de">7</strong> 塊</span>
+            <span>領地: <strong id="hudTerritoryCount" style="color:#4ea8de">21</strong> 塊</span>
             <span>特殊: <strong id="hudSpecialScore" style="color:#f1c40f">0</strong> 分</span>
             <span>團隊總分: <strong id="hudTotalScore" style="color:#f39c12">0</strong></span>
           </div>
@@ -220,7 +222,7 @@
               🎙️ 裁判 / 大螢幕觀戰席
             </button>
             <div style="font-size:12px; color:#7f5539; width:100%;">
-              💡 規則：<strong>一隊 3 人</strong>，每位隊員各自擁有 <strong>500 點個人能量</strong>（非團隊共用），合力開拓領地！一開始積分為 0 分。
+              💡 規則：<strong>一隊 3 人</strong>，每位隊員擁有 <strong>500 點個人能量</strong>，<strong>分佔不同獨立海域島嶼（相鄰皆為敵隊，絕非隊友）</strong>！初始積分為 0 分。
             </div>
           </div>
 

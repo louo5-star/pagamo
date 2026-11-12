@@ -436,7 +436,10 @@ function handleIncomingSync(data) {
             Game.teams[teamId].energy = Game.teams[teamId].members.reduce((sum, m) => sum + (m.energy || 0), 0);
             if (typeof correctCount === 'number') Game.teams[teamId].correctCount = correctCount;
         }
-        Game.tileOwners[tileKey] = { teamId };
+        Game.tileOwners[tileKey] = {
+            teamId,
+            memberSlot: (typeof memberSlot === 'number') ? memberSlot : 1
+        };
         const team = Game.teams[teamId];
         const tile = Game.map ? Game.map.tiles[tileKey] : null;
         let typeName = '領地';
@@ -697,12 +700,12 @@ function initMapState(reroll = false) {
         // Every member has their OWN separate island!
         // No two adjacent islands belong to the same team!
         const islandLayout = [
-            { teamIdx: 0, slot: 1 },
-            { teamIdx: 1, slot: 1 },
-            { teamIdx: 0, slot: 2 },
-            { teamIdx: 1, slot: 2 },
-            { teamIdx: 0, slot: 3 },
-            { teamIdx: 1, slot: 3 }
+            { teamIdx: 0, slot: 1, locName: '北方海域基地 (北)' },
+            { teamIdx: 1, slot: 1, locName: '東北海域基地 (東北)' },
+            { teamIdx: 0, slot: 2, locName: '東南海域基地 (東南)' },
+            { teamIdx: 1, slot: 2, locName: '南方海域基地 (南)' },
+            { teamIdx: 0, slot: 3, locName: '西南海域基地 (西南)' },
+            { teamIdx: 1, slot: 3, locName: '西北海域基地 (西北)' }
         ];
 
         // Ensure exactly 6 islands
@@ -717,7 +720,13 @@ function initMapState(reroll = false) {
             if (island) {
                 island.assignedTeam = team.id;
                 island.assignedMemberSlot = assign.slot;
-                island.name = `${team.name} · 隊員 ${assign.slot} 基地`;
+                island.locName = assign.locName;
+                island.name = `${team.name} · 隊員 ${assign.slot} 基地 (${assign.locName})`;
+                if (team.members && team.members[assign.slot - 1]) {
+                    team.members[assign.slot - 1].islandName = assign.locName;
+                    team.members[assign.slot - 1].islandIdx = idx;
+                    team.members[assign.slot - 1].islandCenter = island.center;
+                }
                 island.hexes.forEach(([q, r]) => {
                     const key = `${q},${r}`;
                     Game.tileOwners[key] = {
@@ -1037,7 +1046,7 @@ function submitPlayerAnswer(selectedIdx) {
     optionBtns.forEach(btn => btn.disabled = true);
 
     const explanationEl = document.getElementById('qExplanation');
-    explanationEl.innerHTML = `<strong>【族語解析】</strong> ${q.explanation}`;
+    explanationEl.innerHTML = `<strong>【族語解析】</strong><br>${q.explanation.replace(/\n/g, '<br>')}`;
     explanationEl.style.display = 'block';
 
     const targetKey = q.targetKey;
@@ -1058,7 +1067,8 @@ function submitPlayerAnswer(selectedIdx) {
         team.correctCount++;
 
         Game.tileOwners[targetKey] = {
-            teamId: team.id
+            teamId: team.id,
+            memberSlot: mySlot
         };
 
         let typeName = '領地';
@@ -1272,6 +1282,10 @@ function initTouchControls() {
 }
 
 function resetCamera() {
+    if (!Game.isSpectator && Game.currentTeamId && Game.myPlayer && Game.myPlayer.slot) {
+        focusMyIsland();
+        return;
+    }
     if (!canvas) return;
     const p = canvas.parentElement;
     const w = (p && p.clientWidth > 300) ? p.clientWidth : (window.innerWidth || 1200);
@@ -1283,6 +1297,11 @@ function resetCamera() {
 }
 
 function focusMyIsland() {
+    if (Game.isSpectator) {
+        resetCamera();
+        return;
+    }
+
     const team = Game.teams[Game.currentTeamId];
     if (!team || !Game.map || !Game.map.islands) return;
 
@@ -1291,12 +1310,26 @@ function focusMyIsland() {
     if (!targetIsland) {
         targetIsland = Game.map.islands.find(isl => isl.assignedTeam === team.id) || Game.map.islands[0];
     }
+    if (!targetIsland) return;
 
     const { x, y } = hexToWorld(targetIsland.center[0], targetIsland.center[1]);
 
-    const rect = canvas.getBoundingClientRect();
-    Game.camera.x = rect.width / 2 - x * Game.camera.zoom;
-    Game.camera.y = rect.height / 2 - y * Game.camera.zoom;
+    let w = 1200;
+    let h = 800;
+    if (canvas) {
+        try {
+            const rect = canvas.getBoundingClientRect();
+            if (rect && rect.width > 100) w = rect.width;
+            if (rect && rect.height > 100) h = rect.height;
+        } catch (e) {}
+    } else if (typeof window !== 'undefined' && window.innerWidth) {
+        w = window.innerWidth;
+        h = window.innerHeight ? (window.innerHeight - 48) : 800;
+    }
+
+    Game.camera.zoom = 1.05;
+    Game.camera.x = Math.round(w / 2 - x * Game.camera.zoom);
+    Game.camera.y = Math.round(h / 2 - y * Game.camera.zoom);
 }
 
 function onMouseDown(e) {
@@ -1512,10 +1545,29 @@ function drawMap() {
                 if (!team) return;
                 const { x, y } = hexToWorld(isl.center[0], isl.center[1]);
                 const member = team.members ? team.members[isl.assignedMemberSlot - 1] : null;
-                const isMyIsland = (team.id === Game.currentTeamId && isl.assignedMemberSlot === Game.myPlayer.slot);
-                const playerName = (member && member.isOccupied && member.name) ? member.name : `隊員 ${isl.assignedMemberSlot}`;
+                const isMyIsland = (!Game.isSpectator && team.id === Game.currentTeamId && isl.assignedMemberSlot === Game.myPlayer.slot);
+                const isTeammateIsland = (!Game.isSpectator && team.id === Game.currentTeamId && !isMyIsland);
+                const playerName = (member && member.isOccupied && member.name) ? member.name : (isl.assignedMemberSlot === 1 ? '隊長' : `隊員 ${isl.assignedMemberSlot}`);
 
-                const labelText = isMyIsland ? `⭐ 我的基地 (${playerName})` : `${team.name} · ${playerName}`;
+                // Draw perimeter boundary ring around island
+                ctx.save();
+                ctx.strokeStyle = isMyIsland ? '#f1c40f' : (isTeammateIsland ? '#2ecc71' : 'rgba(231, 76, 60, 0.6)');
+                ctx.lineWidth = isMyIsland ? 3 : 1.5;
+                ctx.setLineDash(isMyIsland ? [6, 4] : [4, 4]);
+                ctx.beginPath();
+                ctx.arc(x, y, R * 2.6, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.restore();
+
+                let labelText = '';
+                if (isMyIsland) {
+                    labelText = `⭐ 我的基地 (${playerName} · 7塊)`;
+                } else if (isTeammateIsland) {
+                    labelText = `🤝 隊友基地 (${playerName} · 7塊)`;
+                } else {
+                    labelText = `⚔️ 敵方基地 (${team.name} · ${playerName})`;
+                }
+
                 ctx.font = isMyIsland ? 'bold 13px "Microsoft JhengHei", Arial, sans-serif' : 'bold 11px "Microsoft JhengHei", Arial, sans-serif';
                 const metrics = ctx.measureText(labelText);
                 const pillW = metrics.width + 24;
@@ -1727,6 +1779,14 @@ function drawOwnerFlag(ctx, x, y, owner) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = 0.8;
     ctx.stroke();
+
+    if (owner && owner.memberSlot) {
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 7px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(owner.memberSlot, x - 1, y - 5);
+    }
 
     ctx.restore();
 }
@@ -2099,7 +2159,8 @@ function updateTooltip(screenX, screenY, hit) {
     let ownerText = '中立 (未佔領)';
     if (owner) {
         const op = Game.teams[owner.teamId];
-        ownerText = op ? `【${op.alliance}】${op.name}` : owner.teamId;
+        const memName = owner.memberSlot ? ` · 隊員 ${owner.memberSlot}` : '';
+        ownerText = op ? `【${op.alliance}】${op.name}${memName}` : `${owner.teamId}${memName}`;
     }
     document.getElementById('ttOwner').textContent = ownerText;
 
@@ -2276,7 +2337,7 @@ function updatePlayerHUD() {
     const t = Game.teams[Game.currentTeamId];
     if (!t) return;
 
-    const slotName = `隊員 ${Game.myPlayer.slot}`;
+    const slotName = Game.myPlayer.slot === 1 ? '隊長' : `隊員 ${Game.myPlayer.slot}`;
     document.getElementById('hudPlayerName').textContent = `${Game.myPlayer.name} (${t.name} · ${slotName})`;
 
     const teamBadge = document.getElementById('hudTeamBadge');
@@ -2298,6 +2359,14 @@ function updatePlayerHUD() {
     if (hudEnergyFill) hudEnergyFill.style.width = `${energyPct}%`;
     const hudEnergyLabel = document.getElementById('hudEnergyLabel');
     if (hudEnergyLabel) hudEnergyLabel.textContent = `⚡ 個人能量: ${curEnergy} / ${Game.config.maxEnergy}`;
+
+    // Display member's island location in HUD
+    const myIsland = (Game.map && Game.map.islands) ? Game.map.islands.find(isl => isl.assignedTeam === t.id && isl.assignedMemberSlot === mySlot) : null;
+    const islName = myIsland ? (myIsland.locName || myIsland.name) : (myMember.islandName || '獨立海域基地');
+    const locEl = document.getElementById('hudIslandLocation');
+    if (locEl) {
+        locEl.textContent = `🏝️ 初始基地：${islName} (7塊地)`;
+    }
 
     const stats = computeTeamStats(t.id);
     document.getElementById('hudCorrectCount').textContent = t.correctCount;
@@ -2321,6 +2390,9 @@ function openTeamLoginModal() {
 
 function closeTeamLoginModal() {
     document.getElementById('teamLoginModal').style.display = 'none';
+    if (!Game.isSpectator) {
+        focusMyIsland();
+    }
 }
 
 function updateMyPlayerName(name) {
@@ -2363,15 +2435,15 @@ function renderTeamSelectCards() {
                 <div class="tsc-name">${t.name}</div>
             </div>
             <div class="tsc-details">
-                <div>📍 初始島嶼：${t.islandName}</div>
+                <div>📍 基地分配：每位隊員分佔獨立海域島嶼（相鄰皆為敵隊，絕非隊友）</div>
                 <div>⚡ 隊員能量：每位隊員個人 500 點（獨立計量，答對-6 / 答錯-15）</div>
-                <div>🚩 領地：${stats.territories} 塊 (初始7塊) ｜ 總積分：<strong>${stats.totalScore}</strong> 分</div>
+                <div>🚩 團隊領地：${stats.territories} 塊（3位隊員各佔一島，共 21 塊初始領地）｜ 總積分：<strong>${stats.totalScore}</strong> 分</div>
             </div>
 
-            <!-- 3 Player Seats (一隊 3 人) -->
+            <!-- 3 Player Seats (一隊 3 人，各自獨立海域基地) -->
             <div class="tsc-slots-wrap">
                 <div class="tsc-slots-title">
-                    <span>👥 隊員席位 (每人500能量)：</span>
+                    <span>👥 隊員席位與獨立基地 (點選入座)：</span>
                     <span style="color:#7f5539;">點選席位加入</span>
                 </div>
                 <div class="tsc-slots-grid">
@@ -2380,13 +2452,20 @@ function renderTeamSelectCards() {
                         const member = t.members[slot - 1];
                         const memberEnergy = (member && typeof member.energy === 'number') ? member.energy : 500;
                         const isOccupied = member && member.isOccupied;
-                        const memName = (member && member.name) ? member.name : `隊員 ${slot}`;
-                        const label = isMySlot ? `🟢 本人` : (isOccupied ? `👤 ${memName}` : `席位 ${slot}`);
+                        const memName = (member && member.name) ? member.name : (slot === 1 ? '隊長' : `隊員 ${slot}`);
+                        const isl = (Game.map && Game.map.islands) ? Game.map.islands.find(x => x.assignedTeam === t.id && x.assignedMemberSlot === slot) : null;
+                        const islandLoc = isl ? (isl.locName || isl.name) : (member?.islandName || (slot === 1 ? '北方海域基地' : (slot === 2 ? '東南海域基地' : '西南海域基地')));
+                        const label = isMySlot ? `🟢 本人 (${memName})` : (isOccupied ? `👤 ${memName}` : `席位 ${slot} (${slot === 1 ? '隊長' : '隊員'})`);
                         const btnClass = isMySlot ? 'tsc-slot-btn my-slot' : (isOccupied ? 'tsc-slot-btn occupied' : 'tsc-slot-btn');
                         return `
-                            <button class="${btnClass}" onclick="selectTeamSlot('${t.id}', ${slot})">
-                                <span>${label}</span>
-                                <span class="slot-badge">${isMySlot ? '您' : (isOccupied ? '已佔' : '空位')} · ⚡${memberEnergy}</span>
+                            <button class="${btnClass}" onclick="selectTeamSlot('${t.id}', ${slot})" style="display:flex; flex-direction:column; align-items:flex-start; text-align:left; gap:3px; padding:8px 10px;">
+                                <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
+                                    <strong style="font-size:13px;">${label}</strong>
+                                    <span class="slot-badge">${isMySlot ? '您' : (isOccupied ? '已佔' : '空位')} · ⚡${memberEnergy}</span>
+                                </div>
+                                <div style="font-size:11px; color:#5c381e; font-weight:bold;">
+                                    🏝️ 基地：${islandLoc} (7塊)
+                                </div>
                             </button>
                         `;
                     }).join('')}
@@ -2707,6 +2786,9 @@ window.addEventListener('DOMContentLoaded', () => {
     initCanvas();
     updateTimerDisplay();
     updateUI();
+    if (!Game.isSpectator) {
+        focusMyIsland();
+    }
 
     // Load sprite assets asynchronously in background
     initAssets(() => {});
@@ -2740,5 +2822,9 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 window.addEventListener('load', () => {
-    resetCamera();
+    if (!Game.isSpectator) {
+        focusMyIsland();
+    } else {
+        resetCamera();
+    }
 });

@@ -1,7 +1,3 @@
-/**
- * Official PaGamO Finals 300 Question Bank - 中排灣語句型與對話練習
- * Source: 25中排灣語_句型練習.pdf (43頁全篇提取)
- */
 window.QUESTION_BANK = [
   {
     "id": 1,
@@ -3308,750 +3304,750 @@ window.QUESTION_BANK = [
     "subject": "中排灣語",
     "category": "情境族語",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「a ’eman sun ta tjianes?」\n（你要吃橘子嗎？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「a ’eman sun ta tjianes?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "ini a’en a ’eman ta tjianes, avanay a pingku. (我不能吃橘子，我吃蘋果就好。)",
-      "ui, saigu aravac a semenay tiamadju. (會/對，他們很會唱歌。)",
-      "ini, vuqavuqalj a itung nimadju. (不，她的衣服是白色的。)",
-      "tjengelay a’en a ’eman ta ’inesa a paday, sa tisun? (我喜歡吃米飯，那你呢？)"
+      "ini a’en a ’eman ta tjianes, avanay a pingku.",
+      "ui, saigu aravac a semenay tiamadju.",
+      "ini, vuqavuqalj a itung nimadju.",
+      "tjengelay a’en a ’eman ta ’inesa a paday, sa tisun?"
     ],
     "answer": 0,
-    "explanation": "情境對話中，A 說「a ’eman sun ta tjianes?」(你要吃橘子嗎？)，B 最適當的回應是「ini a’en a ’eman ta tjianes, avanay a pingku.」(我不能吃橘子，我吃蘋果就好。)。"
+    "explanation": "【對話解析】\nA 說：「a ’eman sun ta tjianes?」(你要吃橘子嗎？)\n正確回應 B：「ini a’en a ’eman ta tjianes, avanay a pingku.」(我不能吃橘子，我吃蘋果就好。)\n\n情境對話中，A 說「a ’eman sun ta tjianes?」(你要吃橘子嗎？)，B 最適當的回應是「ini a’en a ’eman ta tjianes, avanay a pingku.」(我不能吃橘子，我吃蘋果就好。)。"
   },
   {
     "id": 222,
     "subject": "中排灣語",
     "category": "句型篇國中",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「mapida a su siruvetje’?」\n（你有幾個兄弟姊妹？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「mapida a su siruvetje’?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "tjara djemaljun ta icizikang. (大約要一個小時。)",
-      "ini, tjaljikedrikedri azua umaq. (不，那間房子很小。)",
-      "izua macidilj a tjavulung tjanua’en a uqaljay ta ’u siruvetje’, sa macidilj a tjaljalja’ tjanua’en. (我有一個哥哥和一個弟弟。)",
-      "tjaljatjenglayan a’en ta ljemanguy. (我最喜歡游泳。)"
+      "tjara djemaljun ta icizikang.",
+      "ini, tjaljikedrikedri azua umaq.",
+      "izua macidilj a tjavulung tjanua’en a uqaljay ta ’u siruvetje’, sa macidilj a tjaljalja’ tjanua’en.",
+      "tjaljatjenglayan a’en ta ljemanguy."
     ],
     "answer": 2,
-    "explanation": "情境對話中，A 說「mapida a su siruvetje’?」(你有幾個兄弟姊妹？)，B 最適當的回應是「izua macidilj a tjavulung tjanua’en a uqaljay ta ’u siruvetje’, sa macidilj a tjaljalja’ tjanua’en.」(我有一個哥哥和一個弟弟。)。"
+    "explanation": "【對話解析】\nA 說：「mapida a su siruvetje’?」(你有幾個兄弟姊妹？)\n正確回應 B：「izua macidilj a tjavulung tjanua’en a uqaljay ta ’u siruvetje’, sa macidilj a tjaljalja’ tjanua’en.」(我有一個哥哥和一個弟弟。)\n\n情境對話中，A 說「mapida a su siruvetje’?」(你有幾個兄弟姊妹？)，B 最適當的回應是「izua macidilj a tjavulung tjanua’en a uqaljay ta ’u siruvetje’, sa macidilj a tjaljalja’ tjanua’en.」(我有一個哥哥和一個弟弟。)。"
   },
   {
     "id": 223,
     "subject": "中排灣語",
     "category": "句型篇國中",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「uri mainu sun nutiav?」\n（你明天要去哪裡？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「uri mainu sun nutiav?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "ti ’ina i Aljuy, a siruvetje’ ni ’ina. (他是Aljuy阿姨，我媽的姊妹)",
-      "sinsi timadju. (他是老師。)",
-      "na’emasi pucunug a’en. (我來自文樂。)",
-      "uri vai’ a’en a magade nutiav. (我明天要去山上。)"
+      "ti ’ina i Aljuy, a siruvetje’ ni ’ina.",
+      "sinsi timadju.",
+      "na’emasi pucunug a’en.",
+      "uri vai’ a’en a magade nutiav."
     ],
     "answer": 3,
-    "explanation": "情境對話中，A 說「uri mainu sun nutiav?」(你明天要去哪裡？)，B 最適當的回應是「uri vai’ a’en a magade nutiav.」(我明天要去山上。)。"
+    "explanation": "【對話解析】\nA 說：「uri mainu sun nutiav?」(你明天要去哪裡？)\n正確回應 B：「uri vai’ a’en a magade nutiav.」(我明天要去山上。)\n\n情境對話中，A 說「uri mainu sun nutiav?」(你明天要去哪裡？)，B 最適當的回應是「uri vai’ a’en a magade nutiav.」(我明天要去山上。)。"
   },
   {
     "id": 224,
     "subject": "中排灣語",
     "category": "句型篇高中",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「a uzai anga vali?」\n（颱風來了嗎？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「a uzai anga vali?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "ui, paljeqaca anga ravac a qudjalj. (是/對，今天雨下得很大。)",
-      "ui, paiwan amen. (是，我們是原住民。)",
-      "saqetjuqetju aza ’u macu. (我的眼睛很痛。)",
-      "ui, ljema kaka a’en tjaimadju. (是的，我稱他為kaka)"
+      "ui, paljeqaca anga ravac a qudjalj.",
+      "ui, paiwan amen.",
+      "saqetjuqetju aza ’u macu.",
+      "ui, ljema kaka a’en tjaimadju."
     ],
     "answer": 0,
-    "explanation": "情境對話中，A 說「a uzai anga vali?」(颱風來了嗎？)，B 最適當的回應是「ui, paljeqaca anga ravac a qudjalj.」(是/對，今天雨下得很大。)。"
+    "explanation": "【對話解析】\nA 說：「a uzai anga vali?」(颱風來了嗎？)\n正確回應 B：「ui, paljeqaca anga ravac a qudjalj.」(是/對，今天雨下得很大。)\n\n情境對話中，A 說「a uzai anga vali?」(颱風來了嗎？)，B 最適當的回應是「ui, paljeqaca anga ravac a qudjalj.」(是/對，今天雨下得很大。)。"
   },
   {
     "id": 225,
     "subject": "中排灣語",
     "category": "情境族語",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「a paiwan a su ce’elj auta?」\n（你的另一伴也是排灣族嗎？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「a paiwan a su ce’elj auta?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "ini, seAmis timadju. (不，她是阿美族人。)",
-      "ti ’ina i Aljuy, a siruvetje’ ni ’ina. (他是Aljuy阿姨，我媽的姊妹)",
-      "vai’ a’en a tjumaq. (我正要回家。)",
-      "ini a ’emuda, cugu anga nu izua anga su paisu. (沒關係，你有錢的時候再說。)"
+      "ini, seAmis timadju.",
+      "ti ’ina i Aljuy, a siruvetje’ ni ’ina.",
+      "vai’ a’en a tjumaq.",
+      "ini a ’emuda, cugu anga nu izua anga su paisu."
     ],
     "answer": 0,
-    "explanation": "情境對話中，A 說「a paiwan a su ce’elj auta?」(你的另一伴也是排灣族嗎？)，B 最適當的回應是「ini, seAmis timadju.」(不，她是阿美族人。)。"
+    "explanation": "【對話解析】\nA 說：「a paiwan a su ce’elj auta?」(你的另一伴也是排灣族嗎？)\n正確回應 B：「ini, seAmis timadju.」(不，她是阿美族人。)\n\n情境對話中，A 說「a paiwan a su ce’elj auta?」(你的另一伴也是排灣族嗎？)，B 最適當的回應是「ini, seAmis timadju.」(不，她是阿美族人。)。"
   },
   {
     "id": 226,
     "subject": "中排灣語",
     "category": "情境族語",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「a ti Drangadrang sun?」\n（你是Drangadrang嗎？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「a ti Drangadrang sun?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "masepatj amen a tace’eljan. (我們家有4個人。)",
-      "ini, ti Camak a’en. (不是，我是Camak。)",
-      "ui, mamazamaza men sa’amaya a ’aiv? (是/對，我們經常來這裡吃晚餐。)",
-      "ini, vuqavuqalj a itung nimadju. (不，她的衣服是白色的。)"
+      "masepatj amen a tace’eljan.",
+      "ini, ti Camak a’en.",
+      "ui, mamazamaza men sa’amaya a ’aiv?",
+      "ini, vuqavuqalj a itung nimadju."
     ],
     "answer": 1,
-    "explanation": "情境對話中，A 說「a ti Drangadrang sun?」(你是Drangadrang嗎？)，B 最適當的回應是「ini, ti Camak a’en.」(不是，我是Camak。)。"
+    "explanation": "【對話解析】\nA 說：「a ti Drangadrang sun?」(你是Drangadrang嗎？)\n正確回應 B：「ini, ti Camak a’en.」(不是，我是Camak。)\n\n情境對話中，A 說「a ti Drangadrang sun?」(你是Drangadrang嗎？)，B 最適當的回應是「ini, ti Camak a’en.」(不是，我是Camak。)。"
   },
   {
     "id": 227,
     "subject": "中排灣語",
     "category": "情境族語",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「uri ’emuda timadju nu semu’a i gakku?」\n（她放學要做什麼？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「uri ’emuda timadju nu semu’a i gakku?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "uri vai’ a’en a semenay ’ata ’u drava. (我要跟朋友去唱歌。)",
-      "ini, madrusa a ’u siruvetje’ a vavayan a tjaljalja’ tjanua’en. (不，我有二個妹妹。)",
-      "ma’asenav anga a’en tua ’u ’isi. (我的碗洗好了。)",
-      "uri djemavac timadju. (他走路去醫院。)"
+      "uri vai’ a’en a semenay ’ata ’u drava.",
+      "ini, madrusa a ’u siruvetje’ a vavayan a tjaljalja’ tjanua’en.",
+      "ma’asenav anga a’en tua ’u ’isi.",
+      "uri djemavac timadju."
     ],
     "answer": 0,
-    "explanation": "情境對話中，A 說「uri ’emuda timadju nu semu’a i gakku?」(她放學要做什麼？)，B 最適當的回應是「uri vai’ a’en a semenay ’ata ’u drava.」(我要跟朋友去唱歌。)。"
+    "explanation": "【對話解析】\nA 說：「uri ’emuda timadju nu semu’a i gakku?」(她放學要做什麼？)\n正確回應 B：「uri vai’ a’en a semenay ’ata ’u drava.」(我要跟朋友去唱歌。)\n\n情境對話中，A 說「uri ’emuda timadju nu semu’a i gakku?」(她放學要做什麼？)，B 最適當的回應是「uri vai’ a’en a semenay ’ata ’u drava.」(我要跟朋友去唱歌。)。"
   },
   {
     "id": 228,
     "subject": "中排灣語",
     "category": "情境族語",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「anema a sengesengan ni tjaina?」\n（你媽媽從事什麼工作？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「anema a sengesengan ni tjaina?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "sicuayan anga su pinangtjezan, nasengelit anga a’en tjanusun. (你好久沒來了，我好想念你。)",
-      "ui, ’emeljang a men turi mangtjez ti vuvu nutiav. (是，我們知道祖母明天要來。)",
-      "sivitay timadju. (她是軍人。)",
-      "izua, liav a ’u’initulu tucu (有啊，我今天學到很多)"
+      "sicuayan anga su pinangtjezan, nasengelit anga a’en tjanusun.",
+      "ui, ’emeljang a men turi mangtjez ti vuvu nutiav.",
+      "sivitay timadju.",
+      "izua, liav a ’u’initulu tucu"
     ],
     "answer": 2,
-    "explanation": "情境對話中，A 說「anema a sengesengan ni tjaina?」(你媽媽從事什麼工作？)，B 最適當的回應是「sivitay timadju.」(她是軍人。)。"
+    "explanation": "【對話解析】\nA 說：「anema a sengesengan ni tjaina?」(你媽媽從事什麼工作？)\n正確回應 B：「sivitay timadju.」(她是軍人。)\n\n情境對話中，A 說「anema a sengesengan ni tjaina?」(你媽媽從事什麼工作？)，B 最適當的回應是「sivitay timadju.」(她是軍人。)。"
   },
   {
     "id": 229,
     "subject": "中排灣語",
     "category": "情境族語",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「tima ti Apang?」\n（誰是Apang？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「tima ti Apang?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "ma’asenav anga a’en tua ’u ’isi. (我的碗洗好了。)",
-      "ita a ’inpic, sa ita a laqulj a vaveci’an. (一支鉛筆和一本筆記簿。)",
-      "’u qali a ti Apang. (Apang是我的朋友。)",
-      "ini, vineli cu ni ’ina tjanua’en. (不是，這是我媽媽買給我的。)"
+      "ma’asenav anga a’en tua ’u ’isi.",
+      "ita a ’inpic, sa ita a laqulj a vaveci’an.",
+      "’u qali a ti Apang.",
+      "ini, vineli cu ni ’ina tjanua’en."
     ],
     "answer": 2,
-    "explanation": "情境對話中，A 說「tima ti Apang?」(誰是Apang？)，B 最適當的回應是「’u qali a ti Apang.」(Apang是我的朋友。)。"
+    "explanation": "【對話解析】\nA 說：「tima ti Apang?」(誰是Apang？)\n正確回應 B：「’u qali a ti Apang.」(Apang是我的朋友。)\n\n情境對話中，A 說「tima ti Apang?」(誰是Apang？)，B 最適當的回應是「’u qali a ti Apang.」(Apang是我的朋友。)。"
   },
   {
     "id": 230,
     "subject": "中排灣語",
     "category": "情境族語",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「mainu sun?」\n（你要去哪裡？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「mainu sun?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "uri vai’ a’en a magakku a ’emim tjaisinsi. (我要去學校(教室)找老師)",
-      "’u ’ina a zua. (那是我的媽媽。)",
-      "ini a kadjiadji azua, tjainan azua. (那不是蝴蝶，那是蜜蜂。)",
-      "tjaumeljay, sa tjevuta anga a qadav, sa izua za quljivangrav. (雨剛剛停，出了太陽，彩虹出來了。)"
+      "uri vai’ a’en a magakku a ’emim tjaisinsi.",
+      "’u ’ina a zua.",
+      "ini a kadjiadji azua, tjainan azua.",
+      "tjaumeljay, sa tjevuta anga a qadav, sa izua za quljivangrav."
     ],
     "answer": 0,
-    "explanation": "情境對話中，A 說「mainu sun?」(你要去哪裡？)，B 最適當的回應是「uri vai’ a’en a magakku a ’emim tjaisinsi.」(我要去學校(教室)找老師)。"
+    "explanation": "【對話解析】\nA 說：「mainu sun?」(你要去哪裡？)\n正確回應 B：「uri vai’ a’en a magakku a ’emim tjaisinsi.」(我要去學校(教室)找老師)\n\n情境對話中，A 說「mainu sun?」(你要去哪裡？)，B 最適當的回應是「uri vai’ a’en a magakku a ’emim tjaisinsi.」(我要去學校(教室)找老師)。"
   },
   {
     "id": 231,
     "subject": "中排灣語",
     "category": "12年國教族語",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「nancibi/nanciubi tucu?」\n（今天是星期幾？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「nancibi/nanciubi tucu?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "niciubi tucu (今天是星期日。)",
-      "ljemaljeqeljeqel a pagalju, te’eli ta maculjuculju a zaljum. (天氣有點冷，要多喝熱水。)",
-      "tjaumeljay, sa tjevuta anga a qadav, sa izua za quljivangrav. (雨剛剛停，出了太陽，彩虹出來了。)",
-      "’u pasedjamay sun. (我借你。)"
+      "niciubi tucu",
+      "ljemaljeqeljeqel a pagalju, te’eli ta maculjuculju a zaljum.",
+      "tjaumeljay, sa tjevuta anga a qadav, sa izua za quljivangrav.",
+      "’u pasedjamay sun."
     ],
     "answer": 0,
-    "explanation": "情境對話中，A 說「nancibi/nanciubi tucu?」(今天是星期幾？)，B 最適當的回應是「niciubi tucu」(今天是星期日。)。"
+    "explanation": "【對話解析】\nA 說：「nancibi/nanciubi tucu?」(今天是星期幾？)\n正確回應 B：「niciubi tucu」(今天是星期日。)\n\n情境對話中，A 說「nancibi/nanciubi tucu?」(今天是星期幾？)，B 最適當的回應是「niciubi tucu」(今天是星期日。)。"
   },
   {
     "id": 232,
     "subject": "中排灣語",
     "category": "情境族語",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「a maqati a’en a ’isedjaman ta su itung?」\n（我可以借你的衣服嗎？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「a maqati a’en a ’isedjaman ta su itung?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "ini, ma’abasu a’en a sema gakku. (不是，我搭公車上學。)",
-      "ui, ljema kaka a’en tjaimadju. (是的，我稱他為kaka)",
-      "maqati, alapu a tisun. (可以，自己拿)",
-      "’u ’ina a zua. (那是我的媽媽。)"
+      "ini, ma’abasu a’en a sema gakku.",
+      "ui, ljema kaka a’en tjaimadju.",
+      "maqati, alapu a tisun.",
+      "’u ’ina a zua."
     ],
     "answer": 2,
-    "explanation": "情境對話中，A 說「a maqati a’en a ’isedjaman ta su itung?」(我可以借你的衣服嗎？)，B 最適當的回應是「maqati, alapu a tisun.」(可以，自己拿)。"
+    "explanation": "【對話解析】\nA 說：「a maqati a’en a ’isedjaman ta su itung?」(我可以借你的衣服嗎？)\n正確回應 B：「maqati, alapu a tisun.」(可以，自己拿)\n\n情境對話中，A 說「a maqati a’en a ’isedjaman ta su itung?」(我可以借你的衣服嗎？)，B 最適當的回應是「maqati, alapu a tisun.」(可以，自己拿)。"
   },
   {
     "id": 233,
     "subject": "中排灣語",
     "category": "情境族語",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「veneli a’en ta vurati.」\n（我要買地瓜。）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「veneli a’en ta vurati.」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "mapuljat anga (a veliin) a vurati. (地瓜都賣完了。)",
-      "na’eman a’en tua qacilu. (我吃了蛋。)",
-      "aza ’u siruvetje’ a vavayan, izua macidilj a tjavulung tjanua’an, sa macidilj a tjaljalja’. (我有一個姊姊和一個妹妹。)",
-      "ini, ma’abasu a’en a sema gakku. (不是，我搭公車上學。)"
+      "mapuljat anga (a veliin) a vurati.",
+      "na’eman a’en tua qacilu.",
+      "aza ’u siruvetje’ a vavayan, izua macidilj a tjavulung tjanua’an, sa macidilj a tjaljalja’.",
+      "ini, ma’abasu a’en a sema gakku."
     ],
     "answer": 0,
-    "explanation": "情境對話中，A 說「veneli a’en ta vurati.」(我要買地瓜。)，B 最適當的回應是「mapuljat anga (a veliin) a vurati.」(地瓜都賣完了。)。"
+    "explanation": "【對話解析】\nA 說：「veneli a’en ta vurati.」(我要買地瓜。)\n正確回應 B：「mapuljat anga (a veliin) a vurati.」(地瓜都賣完了。)\n\n情境對話中，A 說「veneli a’en ta vurati.」(我要買地瓜。)，B 最適當的回應是「mapuljat anga (a veliin) a vurati.」(地瓜都賣完了。)。"
   },
   {
     "id": 234,
     "subject": "中排灣語",
     "category": "情境族語",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「izua a kadjiadji a minlayalayap i zua.」\n（那裡有蝴蝶飛來飛去。）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「izua a kadjiadji a minlayalayap i zua.」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "na’uya, maya anan a casav a ’ivangavang. (不可以， 請先別出去玩！)",
-      "ti Tjuku a ngadaan ni kaka/’a’a (我的姐姐的名字是Tjuku。)",
-      "ui, tjambi aravac. /ui, caljeqi aravac. (是/對，他很勤勞。)",
-      "ini a kadjiadji azua, tjainan azua. (那不是蝴蝶，那是蜜蜂。)"
+      "na’uya, maya anan a casav a ’ivangavang.",
+      "ti Tjuku a ngadaan ni kaka/’a’a",
+      "ui, tjambi aravac. /ui, caljeqi aravac.",
+      "ini a kadjiadji azua, tjainan azua."
     ],
     "answer": 3,
-    "explanation": "情境對話中，A 說「izua a kadjiadji a minlayalayap i zua.」(那裡有蝴蝶飛來飛去。)，B 最適當的回應是「ini a kadjiadji azua, tjainan azua.」(那不是蝴蝶，那是蜜蜂。)。"
+    "explanation": "【對話解析】\nA 說：「izua a kadjiadji a minlayalayap i zua.」(那裡有蝴蝶飛來飛去。)\n正確回應 B：「ini a kadjiadji azua, tjainan azua.」(那不是蝴蝶，那是蜜蜂。)\n\n情境對話中，A 說「izua a kadjiadji a minlayalayap i zua.」(那裡有蝴蝶飛來飛去。)，B 最適當的回應是「ini a kadjiadji azua, tjainan azua.」(那不是蝴蝶，那是蜜蜂。)。"
   },
   {
     "id": 235,
     "subject": "中排灣語",
     "category": "情境族語",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「tima ngadaan na su siruvetje’ a vavayan a tjaljalja’ tjanusun?」\n（你妹妹的名字是什麼？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「tima ngadaan na su siruvetje’ a vavayan a tjaljalja’ tjanusun?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "ui, tjaljiqacaqaca azua umaq. (是/對，那間房子很大。)",
-      "ui, pa’irimu. (好，快一點去。)",
-      "ti Vais a ngadaan nimadju. (我的妹妹的名字是Vais。)",
-      "namenuremur anga a’en (我漱口了。)"
+      "ui, tjaljiqacaqaca azua umaq.",
+      "ui, pa’irimu.",
+      "ti Vais a ngadaan nimadju.",
+      "namenuremur anga a’en"
     ],
     "answer": 2,
-    "explanation": "情境對話中，A 說「tima ngadaan na su siruvetje’ a vavayan a tjaljalja’ tjanusun?」(你妹妹的名字是什麼？)，B 最適當的回應是「ti Vais a ngadaan nimadju.」(我的妹妹的名字是Vais。)。"
+    "explanation": "【對話解析】\nA 說：「tima ngadaan na su siruvetje’ a vavayan a tjaljalja’ tjanusun?」(你妹妹的名字是什麼？)\n正確回應 B：「ti Vais a ngadaan nimadju.」(我的妹妹的名字是Vais。)\n\n情境對話中，A 說「tima ngadaan na su siruvetje’ a vavayan a tjaljalja’ tjanusun?」(你妹妹的名字是什麼？)，B 最適當的回應是「ti Vais a ngadaan nimadju.」(我的妹妹的名字是Vais。)。"
   },
   {
     "id": 236,
     "subject": "中排灣語",
     "category": "情境族語",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「anema su pinacunan tucu a qadav?」\n（你今天看到了什麼？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「anema su pinacunan tucu a qadav?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "ui, maledep anga a qadav. (是/對，太陽下山了！)",
-      "na’isan’emesa ti ’ina. (我媽媽是廚師。)",
-      "napacun a’en ta qatjuvi ’ata qayaqayam. (我看到蛇，還有鳥。)",
-      "izua alu a ’ula na gaang (螃蟹有八隻腳。)"
+      "ui, maledep anga a qadav.",
+      "na’isan’emesa ti ’ina.",
+      "napacun a’en ta qatjuvi ’ata qayaqayam.",
+      "izua alu a ’ula na gaang"
     ],
     "answer": 2,
-    "explanation": "情境對話中，A 說「anema su pinacunan tucu a qadav?」(你今天看到了什麼？)，B 最適當的回應是「napacun a’en ta qatjuvi ’ata qayaqayam.」(我看到蛇，還有鳥。)。"
+    "explanation": "【對話解析】\nA 說：「anema su pinacunan tucu a qadav?」(你今天看到了什麼？)\n正確回應 B：「napacun a’en ta qatjuvi ’ata qayaqayam.」(我看到蛇，還有鳥。)\n\n情境對話中，A 說「anema su pinacunan tucu a qadav?」(你今天看到了什麼？)，B 最適當的回應是「napacun a’en ta qatjuvi ’ata qayaqayam.」(我看到蛇，還有鳥。)。"
   },
   {
     "id": 237,
     "subject": "中排灣語",
     "category": "情境族語",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「aqua ini a mangetjez ti Muni?」\n（Muni為甚麼沒來？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「aqua ini a mangetjez ti Muni?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "masezasezam timadju. (她發燒了。)",
-      "ini, vuqavuqalj a itung nimadju. (不，她的衣服是白色的。)",
-      "ui, qaqacaqacaan amen a masanetalj a tace’eljan. (對，我們全家都很高。)",
-      "tjelu a day a tacavu. (一包300元。)"
+      "masezasezam timadju.",
+      "ini, vuqavuqalj a itung nimadju.",
+      "ui, qaqacaqacaan amen a masanetalj a tace’eljan.",
+      "tjelu a day a tacavu."
     ],
     "answer": 0,
-    "explanation": "情境對話中，A 說「aqua ini a mangetjez ti Muni?」(Muni為甚麼沒來？)，B 最適當的回應是「masezasezam timadju.」(她發燒了。)。"
+    "explanation": "【對話解析】\nA 說：「aqua ini a mangetjez ti Muni?」(Muni為甚麼沒來？)\n正確回應 B：「masezasezam timadju.」(她發燒了。)\n\n情境對話中，A 說「aqua ini a mangetjez ti Muni?」(Muni為甚麼沒來？)，B 最適當的回應是「masezasezam timadju.」(她發燒了。)。"
   },
   {
     "id": 238,
     "subject": "中排灣語",
     "category": "情境族語",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「ti Gese a ngadaan nimadju?」\n（他的名字是Gese嗎？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「ti Gese a ngadaan nimadju?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "ini, ti Apang a ngadaan nimadju. (不是，他的名字叫Apang)",
-      "ti ’ina i Aljuy, a siruvetje’ ni ’ina. (他是Aljuy阿姨，我媽的姊妹)",
-      "seman djamadjamay i ’a’esan timadju, ’u vai’av a qivu. (他在廚房炒菜，我去叫他。)",
-      "gata ini anan a’en a ’asudaqedan. (可是我還沒睡飽)"
+      "ini, ti Apang a ngadaan nimadju.",
+      "ti ’ina i Aljuy, a siruvetje’ ni ’ina.",
+      "seman djamadjamay i ’a’esan timadju, ’u vai’av a qivu.",
+      "gata ini anan a’en a ’asudaqedan."
     ],
     "answer": 0,
-    "explanation": "情境對話中，A 說「ti Gese a ngadaan nimadju?」(他的名字是Gese嗎？)，B 最適當的回應是「ini, ti Apang a ngadaan nimadju.」(不是，他的名字叫Apang)。"
+    "explanation": "【對話解析】\nA 說：「ti Gese a ngadaan nimadju?」(他的名字是Gese嗎？)\n正確回應 B：「ini, ti Apang a ngadaan nimadju.」(不是，他的名字叫Apang)\n\n情境對話中，A 說「ti Gese a ngadaan nimadju?」(他的名字是Gese嗎？)，B 最適當的回應是「ini, ti Apang a ngadaan nimadju.」(不是，他的名字叫Apang)。"
   },
   {
     "id": 239,
     "subject": "中排灣語",
     "category": "情境族語",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「sinsi, saqetju a ’u tjialj, vai’ a’en a sema binziyu.」\n（老師，我肚子痛，我要先去廁所。）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「sinsi, saqetju a ’u tjialj, vai’ a’en a sema binziyu.」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "ini, tjengelay tiamadju a mapu/tjaljamtjam. (不，他們喜歡吃東西。)",
-      "namenuremur anga a’en (我漱口了。)",
-      "ui, pa’irimu. (好，快一點去。)",
-      "ma’asenav anga a’en tua ’u ’isi. (我的碗洗好了。)"
+      "ini, tjengelay tiamadju a mapu/tjaljamtjam.",
+      "namenuremur anga a’en",
+      "ui, pa’irimu.",
+      "ma’asenav anga a’en tua ’u ’isi."
     ],
     "answer": 2,
-    "explanation": "情境對話中，A 說「sinsi, saqetju a ’u tjialj, vai’ a’en a sema binziyu.」(老師，我肚子痛，我要先去廁所。)，B 最適當的回應是「ui, pa’irimu.」(好，快一點去。)。"
+    "explanation": "【對話解析】\nA 說：「sinsi, saqetju a ’u tjialj, vai’ a’en a sema binziyu.」(老師，我肚子痛，我要先去廁所。)\n正確回應 B：「ui, pa’irimu.」(好，快一點去。)\n\n情境對話中，A 說「sinsi, saqetju a ’u tjialj, vai’ a’en a sema binziyu.」(老師，我肚子痛，我要先去廁所。)，B 最適當的回應是「ui, pa’irimu.」(好，快一點去。)。"
   },
   {
     "id": 240,
     "subject": "中排灣語",
     "category": "情境族語",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「a izua su utubay?」\n（你有摩托車嗎？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「a izua su utubay?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "izua ’u utubay. (我有一台摩托車。)",
-      "ti Tjanubak a ’u ngadaan, a lja Tjaluigi, tapuluq anga ’u cavilj. (我叫Tjanubak Tjaluigi，我今年10歲。)",
-      "sa pai numaya. (我不客氣了呦！)",
-      "namenuremur anga a’en (我漱口了。)"
+      "izua ’u utubay.",
+      "ti Tjanubak a ’u ngadaan, a lja Tjaluigi, tapuluq anga ’u cavilj.",
+      "sa pai numaya.",
+      "namenuremur anga a’en"
     ],
     "answer": 0,
-    "explanation": "情境對話中，A 說「a izua su utubay?」(你有摩托車嗎？)，B 最適當的回應是「izua ’u utubay.」(我有一台摩托車。)。"
+    "explanation": "【對話解析】\nA 說：「a izua su utubay?」(你有摩托車嗎？)\n正確回應 B：「izua ’u utubay.」(我有一台摩托車。)\n\n情境對話中，A 說「a izua su utubay?」(你有摩托車嗎？)，B 最適當的回應是「izua ’u utubay.」(我有一台摩托車。)。"
   },
   {
     "id": 241,
     "subject": "中排灣語",
     "category": "情境族語",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「a maqati itjen a mecevung nutiav a masu’incengelj?」\n（我和您約明天下午好嗎？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「a maqati itjen a mecevung nutiav a masu’incengelj?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "’u sinipasedjam anga tjai Vais. (我借給Vais了。)",
-      "uri ’eman a’en ta sinancengelj i gakku. (我要吃學校製作的午餐)",
-      "ui, zanganga a’en! (好，馬上。)",
-      "maqati, a cevungi anga izainu? (可以，我們約哪裡見面？)"
+      "’u sinipasedjam anga tjai Vais.",
+      "uri ’eman a’en ta sinancengelj i gakku.",
+      "ui, zanganga a’en!",
+      "maqati, a cevungi anga izainu?"
     ],
     "answer": 3,
-    "explanation": "情境對話中，A 說「a maqati itjen a mecevung nutiav a masu’incengelj?」(我和您約明天下午好嗎？)，B 最適當的回應是「maqati, a cevungi anga izainu?」(可以，我們約哪裡見面？)。"
+    "explanation": "【對話解析】\nA 說：「a maqati itjen a mecevung nutiav a masu’incengelj?」(我和您約明天下午好嗎？)\n正確回應 B：「maqati, a cevungi anga izainu?」(可以，我們約哪裡見面？)\n\n情境對話中，A 說「a maqati itjen a mecevung nutiav a masu’incengelj?」(我和您約明天下午好嗎？)，B 最適當的回應是「maqati, a cevungi anga izainu?」(可以，我們約哪裡見面？)。"
   },
   {
     "id": 242,
     "subject": "中排灣語",
     "category": "句型篇國中",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「ainu anga ti tjama?」\n（你爸爸在哪裡？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「ainu anga ti tjama?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "sicuayan anga su pinangtjezan, nasengelit anga a’en tjanusun. (你好久沒來了，我好想念你。)",
-      "ui, pa’irimu. (好，快一點去。)",
-      "tjelu a puluq a vatan a vurati nu tatjingtjingan. (地瓜一斤30元。)",
-      "i gakku ti ’ama. (我爸爸在學校裡。)"
+      "sicuayan anga su pinangtjezan, nasengelit anga a’en tjanusun.",
+      "ui, pa’irimu.",
+      "tjelu a puluq a vatan a vurati nu tatjingtjingan.",
+      "i gakku ti ’ama."
     ],
     "answer": 3,
-    "explanation": "情境對話中，A 說「ainu anga ti tjama?」(你爸爸在哪裡？)，B 最適當的回應是「i gakku ti ’ama.」(我爸爸在學校裡。)。"
+    "explanation": "【對話解析】\nA 說：「ainu anga ti tjama?」(你爸爸在哪裡？)\n正確回應 B：「i gakku ti ’ama.」(我爸爸在學校裡。)\n\n情境對話中，A 說「ainu anga ti tjama?」(你爸爸在哪裡？)，B 最適當的回應是「i gakku ti ’ama.」(我爸爸在學校裡。)。"
   },
   {
     "id": 243,
     "subject": "中排灣語",
     "category": "句型篇國中",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「a djemedjedjedje a pacun ta iga tiamadju?」\n（他們天天看電視嗎？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「a djemedjedjedje a pacun ta iga tiamadju?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "ui, djemedjedjedje a pacun ta iga tiamadju. (是/對，他們天天看電視。)",
-      "i gakku a’en ’icaquaquan (我正在學校學)",
-      "uri veneli a’en tu ita ta kuppu. (我要買一個杯子。)",
-      "nama’a kisiya ti Sauniyav a sema gakku. (Saniyaw搭火車去學校。)"
+      "ui, djemedjedjedje a pacun ta iga tiamadju.",
+      "i gakku a’en ’icaquaquan",
+      "uri veneli a’en tu ita ta kuppu.",
+      "nama’a kisiya ti Sauniyav a sema gakku."
     ],
     "answer": 0,
-    "explanation": "情境對話中，A 說「a djemedjedjedje a pacun ta iga tiamadju?」(他們天天看電視嗎？)，B 最適當的回應是「ui, djemedjedjedje a pacun ta iga tiamadju.」(是/對，他們天天看電視。)。"
+    "explanation": "【對話解析】\nA 說：「a djemedjedjedje a pacun ta iga tiamadju?」(他們天天看電視嗎？)\n正確回應 B：「ui, djemedjedjedje a pacun ta iga tiamadju.」(是/對，他們天天看電視。)\n\n情境對話中，A 說「a djemedjedjedje a pacun ta iga tiamadju?」(他們天天看電視嗎？)，B 最適當的回應是「ui, djemedjedjedje a pacun ta iga tiamadju.」(是/對，他們天天看電視。)。"
   },
   {
     "id": 244,
     "subject": "中排灣語",
     "category": "12年國教族語",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「na’asinu sun a ’icaquan ta aicu a pinaiwanan?」\n（你在哪裡學排灣話的？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「na’asinu sun a ’icaquan ta aicu a pinaiwanan?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "ini a’en a vai’, uri vai’ a’en a ’itulu. (不，我不去，我要讀書。)",
-      "ui, malap anan a’en ta zuking. (好，我去拿抹布。)",
-      "na’emasi pucunug a’en. (我來自文樂。)",
-      "i gakku a’en ’icaquaquan (我正在學校學)"
+      "ini a’en a vai’, uri vai’ a’en a ’itulu.",
+      "ui, malap anan a’en ta zuking.",
+      "na’emasi pucunug a’en.",
+      "i gakku a’en ’icaquaquan"
     ],
     "answer": 3,
-    "explanation": "情境對話中，A 說「na’asinu sun a ’icaquan ta aicu a pinaiwanan?」(你在哪裡學排灣話的？)，B 最適當的回應是「i gakku a’en ’icaquaquan」(我正在學校學)。"
+    "explanation": "【對話解析】\nA 說：「na’asinu sun a ’icaquan ta aicu a pinaiwanan?」(你在哪裡學排灣話的？)\n正確回應 B：「i gakku a’en ’icaquaquan」(我正在學校學)\n\n情境對話中，A 說「na’asinu sun a ’icaquan ta aicu a pinaiwanan?」(你在哪裡學排灣話的？)，B 最適當的回應是「i gakku a’en ’icaquaquan」(我正在學校學)。"
   },
   {
     "id": 245,
     "subject": "中排灣語",
     "category": "情境族語",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「anema su ’enamain?」\n（你早餐吃了什麼？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「anema su ’enamain?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "nama’a kisiya ti Sauniyav a sema gakku. (Saniyaw搭火車去學校。)",
-      "kiav aicu. (這是青蛙。)",
-      "saqetju a za ’u maca. (我的眼睛痛。)",
-      "na’eman a’en tua qacilu. (我吃了蛋。)"
+      "nama’a kisiya ti Sauniyav a sema gakku.",
+      "kiav aicu.",
+      "saqetju a za ’u maca.",
+      "na’eman a’en tua qacilu."
     ],
     "answer": 3,
-    "explanation": "情境對話中，A 說「anema su ’enamain?」(你早餐吃了什麼？)，B 最適當的回應是「na’eman a’en tua qacilu.」(我吃了蛋。)。"
+    "explanation": "【對話解析】\nA 說：「anema su ’enamain?」(你早餐吃了什麼？)\n正確回應 B：「na’eman a’en tua qacilu.」(我吃了蛋。)\n\n情境對話中，A 說「anema su ’enamain?」(你早餐吃了什麼？)，B 最適當的回應是「na’eman a’en tua qacilu.」(我吃了蛋。)。"
   },
   {
     "id": 246,
     "subject": "中排灣語",
     "category": "句型篇國中",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「nataqed a su kaka/’a’a a vavayan?」\n（你妹妹在睡覺嗎？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「nataqed a su kaka/’a’a a vavayan?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "ini, sepaiwan amen. (不是，我們是排灣族。)",
-      "i pasa ’acedas a i tjagaraus. (大武山在東邊。)",
-      "uri ’eman a’en tua minpaw. (我要吃麵包。)",
-      "ui, nataqed timadju. (是/對，她在睡覺。)"
+      "ini, sepaiwan amen.",
+      "i pasa ’acedas a i tjagaraus.",
+      "uri ’eman a’en tua minpaw.",
+      "ui, nataqed timadju."
     ],
     "answer": 3,
-    "explanation": "情境對話中，A 說「nataqed a su kaka/’a’a a vavayan?」(你妹妹在睡覺嗎？)，B 最適當的回應是「ui, nataqed timadju.」(是/對，她在睡覺。)。"
+    "explanation": "【對話解析】\nA 說：「nataqed a su kaka/’a’a a vavayan?」(你妹妹在睡覺嗎？)\n正確回應 B：「ui, nataqed timadju.」(是/對，她在睡覺。)\n\n情境對話中，A 說「nataqed a su kaka/’a’a a vavayan?」(你妹妹在睡覺嗎？)，B 最適當的回應是「ui, nataqed timadju.」(是/對，她在睡覺。)。"
   },
   {
     "id": 247,
     "subject": "中排灣語",
     "category": "句型篇國中",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「ma’uda sun?」\n（你怎麼啦？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「ma’uda sun?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "ui, maledep anga a qadav. (是/對，太陽下山了！)",
-      "saqetju a za ’u maca. (我的眼睛痛。)",
-      "malje lima tiamadju a tace’eljan. (他們全家有五個人。)",
-      "ini, ini a na’emacu ta kausua ti ’ama sa casav. (不，爸爸出去的時候，他沒有帶著雨傘。)"
+      "ui, maledep anga a qadav.",
+      "saqetju a za ’u maca.",
+      "malje lima tiamadju a tace’eljan.",
+      "ini, ini a na’emacu ta kausua ti ’ama sa casav."
     ],
     "answer": 1,
-    "explanation": "情境對話中，A 說「ma’uda sun?」(你怎麼啦？)，B 最適當的回應是「saqetju a za ’u maca.」(我的眼睛痛。)。"
+    "explanation": "【對話解析】\nA 說：「ma’uda sun?」(你怎麼啦？)\n正確回應 B：「saqetju a za ’u maca.」(我的眼睛痛。)\n\n情境對話中，A 說「ma’uda sun?」(你怎麼啦？)，B 最適當的回應是「saqetju a za ’u maca.」(我的眼睛痛。)。"
   },
   {
     "id": 248,
     "subject": "中排灣語",
     "category": "情境族語",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「a izua nu sipaveliveli a savi’i?」\n（你們有賣檳榔嗎？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「a izua nu sipaveliveli a savi’i?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "pasa mutjautjaq a’en, vai’ a’en a sema tua papilimaan. (我想吐，我要去洗手台)",
-      "ini anan, semenasenav anan a’en tua ’isi. (還沒，我正在洗碗。)",
-      "ne’a, ini amen a paveliveli ta savi’i. (沒有，我們沒有賣檳榔。)",
-      "ini, mavulaqut timadju. /vuljaqulaqut timadju. (不，他很懶惰。)"
+      "pasa mutjautjaq a’en, vai’ a’en a sema tua papilimaan.",
+      "ini anan, semenasenav anan a’en tua ’isi.",
+      "ne’a, ini amen a paveliveli ta savi’i.",
+      "ini, mavulaqut timadju. /vuljaqulaqut timadju."
     ],
     "answer": 2,
-    "explanation": "情境對話中，A 說「a izua nu sipaveliveli a savi’i?」(你們有賣檳榔嗎？)，B 最適當的回應是「ne’a, ini amen a paveliveli ta savi’i.」(沒有，我們沒有賣檳榔。)。"
+    "explanation": "【對話解析】\nA 說：「a izua nu sipaveliveli a savi’i?」(你們有賣檳榔嗎？)\n正確回應 B：「ne’a, ini amen a paveliveli ta savi’i.」(沒有，我們沒有賣檳榔。)\n\n情境對話中，A 說「a izua nu sipaveliveli a savi’i?」(你們有賣檳榔嗎？)，B 最適當的回應是「ne’a, ini amen a paveliveli ta savi’i.」(沒有，我們沒有賣檳榔。)。"
   },
   {
     "id": 249,
     "subject": "中排灣語",
     "category": "情境族語",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「uri semainu ti Puljaljuyan?」\n（Puljaljuyan要去哪裡？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「uri semainu ti Puljaljuyan?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "galju anan, ’u pa’asuapay anan imaza. (等一下，我先掃完這裡。)",
-      "ui, tjambi aravac. /ui, caljeqi aravac. (是/對，他很勤勞。)",
-      "uri vai’ a veneric ta cemel timadju. (他要去丟垃圾。)",
-      "tjelu a day a tacavu. (一包300元。)"
+      "galju anan, ’u pa’asuapay anan imaza.",
+      "ui, tjambi aravac. /ui, caljeqi aravac.",
+      "uri vai’ a veneric ta cemel timadju.",
+      "tjelu a day a tacavu."
     ],
     "answer": 2,
-    "explanation": "情境對話中，A 說「uri semainu ti Puljaljuyan?」(Puljaljuyan要去哪裡？)，B 最適當的回應是「uri vai’ a veneric ta cemel timadju.」(他要去丟垃圾。)。"
+    "explanation": "【對話解析】\nA 說：「uri semainu ti Puljaljuyan?」(Puljaljuyan要去哪裡？)\n正確回應 B：「uri vai’ a veneric ta cemel timadju.」(他要去丟垃圾。)\n\n情境對話中，A 說「uri semainu ti Puljaljuyan?」(Puljaljuyan要去哪裡？)，B 最適當的回應是「uri vai’ a veneric ta cemel timadju.」(他要去丟垃圾。)。"
   },
   {
     "id": 250,
     "subject": "中排灣語",
     "category": "句型篇高中",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「a djemedjetdjedje mun a mamaza a ’aiv?」\n（你們天天來這裡吃晚餐嗎？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「a djemedjetdjedje mun a mamaza a ’aiv?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "i zua anga itua ljaljanguyan, uri ’ilalumalj ta ma’ava’av timadju nusauni. (已在游泳池，他等一下參與游泳比賽。)",
-      "ui, mamazamaza men sa’amaya a ’aiv? (是/對，我們經常來這裡吃晚餐。)",
-      "seman djamadjamay i ’a’esan timadju, ’u vai’av a qivu. (他在廚房炒菜，我去叫他。)",
-      "namenuremur anga a’en (我漱口了。)"
+      "i zua anga itua ljaljanguyan, uri ’ilalumalj ta ma’ava’av timadju nusauni.",
+      "ui, mamazamaza men sa’amaya a ’aiv?",
+      "seman djamadjamay i ’a’esan timadju, ’u vai’av a qivu.",
+      "namenuremur anga a’en"
     ],
     "answer": 1,
-    "explanation": "情境對話中，A 說「a djemedjetdjedje mun a mamaza a ’aiv?」(你們天天來這裡吃晚餐嗎？)，B 最適當的回應是「ui, mamazamaza men sa’amaya a ’aiv?」(是/對，我們經常來這裡吃晚餐。)。"
+    "explanation": "【對話解析】\nA 說：「a djemedjetdjedje mun a mamaza a ’aiv?」(你們天天來這裡吃晚餐嗎？)\n正確回應 B：「ui, mamazamaza men sa’amaya a ’aiv?」(是/對，我們經常來這裡吃晚餐。)\n\n情境對話中，A 說「a djemedjetdjedje mun a mamaza a ’aiv?」(你們天天來這裡吃晚餐嗎？)，B 最適當的回應是「ui, mamazamaza men sa’amaya a ’aiv?」(是/對，我們經常來這裡吃晚餐。)。"
   },
   {
     "id": 251,
     "subject": "中排灣語",
     "category": "情境族語",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「ma’uda sun?」\n（你怎麼了？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「ma’uda sun?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "ui, naqemudjalj ta sauni, sa nameljay anga. (是的，剛剛有下雨，現在雨停了。)",
-      "nu meljay, maqati anga sun a casav a ’ivangavang? (如果雨停了，你可以出去玩。)",
-      "izua a tjelu a laqulj a pinivavav ta cukui. (有三本書放在桌上。)",
-      "pasa mutjautjaq a’en, vai’ a’en a sema tua papilimaan. (我想吐，我要去洗手台)"
+      "ui, naqemudjalj ta sauni, sa nameljay anga.",
+      "nu meljay, maqati anga sun a casav a ’ivangavang?",
+      "izua a tjelu a laqulj a pinivavav ta cukui.",
+      "pasa mutjautjaq a’en, vai’ a’en a sema tua papilimaan."
     ],
     "answer": 3,
-    "explanation": "情境對話中，A 說「ma’uda sun?」(你怎麼了？)，B 最適當的回應是「pasa mutjautjaq a’en, vai’ a’en a sema tua papilimaan.」(我想吐，我要去洗手台)。"
+    "explanation": "【對話解析】\nA 說：「ma’uda sun?」(你怎麼了？)\n正確回應 B：「pasa mutjautjaq a’en, vai’ a’en a sema tua papilimaan.」(我想吐，我要去洗手台)\n\n情境對話中，A 說「ma’uda sun?」(你怎麼了？)，B 最適當的回應是「pasa mutjautjaq a’en, vai’ a’en a sema tua papilimaan.」(我想吐，我要去洗手台)。"
   },
   {
     "id": 252,
     "subject": "中排灣語",
     "category": "句型篇國中",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「a tjaljiqacaqaca azua umaq?」\n（那間房子很大嗎？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「a tjaljiqacaqaca azua umaq?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "saqetju a ’u qulu. (我的頭很痛。)",
-      "ini, tjaljikedrikedri azua umaq. (不，那間房子很小。)",
-      "saqetju a za ’u maca. (我的眼睛痛。)",
-      "ini, i lizulizu’ a ’u alja’. (不，我孩子住在都市)"
+      "saqetju a ’u qulu.",
+      "ini, tjaljikedrikedri azua umaq.",
+      "saqetju a za ’u maca.",
+      "ini, i lizulizu’ a ’u alja’."
     ],
     "answer": 1,
-    "explanation": "情境對話中，A 說「a tjaljiqacaqaca azua umaq?」(那間房子很大嗎？)，B 最適當的回應是「ini, tjaljikedrikedri azua umaq.」(不，那間房子很小。)。"
+    "explanation": "【對話解析】\nA 說：「a tjaljiqacaqaca azua umaq?」(那間房子很大嗎？)\n正確回應 B：「ini, tjaljikedrikedri azua umaq.」(不，那間房子很小。)\n\n情境對話中，A 說「a tjaljiqacaqaca azua umaq?」(那間房子很大嗎？)，B 最適當的回應是「ini, tjaljikedrikedri azua umaq.」(不，那間房子很小。)。"
   },
   {
     "id": 253,
     "subject": "中排灣語",
     "category": "句型篇國中",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「ma’uda sun?」\n（你怎麼啦？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「ma’uda sun?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "ui, paiwan zuku timadju uta. (是的，她也是排灣族人。)",
-      "taiday sa enem anga puluq a penuljat. (這樣是160元。)",
-      "ni, uza suapan! (這掃把給你。)",
-      "saqetju a ’u qulu. (我的頭很痛。)"
+      "ui, paiwan zuku timadju uta.",
+      "taiday sa enem anga puluq a penuljat.",
+      "ni, uza suapan!",
+      "saqetju a ’u qulu."
     ],
     "answer": 3,
-    "explanation": "情境對話中，A 說「ma’uda sun?」(你怎麼啦？)，B 最適當的回應是「saqetju a ’u qulu.」(我的頭很痛。)。"
+    "explanation": "【對話解析】\nA 說：「ma’uda sun?」(你怎麼啦？)\n正確回應 B：「saqetju a ’u qulu.」(我的頭很痛。)\n\n情境對話中，A 說「ma’uda sun?」(你怎麼啦？)，B 最適當的回應是「saqetju a ’u qulu.」(我的頭很痛。)。"
   },
   {
     "id": 254,
     "subject": "中排灣語",
     "category": "12年國教族語",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「iyainuan a nu umaq?」\n（你們的家在哪裡？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「iyainuan a nu umaq?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "uri ’eman a’en tua minpaw. (我要吃麵包。)",
-      "i gade a nia umaq. (我們家在山上。)",
-      "ui, pa’irimu. (好，快一點去。)",
-      "izua ’inesa a paday? (有米飯嗎？)"
+      "uri ’eman a’en tua minpaw.",
+      "i gade a nia umaq.",
+      "ui, pa’irimu.",
+      "izua ’inesa a paday?"
     ],
     "answer": 1,
-    "explanation": "情境對話中，A 說「iyainuan a nu umaq?」(你們的家在哪裡？)，B 最適當的回應是「i gade a nia umaq.」(我們家在山上。)。"
+    "explanation": "【對話解析】\nA 說：「iyainuan a nu umaq?」(你們的家在哪裡？)\n正確回應 B：「i gade a nia umaq.」(我們家在山上。)\n\n情境對話中，A 說「iyainuan a nu umaq?」(你們的家在哪裡？)，B 最適當的回應是「i gade a nia umaq.」(我們家在山上。)。"
   },
   {
     "id": 255,
     "subject": "中排灣語",
     "category": "情境族語",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「tima ngadaan ni tjama?」\n（你爸爸叫什麼名字？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「tima ngadaan ni tjama?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "ui, vurati azua. (是/對，那是地瓜。)",
-      "ti Sedjam a ngadaan ni ama. (我爸爸的名字是Sedjam。)",
-      "sa vai’ a’en a mata nanguanguaq a ’a’ivangavangan. (我想去很好玩的地方。)",
-      "ui, malap anan a’en ta zuking. (好，我去拿抹布。)"
+      "ui, vurati azua.",
+      "ti Sedjam a ngadaan ni ama.",
+      "sa vai’ a’en a mata nanguanguaq a ’a’ivangavangan.",
+      "ui, malap anan a’en ta zuking."
     ],
     "answer": 1,
-    "explanation": "情境對話中，A 說「tima ngadaan ni tjama?」(你爸爸叫什麼名字？)，B 最適當的回應是「ti Sedjam a ngadaan ni ama.」(我爸爸的名字是Sedjam。)。"
+    "explanation": "【對話解析】\nA 說：「tima ngadaan ni tjama?」(你爸爸叫什麼名字？)\n正確回應 B：「ti Sedjam a ngadaan ni ama.」(我爸爸的名字是Sedjam。)\n\n情境對話中，A 說「tima ngadaan ni tjama?」(你爸爸叫什麼名字？)，B 最適當的回應是「ti Sedjam a ngadaan ni ama.」(我爸爸的名字是Sedjam。)。"
   },
   {
     "id": 256,
     "subject": "中排灣語",
     "category": "句型篇高中",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「anema cu?」\n（這是什麼？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「anema cu?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "ini a’en a vai’, uri vai’ a’en a ’itulu. (不，我不去，我要讀書。)",
-      "kiav aicu. (這是青蛙。)",
-      "ui, pa’irimu. (好，快一點去。)",
-      "ui, tjenglay a’en aravac a ’itulu ta laqulj. (是/對，我很喜歡讀書。)"
+      "ini a’en a vai’, uri vai’ a’en a ’itulu.",
+      "kiav aicu.",
+      "ui, pa’irimu.",
+      "ui, tjenglay a’en aravac a ’itulu ta laqulj."
     ],
     "answer": 1,
-    "explanation": "情境對話中，A 說「anema cu?」(這是什麼？)，B 最適當的回應是「kiav aicu.」(這是青蛙。)。"
+    "explanation": "【對話解析】\nA 說：「anema cu?」(這是什麼？)\n正確回應 B：「kiav aicu.」(這是青蛙。)\n\n情境對話中，A 說「anema cu?」(這是什麼？)，B 最適當的回應是「kiav aicu.」(這是青蛙。)。"
   },
   {
     "id": 257,
     "subject": "中排灣語",
     "category": "情境族語",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「mapida su siruvetje’ a tjavavulungan tjanusun?」\n（你有幾個兄姊？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「mapida su siruvetje’ a tjavavulungan tjanusun?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "ne’a lja ’u kaka a tjavulung tjanua’en. (我沒有兄姊。)",
-      "paruzemulzulzul tucu, te’eli a semuqaca ta zaljum. (天氣有點熱，我們要多喝水。)",
-      "ui, sadjelung aravac cu a cukui (是/對，這張桌子很重。)",
-      "palamu anga, djemaljudjaljun anga itjen. (快了，我們快到了。)"
+      "ne’a lja ’u kaka a tjavulung tjanua’en.",
+      "paruzemulzulzul tucu, te’eli a semuqaca ta zaljum.",
+      "ui, sadjelung aravac cu a cukui",
+      "palamu anga, djemaljudjaljun anga itjen."
     ],
     "answer": 0,
-    "explanation": "情境對話中，A 說「mapida su siruvetje’ a tjavavulungan tjanusun?」(你有幾個兄姊？)，B 最適當的回應是「ne’a lja ’u kaka a tjavulung tjanua’en.」(我沒有兄姊。)。"
+    "explanation": "【對話解析】\nA 說：「mapida su siruvetje’ a tjavavulungan tjanusun?」(你有幾個兄姊？)\n正確回應 B：「ne’a lja ’u kaka a tjavulung tjanua’en.」(我沒有兄姊。)\n\n情境對話中，A 說「mapida su siruvetje’ a tjavavulungan tjanusun?」(你有幾個兄姊？)，B 最適當的回應是「ne’a lja ’u kaka a tjavulung tjanua’en.」(我沒有兄姊。)。"
   },
   {
     "id": 258,
     "subject": "中排灣語",
     "category": "句型篇高中",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「nu meljay, maqati a’en a casav a ’ivangavang?」\n（如果雨停了，我可以出去玩嗎？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「nu meljay, maqati a’en a casav a ’ivangavang?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "nu meljay, maqati anga sun a casav a ’ivangavang? (如果雨停了，你可以出去玩。)",
-      "maqati, paci’elu anga nutiav. (可以，明天要還。)",
-      "tjaumeljay, sa tjevuta anga a qadav, sa izua za quljivangrav. (雨剛剛停，出了太陽，彩虹出來了。)",
-      "izua macidilj a tjavulung tjanua’en a uqaljay ta ’u siruvetje’, sa macidilj a tjaljalja’ tjanua’en. (我有一個哥哥和一個弟弟。)"
+      "nu meljay, maqati anga sun a casav a ’ivangavang?",
+      "maqati, paci’elu anga nutiav.",
+      "tjaumeljay, sa tjevuta anga a qadav, sa izua za quljivangrav.",
+      "izua macidilj a tjavulung tjanua’en a uqaljay ta ’u siruvetje’, sa macidilj a tjaljalja’ tjanua’en."
     ],
     "answer": 0,
-    "explanation": "情境對話中，A 說「nu meljay, maqati a’en a casav a ’ivangavang?」(如果雨停了，我可以出去玩嗎？)，B 最適當的回應是「nu meljay, maqati anga sun a casav a ’ivangavang?」(如果雨停了，你可以出去玩。)。"
+    "explanation": "【對話解析】\nA 說：「nu meljay, maqati a’en a casav a ’ivangavang?」(如果雨停了，我可以出去玩嗎？)\n正確回應 B：「nu meljay, maqati anga sun a casav a ’ivangavang?」(如果雨停了，你可以出去玩。)\n\n情境對話中，A 說「nu meljay, maqati a’en a casav a ’ivangavang?」(如果雨停了，我可以出去玩嗎？)，B 最適當的回應是「nu meljay, maqati anga sun a casav a ’ivangavang?」(如果雨停了，你可以出去玩。)。"
   },
   {
     "id": 259,
     "subject": "中排灣語",
     "category": "情境族語",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「nu ma’abasu itjen a magimeng ma’apidalj a zikang?」\n（搭公車要多久才會到學校？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「nu ma’abasu itjen a magimeng ma’apidalj a zikang?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "ni, uza suapan! (這掃把給你。)",
-      "ne’a lja ’u kaka a tjavulung tjanua’en. (我沒有兄姊。)",
-      "tjaljatjenglayan a’en ta ljemanguy. (我最喜歡游泳。)",
-      "nu tapuluq sa’a lima pungan a zikang djaljun i gakku/gimmeng. (分鐘會到學校。)"
+      "ni, uza suapan!",
+      "ne’a lja ’u kaka a tjavulung tjanua’en.",
+      "tjaljatjenglayan a’en ta ljemanguy.",
+      "nu tapuluq sa’a lima pungan a zikang djaljun i gakku/gimmeng."
     ],
     "answer": 3,
-    "explanation": "情境對話中，A 說「nu ma’abasu itjen a magimeng ma’apidalj a zikang?」(搭公車要多久才會到學校？)，B 最適當的回應是「nu tapuluq sa’a lima pungan a zikang djaljun i gakku/gimmeng.」(分鐘會到學校。)。"
+    "explanation": "【對話解析】\nA 說：「nu ma’abasu itjen a magimeng ma’apidalj a zikang?」(搭公車要多久才會到學校？)\n正確回應 B：「nu tapuluq sa’a lima pungan a zikang djaljun i gakku/gimmeng.」(分鐘會到學校。)\n\n情境對話中，A 說「nu ma’abasu itjen a magimeng ma’apidalj a zikang?」(搭公車要多久才會到學校？)，B 最適當的回應是「nu tapuluq sa’a lima pungan a zikang djaljun i gakku/gimmeng.」(分鐘會到學校。)。"
   },
   {
     "id": 260,
     "subject": "中排灣語",
     "category": "情境族語",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「a qemudjaqudjalj anga?」\n（下雨了嗎？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「a qemudjaqudjalj anga?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "ini, tjengelay tiamadju a pacun ta iga. (不，他們喜歡看電視。)",
-      "uri vai’ a’en a ’isansinsi a temulu. (我要回去教書。)",
-      "ui, naqemudjalj ta sauni, sa nameljay anga. (是的，剛剛有下雨，現在雨停了。)",
-      "tjelu a iday sa’a lima puluq a vatan a taita a itung, sa nu tjelu, ’uzulj. (衣服一件350元，衣服三件1000元。)"
+      "ini, tjengelay tiamadju a pacun ta iga.",
+      "uri vai’ a’en a ’isansinsi a temulu.",
+      "ui, naqemudjalj ta sauni, sa nameljay anga.",
+      "tjelu a iday sa’a lima puluq a vatan a taita a itung, sa nu tjelu, ’uzulj."
     ],
     "answer": 2,
-    "explanation": "情境對話中，A 說「a qemudjaqudjalj anga?」(下雨了嗎？)，B 最適當的回應是「ui, naqemudjalj ta sauni, sa nameljay anga.」(是的，剛剛有下雨，現在雨停了。)。"
+    "explanation": "【對話解析】\nA 說：「a qemudjaqudjalj anga?」(下雨了嗎？)\n正確回應 B：「ui, naqemudjalj ta sauni, sa nameljay anga.」(是的，剛剛有下雨，現在雨停了。)\n\n情境對話中，A 說「a qemudjaqudjalj anga?」(下雨了嗎？)，B 最適當的回應是「ui, naqemudjalj ta sauni, sa nameljay anga.」(是的，剛剛有下雨，現在雨停了。)。"
   },
   {
     "id": 261,
     "subject": "中排灣語",
     "category": "情境族語",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「mapida mare’a su siruvestje’ a tjaljalja’ tjanusun?」\n（你有幾個弟弟妹妹？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「mapida mare’a su siruvestje’ a tjaljalja’ tjanusun?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "izua macidilj a tjavulung tjanua’en a uqaljay ta ’u siruvetje’, sa macidilj a tjaljalja’ tjanua’en. (我有一個哥哥和一個弟弟。)",
-      "ui, nisun cu a paisu. (是的，這是你的錢。)",
-      "izua i vavav timadju, sau ’imu. (他在二樓，你上去找吧。)",
-      "ne’a nu ’u siruvetje’ a uqaljay a tjaljalja’ tjanua’en, lja’ua matjelu a vavayavayan. (我沒有弟弟，但有三個妹妹)"
+      "izua macidilj a tjavulung tjanua’en a uqaljay ta ’u siruvetje’, sa macidilj a tjaljalja’ tjanua’en.",
+      "ui, nisun cu a paisu.",
+      "izua i vavav timadju, sau ’imu.",
+      "ne’a nu ’u siruvetje’ a uqaljay a tjaljalja’ tjanua’en, lja’ua matjelu a vavayavayan."
     ],
     "answer": 3,
-    "explanation": "情境對話中，A 說「mapida mare’a su siruvestje’ a tjaljalja’ tjanusun?」(你有幾個弟弟妹妹？)，B 最適當的回應是「ne’a nu ’u siruvetje’ a uqaljay a tjaljalja’ tjanua’en, lja’ua matjelu a vavayavayan.」(我沒有弟弟，但有三個妹妹)。"
+    "explanation": "【對話解析】\nA 說：「mapida mare’a su siruvestje’ a tjaljalja’ tjanusun?」(你有幾個弟弟妹妹？)\n正確回應 B：「ne’a nu ’u siruvetje’ a uqaljay a tjaljalja’ tjanua’en, lja’ua matjelu a vavayavayan.」(我沒有弟弟，但有三個妹妹)\n\n情境對話中，A 說「mapida mare’a su siruvestje’ a tjaljalja’ tjanusun?」(你有幾個弟弟妹妹？)，B 最適當的回應是「ne’a nu ’u siruvetje’ a uqaljay a tjaljalja’ tjanua’en, lja’ua matjelu a vavayavayan.」(我沒有弟弟，但有三個妹妹)。"
   },
   {
     "id": 262,
     "subject": "中排灣語",
     "category": "情境族語",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「maljepida tiamadju a tace’eljan?」\n（他們全家有幾個人？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「maljepida tiamadju a tace’eljan?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "ne’a nu tjavulung tjanua’en a uqaljay ta ’u siruvetje’. (我沒有哥哥。)",
-      "malje lima tiamadju a tace’eljan. (他們全家有五個人。)",
-      "nu meljay anga, vai’u anga a casav a ’ivangavang. (如果雨停了，你可以出去玩。)",
-      "ini, tjengelay tiamadju a mapu/tjaljamtjam. (不，他們喜歡吃東西。)"
+      "ne’a nu tjavulung tjanua’en a uqaljay ta ’u siruvetje’.",
+      "malje lima tiamadju a tace’eljan.",
+      "nu meljay anga, vai’u anga a casav a ’ivangavang.",
+      "ini, tjengelay tiamadju a mapu/tjaljamtjam."
     ],
     "answer": 1,
-    "explanation": "情境對話中，A 說「maljepida tiamadju a tace’eljan?」(他們全家有幾個人？)，B 最適當的回應是「malje lima tiamadju a tace’eljan.」(他們全家有五個人。)。"
+    "explanation": "【對話解析】\nA 說：「maljepida tiamadju a tace’eljan?」(他們全家有幾個人？)\n正確回應 B：「malje lima tiamadju a tace’eljan.」(他們全家有五個人。)\n\n情境對話中，A 說「maljepida tiamadju a tace’eljan?」(他們全家有幾個人？)，B 最適當的回應是「malje lima tiamadju a tace’eljan.」(他們全家有五個人。)。"
   },
   {
     "id": 263,
     "subject": "中排灣語",
     "category": "12年國教族語",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「a natjemalupung ti ’ina ta vai’ a casav?」\n（媽媽外出時，有戴帽子嗎？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「a natjemalupung ti ’ina ta vai’ a casav?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "ari vai’i a pacun ta quljicacenglav. (我們去看蜻蜓。)",
-      "seman djamadjamay i ’a’esan timadju, ’u vai’av a qivu. (他在廚房炒菜，我去叫他。)",
-      "ui, vurati azua. (是/對，那是地瓜。)",
-      "ini, ini anga paqenetj ti ’ina a tjemalupung. (沒有，媽媽忘了戴帽子。)"
+      "ari vai’i a pacun ta quljicacenglav.",
+      "seman djamadjamay i ’a’esan timadju, ’u vai’av a qivu.",
+      "ui, vurati azua.",
+      "ini, ini anga paqenetj ti ’ina a tjemalupung."
     ],
     "answer": 3,
-    "explanation": "情境對話中，A 說「a natjemalupung ti ’ina ta vai’ a casav?」(媽媽外出時，有戴帽子嗎？)，B 最適當的回應是「ini, ini anga paqenetj ti ’ina a tjemalupung.」(沒有，媽媽忘了戴帽子。)。"
+    "explanation": "【對話解析】\nA 說：「a natjemalupung ti ’ina ta vai’ a casav?」(媽媽外出時，有戴帽子嗎？)\n正確回應 B：「ini, ini anga paqenetj ti ’ina a tjemalupung.」(沒有，媽媽忘了戴帽子。)\n\n情境對話中，A 說「a natjemalupung ti ’ina ta vai’ a casav?」(媽媽外出時，有戴帽子嗎？)，B 最適當的回應是「ini, ini anga paqenetj ti ’ina a tjemalupung.」(沒有，媽媽忘了戴帽子。)。"
   },
   {
     "id": 264,
     "subject": "中排灣語",
     "category": "句型篇國中",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「ainu anga ’u ’inpic?」\n（我的筆在哪裡？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「ainu anga ’u ’inpic?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "izua, liav a ’u’initulu tucu (有啊，我今天學到很多)",
-      "na’uya, maya anan a casav a ’ivangavang. (不可以， 請先別出去玩！)",
-      "dacu a su ’inpic. (你的筆在這裡。)",
-      "ne’a nu ’u siruvetje’ a uqaljay a tjaljalja’ tjanua’en, lja’ua matjelu a vavayavayan. (我沒有弟弟，但有三個妹妹)"
+      "izua, liav a ’u’initulu tucu",
+      "na’uya, maya anan a casav a ’ivangavang.",
+      "dacu a su ’inpic.",
+      "ne’a nu ’u siruvetje’ a uqaljay a tjaljalja’ tjanua’en, lja’ua matjelu a vavayavayan."
     ],
     "answer": 2,
-    "explanation": "情境對話中，A 說「ainu anga ’u ’inpic?」(我的筆在哪裡？)，B 最適當的回應是「dacu a su ’inpic.」(你的筆在這裡。)。"
+    "explanation": "【對話解析】\nA 說：「ainu anga ’u ’inpic?」(我的筆在哪裡？)\n正確回應 B：「dacu a su ’inpic.」(你的筆在這裡。)\n\n情境對話中，A 說「ainu anga ’u ’inpic?」(我的筆在哪裡？)，B 最適當的回應是「dacu a su ’inpic.」(你的筆在這裡。)。"
   },
   {
     "id": 265,
     "subject": "中排灣語",
     "category": "句型篇高中",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「saigu a semenay azua alja’?」\n（那個孩子會唱歌嗎？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「saigu a semenay azua alja’?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "ui, ma’apalidring a’en a sema gakku. (對，我騎腳踏車上學。)",
-      "malje lima tiamadju a tace’eljan. (他們全家有五個人。)",
-      "ui, magakuku anga timadju. (是，她上學了。)",
-      "ini, ini a saigu a semenay timadju. (不，他不會唱歌。)"
+      "ui, ma’apalidring a’en a sema gakku.",
+      "malje lima tiamadju a tace’eljan.",
+      "ui, magakuku anga timadju.",
+      "ini, ini a saigu a semenay timadju."
     ],
     "answer": 3,
-    "explanation": "情境對話中，A 說「saigu a semenay azua alja’?」(那個孩子會唱歌嗎？)，B 最適當的回應是「ini, ini a saigu a semenay timadju.」(不，他不會唱歌。)。"
+    "explanation": "【對話解析】\nA 說：「saigu a semenay azua alja’?」(那個孩子會唱歌嗎？)\n正確回應 B：「ini, ini a saigu a semenay timadju.」(不，他不會唱歌。)\n\n情境對話中，A 說「saigu a semenay azua alja’?」(那個孩子會唱歌嗎？)，B 最適當的回應是「ini, ini a saigu a semenay timadju.」(不，他不會唱歌。)。"
   },
   {
     "id": 266,
     "subject": "中排灣語",
     "category": "12年國教族語",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「tu nama’uda a ljave’ nu tja te’elen?」\n（海水是什麼味道？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「tu nama’uda a ljave’ nu tja te’elen?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "mapuljat anga nia qacilu. (我們的蛋沒剩了)",
-      "qapedapedang a ljave’. (海水是鹹鹹的。)",
-      "i tjungu, tja djavacen. (很近，走路就會到。)",
-      "ari vai’i a pacun ta quljicacenglav. (我們去看蜻蜓。)"
+      "mapuljat anga nia qacilu.",
+      "qapedapedang a ljave’.",
+      "i tjungu, tja djavacen.",
+      "ari vai’i a pacun ta quljicacenglav."
     ],
     "answer": 1,
-    "explanation": "情境對話中，A 說「tu nama’uda a ljave’ nu tja te’elen?」(海水是什麼味道？)，B 最適當的回應是「qapedapedang a ljave’.」(海水是鹹鹹的。)。"
+    "explanation": "【對話解析】\nA 說：「tu nama’uda a ljave’ nu tja te’elen?」(海水是什麼味道？)\n正確回應 B：「qapedapedang a ljave’.」(海水是鹹鹹的。)\n\n情境對話中，A 說「tu nama’uda a ljave’ nu tja te’elen?」(海水是什麼味道？)，B 最適當的回應是「qapedapedang a ljave’.」(海水是鹹鹹的。)。"
   },
   {
     "id": 267,
     "subject": "中排灣語",
     "category": "情境族語",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「a nama’a palidring sun a sema gakku?」\n（你騎腳踏車上學嗎？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「a nama’a palidring sun a sema gakku?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "ui, ma’apalidring a’en a sema gakku. (對，我騎腳踏車上學。)",
-      "ui, paiwan amen. (是，我們是原住民。)",
-      "saqetju a ’u qulu. (我的頭很痛。)",
-      "ui, mamazamaza men sa’amaya a ’aiv? (是/對，我們經常來這裡吃晚餐。)"
+      "ui, ma’apalidring a’en a sema gakku.",
+      "ui, paiwan amen.",
+      "saqetju a ’u qulu.",
+      "ui, mamazamaza men sa’amaya a ’aiv?"
     ],
     "answer": 0,
-    "explanation": "情境對話中，A 說「a nama’a palidring sun a sema gakku?」(你騎腳踏車上學嗎？)，B 最適當的回應是「ui, ma’apalidring a’en a sema gakku.」(對，我騎腳踏車上學。)。"
+    "explanation": "【對話解析】\nA 說：「a nama’a palidring sun a sema gakku?」(你騎腳踏車上學嗎？)\n正確回應 B：「ui, ma’apalidring a’en a sema gakku.」(對，我騎腳踏車上學。)\n\n情境對話中，A 說「a nama’a palidring sun a sema gakku?」(你騎腳踏車上學嗎？)，B 最適當的回應是「ui, ma’apalidring a’en a sema gakku.」(對，我騎腳踏車上學。)。"
   },
   {
     "id": 268,
     "subject": "中排灣語",
     "category": "情境族語",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「pida anga a cavilj ni su kaka a uqaljay?」\n（你哥哥今年已幾歲？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「pida anga a cavilj ni su kaka a uqaljay?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "semuliav anga a’en, ini a’en a ’eman anga. (我吃多了，不吃了。)",
-      "tapuluq anga sa’a lima a cavilj nimadju. (他今年15歲了。)",
-      "uri vai’ a’en a magade nutiav. (我明天要去山上。)",
-      "ma’asuap anga a’en. (我掃好了。)"
+      "semuliav anga a’en, ini a’en a ’eman anga.",
+      "tapuluq anga sa’a lima a cavilj nimadju.",
+      "uri vai’ a’en a magade nutiav.",
+      "ma’asuap anga a’en."
     ],
     "answer": 1,
-    "explanation": "情境對話中，A 說「pida anga a cavilj ni su kaka a uqaljay?」(你哥哥今年已幾歲？)，B 最適當的回應是「tapuluq anga sa’a lima a cavilj nimadju.」(他今年15歲了。)。"
+    "explanation": "【對話解析】\nA 說：「pida anga a cavilj ni su kaka a uqaljay?」(你哥哥今年已幾歲？)\n正確回應 B：「tapuluq anga sa’a lima a cavilj nimadju.」(他今年15歲了。)\n\n情境對話中，A 說「pida anga a cavilj ni su kaka a uqaljay?」(你哥哥今年已幾歲？)，B 最適當的回應是「tapuluq anga sa’a lima a cavilj nimadju.」(他今年15歲了。)。"
   },
   {
     "id": 269,
     "subject": "中排灣語",
     "category": "句型篇國中",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「pasainu sun tucu?」\n（你現在要往哪兒去？）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「pasainu sun tucu?」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "nu tjevuta itjen itua sase’ezan, djemavac a palamu sa djaljun. (出車站再走一下就到了。)",
-      "pida su ’isedjamen? (你要借多少？)",
-      "ui, paiwan zuku timadju uta. (是的，她也是排灣族人。)",
-      "vai’ a’en a tjumaq. (我正要回家。)"
+      "nu tjevuta itjen itua sase’ezan, djemavac a palamu sa djaljun.",
+      "pida su ’isedjamen?",
+      "ui, paiwan zuku timadju uta.",
+      "vai’ a’en a tjumaq."
     ],
     "answer": 3,
-    "explanation": "情境對話中，A 說「pasainu sun tucu?」(你現在要往哪兒去？)，B 最適當的回應是「vai’ a’en a tjumaq.」(我正要回家。)。"
+    "explanation": "【對話解析】\nA 說：「pasainu sun tucu?」(你現在要往哪兒去？)\n正確回應 B：「vai’ a’en a tjumaq.」(我正要回家。)\n\n情境對話中，A 說「pasainu sun tucu?」(你現在要往哪兒去？)，B 最適當的回應是「vai’ a’en a tjumaq.」(我正要回家。)。"
   },
   {
     "id": 270,
     "subject": "中排灣語",
     "category": "情境族語",
     "type": "情境對話",
-    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「sinsi, ini a’en a paqenetj anga a ’emacu tua ’u ’inpic.」\n（老師，我忘了帶筆。）\n請問說話者 B 最適當的回應是？",
+    "question": "【中排灣語 情境對話】\n說話者 A 說：\n「sinsi, ini a’en a paqenetj anga a ’emacu tua ’u ’inpic.」\n請問說話者 B 最適當的回應是？",
     "options": [
-      "mezangal aravac a qadav, sa malingac a’en (太陽好大，曬得我頭好暈。)",
-      "uri vai’ a’en a semenay ’ata ’u drava. (我要跟朋友去唱歌。)",
-      "maqati, paci’elu anga nutiav. (可以，明天要還。)",
-      "u pasedjamai sun. (我借你。)"
+      "mezangal aravac a qadav, sa malingac a’en",
+      "uri vai’ a’en a semenay ’ata ’u drava.",
+      "maqati, paci’elu anga nutiav.",
+      "u pasedjamai sun."
     ],
     "answer": 3,
-    "explanation": "情境對話中，A 說「sinsi, ini a’en a paqenetj anga a ’emacu tua ’u ’inpic.」(老師，我忘了帶筆。)，B 最適當的回應是「u pasedjamai sun.」(我借你。)。"
+    "explanation": "【對話解析】\nA 說：「sinsi, ini a’en a paqenetj anga a ’emacu tua ’u ’inpic.」(老師，我忘了帶筆。)\n正確回應 B：「u pasedjamai sun.」(我借你。)\n\n情境對話中，A 說「sinsi, ini a’en a paqenetj anga a ’emacu tua ’u ’inpic.」(老師，我忘了帶筆。)，B 最適當的回應是「u pasedjamai sun.」(我借你。)。"
   },
   {
     "id": 271,
