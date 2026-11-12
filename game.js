@@ -26,12 +26,16 @@ const Game = {
     timeRemaining: 1200,
     timerInterval: null,
     isRunning: false,
+    hasStarted: false,
     gameSpeed: 1,
 
     // Real-Time Room & Networking
     roomId: 'wangjia2026',
     floatingTexts: [],
     mqttClient: null,
+
+    // Play Mode: 'TOURNAMENT' (預設: 比賽模式，按下開始比賽才可以開始進行占地、作答、計分) or 'PRACTICE' (練習模式: 隨時可作答)
+    playMode: 'TOURNAMENT',
 
     // Match Mode: '2TEAMS' (2隊6人, 一隊3人) or '4TEAMS' (4隊12人, 一隊3人)
     matchMode: '2TEAMS',
@@ -535,6 +539,13 @@ function handleIncomingSync(data) {
         logBattle(`❌【${Game.teams[teamId] ? Game.teams[teamId].name : teamId}】${playerName ? `(${playerName})` : ''} 答錯題目 (-15個人能量)`);
         updateUI();
     } else if (data.type === 'START_MATCH') {
+        if (Game.playMode === 'PRACTICE') {
+            Game.playMode = 'TOURNAMENT';
+            const navSel = document.getElementById('playModeSelect');
+            if (navSel) navSel.value = 'TOURNAMENT';
+            const cfgSel = document.getElementById('cfgPlayMode');
+            if (cfgSel) cfgSel.value = 'TOURNAMENT';
+        }
         if (!Game.isRunning) {
             startMatch(false);
         }
@@ -568,6 +579,10 @@ function handleIncomingSync(data) {
         }
         renderTeamSelectCards();
         updateUI();
+    } else if (data.type === 'PLAY_MODE_CHANGE') {
+        if (data.playMode && data.playMode !== Game.playMode) {
+            switchPlayMode(data.playMode, false);
+        }
     } else if (data.type === 'MODE_CHANGE') {
         switchMatchMode(data.mode, false);
     } else if (data.type === 'RESET_MATCH') {
@@ -579,6 +594,7 @@ function handleIncomingSync(data) {
         endMatch(false);
     } else if (data.type === 'REQUEST_SYNC_STATE') {
         const snapshot = {
+            playMode: Game.playMode,
             matchMode: Game.matchMode,
             activeTeamIds: Game.activeTeamIds,
             isRunning: Game.isRunning,
@@ -603,6 +619,9 @@ function handleIncomingSync(data) {
         if (data.targetId && data.targetId !== myClientId) return;
         const s = data.snapshot;
         if (!s) return;
+        if (s.playMode && s.playMode !== Game.playMode) {
+            switchPlayMode(s.playMode, false);
+        }
         if (s.matchMode && s.matchMode !== Game.matchMode) {
             switchMatchMode(s.matchMode, false);
         }
@@ -677,6 +696,88 @@ function initAssets(callback) {
             loaded++;
             if (loaded === total && callback) callback();
         };
+    }
+}
+
+// ==================== Play Mode (比賽模式 vs 練習模式) ====================
+function switchPlayMode(mode, shouldBroadcast = true) {
+    if (mode !== 'TOURNAMENT' && mode !== 'PRACTICE') return;
+    Game.playMode = mode;
+
+    // 同步更新導航列與設定下拉選單
+    const navSel = document.getElementById('playModeSelect');
+    if (navSel) navSel.value = mode;
+
+    const cfgSel = document.getElementById('cfgPlayMode');
+    if (cfgSel) cfgSel.value = mode;
+
+    // 同步更新選隊彈窗中的分頁按鈕樣式
+    const btnTourn = document.getElementById('playModeBtnTourn');
+    const btnPract = document.getElementById('playModeBtnPract');
+    if (btnTourn && btnPract) {
+        btnTourn.classList.toggle('active', mode === 'TOURNAMENT');
+        btnPract.classList.toggle('active', mode === 'PRACTICE');
+    }
+
+    const timerTitle = document.querySelector('.timer-title');
+    const timerDigits = document.getElementById('timerDigits');
+    const timerUnit = document.querySelector('.timer-unit');
+    const playBtn = document.getElementById('playPauseBtn');
+
+    if (mode === 'PRACTICE') {
+        // 練習模式：暫停比賽倒數，允許隨時作答
+        if (Game.timerInterval) {
+            clearInterval(Game.timerInterval);
+            Game.timerInterval = null;
+        }
+        Game.isRunning = false;
+
+        if (timerTitle) timerTitle.textContent = '練習狀態';
+        if (timerDigits) {
+            timerDigits.textContent = '自由練習';
+            timerDigits.style.fontSize = '14px';
+        }
+        if (timerUnit) timerUnit.style.display = 'none';
+
+        if (playBtn) {
+            playBtn.innerHTML = '📖 練習中(隨時作答)';
+            playBtn.className = 'wood-btn';
+            playBtn.title = '練習模式：隨時點擊相鄰領地即可作答。點擊可切換至比賽模式';
+        }
+
+        logBattle('📖 已切換至【練習模式】！全體選手可隨時點選相鄰土地自由作答、開拓領地！');
+    } else {
+        // 比賽模式（預設）：按下「開始比賽」方可開始進行占地、作答與計分
+        Game.isRunning = false;
+        Game.hasStarted = false;
+        if (Game.timerInterval) {
+            clearInterval(Game.timerInterval);
+            Game.timerInterval = null;
+        }
+
+        if (timerTitle) timerTitle.textContent = '比賽剩餘';
+        if (timerDigits) {
+            timerDigits.style.fontSize = '';
+        }
+        if (timerUnit) timerUnit.style.display = '';
+        updateTimerDisplay();
+
+        if (playBtn) {
+            playBtn.innerHTML = '▶️ 開始比賽';
+            playBtn.className = 'wood-btn btn-gold';
+            playBtn.title = '裁判/老師點擊可同步啟動全體選手倒數計時';
+        }
+
+        logBattle('🏆 已切換至【比賽模式】！按下右上角「▶️ 開始比賽」後方可開始進行占地、作答與計分！');
+    }
+
+    updateUI();
+
+    if (shouldBroadcast) {
+        broadcastSync({
+            type: 'PLAY_MODE_CHANGE',
+            playMode: mode
+        });
     }
 }
 
@@ -957,12 +1058,31 @@ function computeTeamStats(teamId) {
 
 // ==================== Game Loop & Timer ====================
 function startMatch(shouldBroadcast = true) {
+    if (Game.playMode === 'PRACTICE') {
+        // 若在練習模式按下開始比賽，自動切換至比賽模式
+        Game.playMode = 'TOURNAMENT';
+        const navSel = document.getElementById('playModeSelect');
+        if (navSel) navSel.value = 'TOURNAMENT';
+        const cfgSel = document.getElementById('cfgPlayMode');
+        if (cfgSel) cfgSel.value = 'TOURNAMENT';
+    }
+    Game.hasStarted = true;
     if (Game.isRunning) return;
     Game.isRunning = true;
     window.soundManager.init();
 
     const btn = document.getElementById('playPauseBtn');
-    if (btn) btn.innerHTML = '⏸️ 暫停計時';
+    if (btn) {
+        btn.innerHTML = '⏸️ 暫停計時';
+        btn.className = 'wood-btn';
+    }
+
+    const timerTitle = document.querySelector('.timer-title');
+    if (timerTitle) timerTitle.textContent = '比賽剩餘';
+    const timerDigits = document.getElementById('timerDigits');
+    if (timerDigits) timerDigits.style.fontSize = '';
+    const timerUnit = document.querySelector('.timer-unit');
+    if (timerUnit) timerUnit.style.display = '';
 
     if (Game.timerInterval) clearInterval(Game.timerInterval);
     Game.timerInterval = setInterval(() => {
@@ -984,25 +1104,36 @@ function startMatch(shouldBroadcast = true) {
 
     if (shouldBroadcast) {
         broadcastSync({ type: 'START_MATCH', timeRemaining: Game.timeRemaining });
-        logBattle('▶️ 比賽正式開始！全體選手倒數計時啟動！');
+        logBattle('▶️ 比賽正式開始！全體選手倒數計時啟動，可開始占地作答與計分！');
     }
 }
 
 function pauseMatch(shouldBroadcast = true) {
     Game.isRunning = false;
     const btn = document.getElementById('playPauseBtn');
-    if (btn) btn.innerHTML = '▶️ 繼續比賽';
+    if (btn) {
+        btn.innerHTML = '▶️ 繼續比賽';
+        btn.className = 'wood-btn btn-gold';
+    }
     if (Game.timerInterval) {
         clearInterval(Game.timerInterval);
         Game.timerInterval = null;
     }
     if (shouldBroadcast) {
         broadcastSync({ type: 'PAUSE_MATCH', timeRemaining: Game.timeRemaining });
-        logBattle('⏸️ 比賽由裁判暫停');
+        logBattle('⏸️ 比賽由裁判暫停，作答與計分已鎖定');
     }
 }
 
 function togglePlayPause() {
+    if (Game.playMode === 'PRACTICE') {
+        if (confirm('目前為【練習模式】（可隨時自由作答）。\n\n是否切換至【🏆 比賽模式】並立即開始比賽？')) {
+            switchPlayMode('TOURNAMENT', true);
+            startMatch(true);
+        }
+        return;
+    }
+
     if (Game.isRunning) {
         pauseMatch(true);
     } else {
@@ -1011,30 +1142,61 @@ function togglePlayPause() {
 }
 
 function updateTimerDisplay() {
+    if (Game.playMode === 'PRACTICE') {
+        const el = document.getElementById('timerDigits');
+        if (el) {
+            el.textContent = '自由練習';
+            el.style.fontSize = '14px';
+        }
+        return;
+    }
     const mins = Math.floor(Game.timeRemaining / 60);
     const secs = Game.timeRemaining % 60;
     const formatted = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
     const el = document.getElementById('timerDigits');
-    if (el) el.textContent = formatted;
+    if (el) {
+        el.textContent = formatted;
+        el.style.fontSize = '';
+    }
 }
 
 // ==================== Interactive Human Answering ====================
-function openQuestionModal(tileKey) {
+function openQuestionModal(tileKey, force = false) {
     if (Game.isSpectator) {
-        alert('🎙️ 您目前是「裁判 / 大螢幕觀戰席」，僅供全場戰況觀看與發令計時。\n如需親自攻佔領地與答題，請點選上方「選隊入座」選擇您的隊伍席位！');
+        if (typeof alert === 'function') alert('🎙️ 您目前是「裁判 / 大螢幕觀戰席」，僅供全場戰況觀看與發令計時。\n如需親自攻佔領地與答題，請點選上方「選隊入座」選擇您的隊伍席位！');
         return;
     }
+
+    // 比賽模式限制：按下「開始比賽」才可以開始進行占地、作答、計分！
+    if (Game.playMode === 'TOURNAMENT' && !Game.isRunning && !force) {
+        const msg = !Game.hasStarted
+            ? '⚠️ 目前為【比賽模式】，比賽尚未開始！\n請由老師或裁判點擊右上角「▶️ 開始比賽」後，方可開始進行占地、作答與計分！\n\n（若需隨時自由作答，請在上方將模式切換為「📖 練習模式」）'
+            : '⏸️ 目前比賽處於暫停狀態！\n請由老師或裁判點擊右上角「▶️ 繼續比賽」後，方可繼續作答！';
+        if (typeof alert === 'function') alert(msg);
+        if (window.soundManager) window.soundManager.playWarning();
+        return;
+    }
+
     const team = Game.teams[Game.currentTeamId];
     if (!team) return;
 
     const mySlot = Game.myPlayer.slot || 1;
     const myMember = (team.members && team.members[mySlot - 1]) ? team.members[mySlot - 1] : { energy: 500 };
-    const curEnergy = typeof myMember.energy === 'number' ? myMember.energy : 500;
+    let curEnergy = typeof myMember.energy === 'number' ? myMember.energy : 500;
 
     if (curEnergy < Game.config.correctEnergyCost) {
-        alert(`⚡ 個人能量不足！答對一題需消耗 6 點能量，您目前個人能量僅剩 ${curEnergy} 點，無法出征！\n同隊其他隊員有其獨立的 500 點個人能量，可由隊友繼續出題攻佔。`);
-        window.soundManager.playWarning();
-        return;
+        if (Game.playMode === 'PRACTICE') {
+            // 練習模式：能量用盡時自動補充，保證可隨時繼續練習
+            myMember.energy = 500;
+            curEnergy = 500;
+            team.energy = team.members ? team.members.reduce((sum, m) => sum + (m.energy || 0), 0) : 500;
+            updateUI();
+            logBattle(`⚡ 練習模式：已為【${team.name}】(${Game.myPlayer.name}) 自動補充能量至 500 點！`);
+        } else {
+            if (typeof alert === 'function') alert(`⚡ 個人能量不足！答對一題需消耗 6 點能量，您目前個人能量僅剩 ${curEnergy} 點，無法出征！\n同隊其他隊員有其獨立的 500 點個人能量，可由隊友繼續出題攻佔。`);
+            if (window.soundManager) window.soundManager.playWarning();
+            return;
+        }
     }
 
     const targetTile = Game.map.tiles[tileKey];
@@ -1071,8 +1233,12 @@ function openQuestionModal(tileKey) {
     const catBadge = document.getElementById('qCategoryBadge');
     if (catBadge) catBadge.textContent = q.category || '情境族語';
 
+    const modeBadge = Game.playMode === 'PRACTICE'
+        ? '<span class="team-badge" style="background:#27ae60; font-size:11px; margin-right:4px;">📖 練習模式</span>'
+        : '<span class="team-badge" style="background:#d35400; font-size:11px; margin-right:4px;">🏆 比賽模式</span>';
+
     document.getElementById('qTargetBanner').innerHTML = `
-        <span>目標: <strong>${targetName}</strong> (+${pts}分) ｜ ${ownerTip}</span>
+        <span>${modeBadge}目標: <strong>${targetName}</strong> (+${pts}分) ｜ ${ownerTip}</span>
         <span class="q-energy-tip">⚡ 個人能量: ${curEnergy}/500 (答對 -6 ｜ 答錯 -15)</span>
     `;
 
@@ -1095,6 +1261,10 @@ function openQuestionModal(tileKey) {
 }
 
 function submitPlayerAnswer(selectedIdx) {
+    if (Game.playMode === 'TOURNAMENT' && !Game.isRunning) {
+        if (typeof alert === 'function') alert('⚠️ 目前比賽處於暫停或尚未開始狀態，作答無效！');
+        return;
+    }
     const q = Game.currentQuestion;
     if (!q) return;
 
@@ -1116,7 +1286,7 @@ function submitPlayerAnswer(selectedIdx) {
     const myMember = (team.members && team.members[mySlot - 1]) ? team.members[mySlot - 1] : null;
 
     if (isCorrect) {
-        optionBtns[selectedIdx].classList.add('selected-correct');
+        if (optionBtns[selectedIdx]) optionBtns[selectedIdx].classList.add('selected-correct');
         window.soundManager.playCorrect();
 
         if (myMember) {
@@ -1172,8 +1342,8 @@ function submitPlayerAnswer(selectedIdx) {
             closeQuestionModal();
         }, 1600);
     } else {
-        optionBtns[selectedIdx].classList.add('selected-wrong');
-        optionBtns[q.answer].classList.add('selected-correct');
+        if (optionBtns[selectedIdx]) optionBtns[selectedIdx].classList.add('selected-wrong');
+        if (optionBtns[q.answer]) optionBtns[q.answer].classList.add('selected-correct');
         window.soundManager.playWrong();
 
         if (myMember) {
@@ -1545,6 +1715,17 @@ function handleTileAction(mouseX, mouseY) {
 
     const team = Game.teams[Game.currentTeamId];
     if (!team) return;
+
+    // 比賽模式限制：按下「開始比賽」才可以開始進行占地、作答、計分！
+    if (Game.playMode === 'TOURNAMENT' && !Game.isRunning) {
+        const msg = !Game.hasStarted
+            ? '⚠️ 目前為【比賽模式】，比賽尚未開始！\n請由老師或裁判點擊右上角「▶️ 開始比賽」後，方可開始進行占地、作答與計分！\n\n（若需隨時自由作答，請在上方將模式切換為「📖 練習模式」）'
+            : '⏸️ 目前比賽處於暫停狀態！\n請由老師或裁判點擊右上角「▶️ 繼續比賽」後，方可繼續作答！';
+        if (typeof alert === 'function') alert(msg);
+        if (window.soundManager) window.soundManager.playWarning();
+        logBattle(msg.replace(/\n/g, ' '));
+        return;
+    }
 
     // Check if tile is expandable for current team
     const expandable = getExpandableTilesForTeam(team.id);
@@ -2314,11 +2495,18 @@ function updateTooltip(screenX, screenY, hit) {
 
     const actionHint = document.getElementById('ttAction');
     if (isExpandable) {
-        if (owner && owner.teamId !== currentTeam.id) {
-            actionHint.textContent = '⚔️ 點擊發動攻打（奪取敵方領地）！';
+        if (Game.playMode === 'TOURNAMENT' && !Game.isRunning) {
+            actionHint.textContent = '⏳ 比賽模式：請先按右上角「▶️ 開始比賽」方可作答！';
+            actionHint.className = 'tooltip-action-hint hint-neutral';
+        } else if (owner && owner.teamId !== currentTeam.id) {
+            actionHint.textContent = Game.playMode === 'PRACTICE'
+                ? '📖 練習模式：點擊立即作答奪地！'
+                : '⚔️ 比賽進行中：點擊作答奪取敵方領地！';
             actionHint.className = 'tooltip-action-hint hint-attack';
         } else {
-            actionHint.textContent = '✨ 點擊回答中排灣語題目進行開拓！';
+            actionHint.textContent = Game.playMode === 'PRACTICE'
+                ? '📖 練習模式：點擊立即作答開拓！'
+                : '✨ 點擊回答中排灣語題目進行開拓！';
             actionHint.className = 'tooltip-action-hint hint-attack';
         }
     } else if (owner && owner.teamId === currentTeam.id) {
@@ -2356,7 +2544,17 @@ function updateLeaderboard() {
     // Header Title
     const titleEl = document.getElementById('lbHeaderTitle');
     if (titleEl) {
-        titleEl.textContent = Game.matchMode === '2TEAMS' ? '👑 即時戰況排行榜 (2隊對決)' : '👑 即時戰況排行榜 (4隊爭霸)';
+        const prefix = Game.playMode === 'PRACTICE' ? '📖 練習模式戰況' : '👑 即時戰況排行榜';
+        titleEl.textContent = Game.matchMode === '2TEAMS' ? `${prefix} (2隊對決)` : `${prefix} (4隊爭霸)`;
+    }
+
+    const modeLabelEl = document.getElementById('lbModeLabel');
+    if (modeLabelEl) {
+        if (Game.playMode === 'PRACTICE') {
+            modeLabelEl.textContent = '自由練習 · 隨時作答拓殖 · 500能量自動補充';
+        } else {
+            modeLabelEl.textContent = '一隊3人 (每人500能量) · 初始0分';
+        }
     }
 
     // Top Comparison Bar
@@ -2533,6 +2731,12 @@ function updatePlayerHUD() {
 // ==================== Team & Seat Selection Modal (一隊3人) ====================
 function openTeamLoginModal() {
     renderTeamSelectCards();
+    const btnTourn = document.getElementById('playModeBtnTourn');
+    const btnPract = document.getElementById('playModeBtnPract');
+    if (btnTourn && btnPract) {
+        btnTourn.classList.toggle('active', Game.playMode === 'TOURNAMENT');
+        btnPract.classList.toggle('active', Game.playMode === 'PRACTICE');
+    }
     document.getElementById('teamLoginModal').style.display = 'flex';
 }
 
@@ -2769,7 +2973,25 @@ function endMatch(shouldBroadcast = true) {
 
 function restartMatch(shouldBroadcast = true) {
     document.getElementById('resultsModal').style.display = 'none';
+    if (Game.timerInterval) {
+        clearInterval(Game.timerInterval);
+        Game.timerInterval = null;
+    }
+    Game.isRunning = false;
+    Game.hasStarted = false;
     Game.timeRemaining = Game.config.totalDuration;
+
+    const playBtn = document.getElementById('playPauseBtn');
+    if (playBtn) {
+        if (Game.playMode === 'TOURNAMENT') {
+            playBtn.innerHTML = '▶️ 開始比賽';
+            playBtn.className = 'wood-btn btn-gold';
+        } else {
+            playBtn.innerHTML = '📖 練習中(隨時作答)';
+            playBtn.className = 'wood-btn';
+        }
+    }
+
     updateTimerDisplay();
 
     Object.values(Game.teams).forEach(t => {
@@ -2869,6 +3091,10 @@ function renderQBankList(categoryFilter, searchTerm) {
 
 // ==================== Game Settings Modal ====================
 function openSettingsModal() {
+    const cfgPlayMode = document.getElementById('cfgPlayMode');
+    if (cfgPlayMode) cfgPlayMode.value = Game.playMode;
+    const cfgMatchMode = document.getElementById('cfgMatchMode');
+    if (cfgMatchMode) cfgMatchMode.value = Game.matchMode;
     document.getElementById('settingsModal').style.display = 'flex';
 }
 
@@ -2879,8 +3105,15 @@ function closeSettingsModal() {
 function applySettings() {
     const durationMins = parseInt(document.getElementById('cfgMatchDuration').value) || 20;
     Game.config.totalDuration = durationMins * 60;
-    Game.timeRemaining = Game.config.totalDuration;
-    updateTimerDisplay();
+    if (Game.playMode === 'TOURNAMENT' && !Game.isRunning) {
+        Game.timeRemaining = Game.config.totalDuration;
+        updateTimerDisplay();
+    }
+
+    const selectedPlayMode = document.getElementById('cfgPlayMode') ? document.getElementById('cfgPlayMode').value : Game.playMode;
+    if (selectedPlayMode && selectedPlayMode !== Game.playMode) {
+        switchPlayMode(selectedPlayMode);
+    }
 
     const selectedMode = document.getElementById('cfgMatchMode').value;
     if (selectedMode !== Game.matchMode) {
@@ -2888,7 +3121,7 @@ function applySettings() {
     }
 
     closeSettingsModal();
-    logBattle(`⚙️ 設定已套用：競賽時長 ${durationMins} 分鐘 ｜ 賽制模式: ${Game.matchMode === '2TEAMS' ? '雙隊對決' : '四隊爭霸'}`);
+    logBattle(`⚙️ 設定已套用：模式【${Game.playMode === 'TOURNAMENT' ? '比賽模式' : '練習模式'}】｜ 競賽時長 ${durationMins} 分鐘 ｜ 賽制: ${Game.matchMode === '2TEAMS' ? '雙隊對決' : '四隊爭霸'}`);
     updateUI();
 }
 
@@ -2935,6 +3168,12 @@ window.addEventListener('DOMContentLoaded', () => {
     initMapState(false);
     refreshGameQuestionBank(true);
     initCanvas();
+    // Default to Tournament Mode
+    Game.playMode = 'TOURNAMENT';
+    const navPlayModeSel = document.getElementById('playModeSelect');
+    if (navPlayModeSel) navPlayModeSel.value = 'TOURNAMENT';
+    const cfgPlayModeSel = document.getElementById('cfgPlayMode');
+    if (cfgPlayModeSel) cfgPlayModeSel.value = 'TOURNAMENT';
     updateTimerDisplay();
     updateUI();
     if (!Game.isSpectator) {
@@ -2945,7 +3184,7 @@ window.addEventListener('DOMContentLoaded', () => {
     initAssets(() => {});
 
     logBattle(`🏆 歡迎來到 PaGamO 城堡爭奪戰 總決賽！`);
-    logBattle(`💡 一隊 3 人，初始總積分為 0 分！請點選「選隊入座」選擇您的隊伍與席位！`);
+    logBattle(`💡 目前為【比賽模式】（預設），按下右上角「▶️ 開始比賽」後方可開始占地、作答與計分；亦可切換為【練習模式】隨時自由作答！`);
 
     // URL Hash / Query router
     const hash = (window.location.hash || '').replace('#', '');
@@ -2956,7 +3195,7 @@ window.addEventListener('DOMContentLoaded', () => {
         closeTeamLoginModal();
     } else if (modalParam === 'qmodal') {
         closeTeamLoginModal();
-        openQuestionModal('0,-1');
+        openQuestionModal('0,-1', true);
     } else if (modalParam === 'results') {
         closeTeamLoginModal();
         endMatch();

@@ -26,6 +26,13 @@
             <option value="4TEAMS">🏰 四隊 (12人)</option>
           </select>
         </div>
+        <div class="nav-pill nav-playmode-pill" id="navPlayModePill" title="選擇遊玩模式：比賽模式需按「開始比賽」方可作答計分；練習模式隨時可作答">
+          <span style="color:#ffd166; font-size:12px; font-weight:bold;">模式:</span>
+          <select id="playModeSelect" class="wood-select" onchange="switchPlayMode(this.value)" style="font-weight:bold; color:#ffeaa7;">
+            <option value="TOURNAMENT" selected>🏆 比賽模式</option>
+            <option value="PRACTICE">📖 練習模式</option>
+          </select>
+        </div>
         <div class="sync-badge" id="syncStatusBadge" title="已開啟跨裝置雲端即時連線同步競賽">
           🟢 雲端同步
         </div>
@@ -210,7 +217,17 @@
           <button class="modal-close" onclick="closeTeamLoginModal()">✕</button>
         </div>
         <div style="padding: 16px 20px;">
-          <!-- Mode Switcher Tabs -->
+          <!-- Play Mode Switcher Tabs (比賽模式 vs 練習模式) -->
+          <div class="mode-toggle-bar" style="margin-bottom: 8px;">
+            <button id="playModeBtnTourn" class="mode-toggle-btn active" onclick="switchPlayMode('TOURNAMENT')">
+              🏆 比賽模式 (預設 · 按「開始比賽」方可作答計分)
+            </button>
+            <button id="playModeBtnPract" class="mode-toggle-btn" onclick="switchPlayMode('PRACTICE')">
+              📖 練習模式 (隨時可作答練習)
+            </button>
+          </div>
+
+          <!-- Team Match Mode Tabs (雙隊 vs 四隊) -->
           <div class="mode-toggle-bar">
             <button id="modeBtn2" class="mode-toggle-btn active" onclick="switchMatchMode('2TEAMS')">
               ⚔️ 雙隊對決賽制 (2隊 · 6人同場)
@@ -369,7 +386,15 @@
         </div>
         <div style="padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; font-size: 14px;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <label><strong>競賽模式：</strong></label>
+            <label><strong>遊玩模式：</strong></label>
+            <select id="cfgPlayMode" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #ccc; font-weight:bold;" onchange="switchPlayMode(this.value)">
+              <option value="TOURNAMENT" selected>🏆 比賽模式 (按「開始比賽」方可作答計分)</option>
+              <option value="PRACTICE">📖 練習模式 (隨時可作答練習)</option>
+            </select>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <label><strong>隊伍賽制：</strong></label>
             <select id="cfgMatchMode" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #ccc;" onchange="switchMatchMode(this.value)">
               <option value="2TEAMS">⚔️ 雙隊對決 (2隊 · 6人同場)</option>
               <option value="4TEAMS">🏰 四隊爭霸 (4隊 · 12人同場)</option>
