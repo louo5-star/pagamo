@@ -193,6 +193,12 @@ const Game = {
     selectedTargetKey: null,
     currentQuestion: null,
 
+    // Dynamic Question Engine state (依據 25中排灣語_句型練習.pdf)
+    questionPool: [],
+    questionQueue: [],
+    usedQuestionIds: new Set(),
+    questionBankRound: 1,
+
     // Sprites
     sprites: {}
 };
@@ -200,6 +206,53 @@ const Game = {
 // ==================== Cross-Device Real-Time Sync (MQTT over WebSocket + BroadcastChannel) ====================
 const myClientId = 'C_' + Math.random().toString(36).substring(2, 9);
 let syncChannel = null;
+
+// Utility: Shuffle Array
+function shuffleArray(arr) {
+    if (!arr || !arr.length) return [];
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const tmp = a[i];
+        a[i] = a[j];
+        a[j] = tmp;
+    }
+    return a;
+}
+
+// 動態更新本局題庫（每次開局隨機全新抽選，題目絕不重複）
+function refreshGameQuestionBank(silent = false) {
+    if (typeof window.generatePaiwanQuestionBank === 'function') {
+        Game.questionPool = window.generatePaiwanQuestionBank();
+        window.QUESTION_BANK = Game.questionPool;
+    } else {
+        Game.questionPool = window.QUESTION_BANK || [];
+    }
+    Game.questionQueue = shuffleArray(Game.questionPool);
+    Game.usedQuestionIds = new Set();
+    Game.questionBankRound = (Game.questionBankRound || 1) + 1;
+
+    if (!silent) {
+        logBattle(`🎲 本局題庫已依據《25中排灣語_句型練習.pdf》全新隨機抽換完成（共 ${Game.questionPool.length} 題 · 無重複出題）！`);
+    }
+
+    const countBadge = document.getElementById('qbankCountBadge');
+    if (countBadge) {
+        countBadge.textContent = `共 ${Game.questionPool.length} 題（100% 依據《25中排灣語_句型練習.pdf》出題 · 第 ${Game.questionBankRound} 輪全新隨機抽題）`;
+    }
+
+    if (document.getElementById('qbankModal') && document.getElementById('qbankModal').style.display !== 'none') {
+        renderQBankList('全部', '');
+    }
+}
+
+function userRefreshQuestionBank() {
+    refreshGameQuestionBank(false);
+    broadcastSync({
+        type: 'REFRESH_QUESTIONS'
+    });
+    if (window.soundManager) window.soundManager.playClick();
+}
 
 function addFloatingText(x, y, text, color = '#f1c40f', isBig = false) {
     if (!Game.floatingTexts) Game.floatingTexts = [];
@@ -519,6 +572,9 @@ function handleIncomingSync(data) {
         switchMatchMode(data.mode, false);
     } else if (data.type === 'RESET_MATCH') {
         restartMatch(false);
+    } else if (data.type === 'REFRESH_QUESTIONS') {
+        refreshGameQuestionBank(true);
+        logBattle(`🔄 題庫已依據《25中排灣語_句型練習.pdf》同步重新抽題！全場本局題目已煥然一新！`);
     } else if (data.type === 'END_MATCH') {
         endMatch(false);
     } else if (data.type === 'REQUEST_SYNC_STATE') {
@@ -984,14 +1040,17 @@ function openQuestionModal(tileKey) {
     const targetTile = Game.map.tiles[tileKey];
     if (!targetTile) return;
 
-    // Pick random question from 中排灣語題庫 (300題)
-    const questions = window.QUESTION_BANK;
-    if (!questions || questions.length === 0) {
-        alert('題庫載入中，請稍候！');
-        return;
+    // 從《25中排灣語_句型練習.pdf》題庫隊列依序抽取不重複題目（保證單局絕不重複）
+    if (!Game.questionQueue || Game.questionQueue.length === 0) {
+        if (!Game.questionPool || Game.questionPool.length === 0) {
+            refreshGameQuestionBank(true);
+        } else {
+            Game.questionQueue = shuffleArray(Game.questionPool);
+        }
     }
 
-    const q = questions[Math.floor(Math.random() * questions.length)];
+    const q = Game.questionQueue.pop() || window.QUESTION_BANK[0];
+    if (Game.usedQuestionIds) Game.usedQuestionIds.add(q.id);
     Game.currentQuestion = { ...q, targetKey: tileKey };
 
     let targetName = '🌊 海域領地';
@@ -2634,9 +2693,10 @@ function restartMatch(shouldBroadcast = true) {
     });
 
     initMapState(false);
+    refreshGameQuestionBank(false);
     updateUI();
     resetCamera();
-    logBattle(`🔄 比賽已重設開局，每位選手能量皆恢復 500 點，積分已歸 0 分！`);
+    logBattle(`🔄 比賽已重設開局，每位選手能量恢復 500 點，積分歸 0，全新題庫已隨機換抽！`);
 
     if (shouldBroadcast) {
         broadcastSync({ type: 'RESET_MATCH' });
@@ -2691,7 +2751,8 @@ function renderQBankList(categoryFilter, searchTerm) {
         return matchCat && matchSearch;
     });
 
-    document.getElementById('qbankCountBadge').textContent = `篩選顯示 ${filtered.length} 題 / 全題庫共 ${questions.length} 題`;
+    const roundTip = Game.questionBankRound ? ` · 第 ${Game.questionBankRound} 輪隨機抽題` : '';
+    document.getElementById('qbankCountBadge').textContent = `篩選顯示 ${filtered.length} 題 / 全局共 ${questions.length} 題（依據《25中排灣語_句型練習.pdf》出題${roundTip}）`;
 
     filtered.forEach(q => {
         const card = document.createElement('div');
@@ -2710,7 +2771,7 @@ function renderQBankList(categoryFilter, searchTerm) {
                 `).join('')}
             </div>
             <div style="font-size:11px; color:#4e342e; background:#f5efe6; padding:6px 10px; border-radius:4px; border:1px solid #e0d0be;">
-                <strong>解析:</strong> ${q.explanation}
+                <strong>解析:</strong><br>${q.explanation.replace(/\n/g, '<br>')}
             </div>
         `;
         listEl.appendChild(card);
@@ -2781,8 +2842,9 @@ window.addEventListener('DOMContentLoaded', () => {
     // Connect to MQTT & Local Network Sync
     initNetworkSync();
 
-    // Initialize Map, Canvas, and UI synchronously
+    // Initialize Map, Canvas, Question Pool, and UI synchronously
     initMapState(false);
+    refreshGameQuestionBank(true);
     initCanvas();
     updateTimerDisplay();
     updateUI();

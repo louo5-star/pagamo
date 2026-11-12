@@ -244,6 +244,7 @@
           <span class="modal-title">
             <span id="qSubjectBadge" class="q-badge">中排灣語</span>
             <span id="qCategoryBadge" class="q-badge" style="background:#27ae60">情境族語</span>
+            <span class="q-badge" style="background:#8e44ad; font-size:11px;" title="題目100%出自官方教材">📖 題源: 《25中排灣語_句型練習.pdf》</span>
             <span>領地爭奪答題</span>
           </span>
           <button class="modal-close" onclick="closeQuestionModal()">✕</button>
@@ -318,7 +319,7 @@
     <div id="qbankModal" class="modal-overlay" style="display:none;">
       <div class="modal-content qbank-modal">
         <div class="modal-header">
-          <span class="modal-title">📚 中排灣語競賽題庫 (全篇 300 題完整題庫)</span>
+          <span class="modal-title">📚 《25中排灣語_句型練習.pdf》官方競賽題庫 (每次開局動態抽題)</span>
           <button class="modal-close" onclick="closeQBankModal()">✕</button>
         </div>
         <div class="qbank-body">
@@ -333,8 +334,13 @@
             </div>
             <input type="text" id="qbankSearchInput" class="qbank-search" placeholder="🔍 搜尋族語或中文..." oninput="onQBankSearch(this.value)">
           </div>
-          <div style="font-size:12px; color:#7f5539; font-weight:bold;" id="qbankCountBadge">
-            共 300 題
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
+            <div style="font-size:12px; color:#7f5539; font-weight:bold;" id="qbankCountBadge">
+              共 300 題（100% 依據《25中排灣語_句型練習.pdf》出題 · 每次開局全新隨機抽題）
+            </div>
+            <button class="wood-btn btn-sm btn-gold" onclick="userRefreshQuestionBank()" style="padding:4px 12px; font-size:12px;" title="依據PDF重新抽選隨機題庫與選項順序">
+              🎲 立即更新 / 重抽本局題庫
+            </button>
           </div>
           <div id="qbankListWrap" class="qbank-list-wrap">
             <!-- Dynamically populated -->
