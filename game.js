@@ -29,7 +29,7 @@ const Game = {
     hasStarted: false,
     gameSpeed: 1,
 
-    // Real-Time Room & Networking (1-5 號房選項，預設第 1 號房)
+    // Real-Time Room & Networking (1-5 區選項，預設第 1 區)
     roomId: 'room1',
     floatingTexts: [],
     mqttClient: null,
@@ -435,23 +435,23 @@ function broadcastSync(data) {
 
 function getRoomLabel(roomId) {
     const map = {
-        'room1': '第 1 號房',
-        'room2': '第 2 號房',
-        'room3': '第 3 號房',
-        'room4': '第 4 號房',
-        'room5': '第 5 號房',
-        '1': '第 1 號房',
-        '2': '第 2 號房',
-        '3': '第 3 號房',
-        '4': '第 4 號房',
-        '5': '第 5 號房'
+        'room1': '第 1 區',
+        'room2': '第 2 區',
+        'room3': '第 3 區',
+        'room4': '第 4 區',
+        'room5': '第 5 區',
+        '1': '第 1 區',
+        '2': '第 2 區',
+        '3': '第 3 區',
+        '4': '第 4 區',
+        '5': '第 5 區'
     };
-    return map[roomId] || `${roomId} 號房`;
+    return map[roomId] || `${roomId} 區`;
 }
 
 function promptChangeRoomId() {
     const cur = Game.roomId || 'room1';
-    const num = prompt('請選擇競賽房間 (1-5 號房)：', cur.replace('room', ''));
+    const num = prompt('請選擇競賽區域 (1-5 區)：', cur.replace('room', ''));
     if (num && num.trim()) {
         switchRoom(num.trim());
     }
@@ -505,7 +505,7 @@ function switchRoom(newRoomId) {
     } catch(e){}
 
     const label = getRoomLabel(newRoomId);
-    logBattle(`🏟️ 已切換進入競賽房間：【${label}】！同房間各裝置將即時連線競賽！`);
+    logBattle(`🏟️ 已切換進入競賽區域：【${label}】！同區域各裝置將即時連線競賽！`);
     broadcastSync({ type: 'REQUEST_SYNC_STATE' });
 }
 
@@ -678,7 +678,7 @@ function handleIncomingSync(data) {
         }
         renderTeamSelectCards();
         updateUI();
-        logBattle('🌐 已成功與同房間比賽進度即時同步！');
+        logBattle('🌐 已成功與同區域比賽進度即時同步！');
     }
 }
 
@@ -3161,7 +3161,7 @@ function applySettings() {
     }
 
     closeSettingsModal();
-    logBattle(`⚙️ 設定已套用：房間【${getRoomLabel(Game.roomId)}】｜ 模式【${Game.playMode === 'TOURNAMENT' ? '比賽模式' : '練習模式'}】｜ 競賽時長 ${durationMins} 分鐘 ｜ 賽制: ${Game.matchMode === '2TEAMS' ? '雙隊對決' : '四隊爭霸'}`);
+    logBattle(`⚙️ 設定已套用：區域【${getRoomLabel(Game.roomId)}】｜ 模式【${Game.playMode === 'TOURNAMENT' ? '比賽模式' : '練習模式'}】｜ 競賽時長 ${durationMins} 分鐘 ｜ 賽制: ${Game.matchMode === '2TEAMS' ? '雙隊對決' : '四隊爭霸'}`);
     updateUI();
 }
 
@@ -3186,7 +3186,7 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     } catch (e) {}
 
-    // Initialize Room ID (Default: room1, 1-5 號房選項)
+    // Initialize Room ID (Default: room1, 1-5 區選項)
     try {
         const urlParams = new URLSearchParams(window.location.search);
         let rParam = urlParams.get('room');
