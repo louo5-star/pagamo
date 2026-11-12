@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>PaGamO 城堡爭奪戰 - 總決賽 (中排灣語競賽)</title>
   <link rel="stylesheet" href="game.css">
 </head>
@@ -189,6 +189,14 @@
         <div id="ttAction" class="tooltip-action-hint hint-attack">
           點擊回答排灣族語題目進行開拓！
         </div>
+      </div>
+
+      <!-- Floating Map Zoom & View Controls (雙指縮放與快捷縮放按鈕) -->
+      <div class="map-floating-controls" id="mapFloatingControls">
+        <button class="map-ctrl-btn" onclick="zoomIn()" title="放大地圖 (+20%)" aria-label="放大地圖">➕</button>
+        <button class="map-ctrl-btn" onclick="zoomOut()" title="縮小地圖 (-20%)" aria-label="縮小地圖">➖</button>
+        <button class="map-ctrl-btn" onclick="focusMyIsland()" title="回到我的基地" aria-label="回到我的基地">🎯</button>
+        <button class="map-ctrl-btn" onclick="viewOverview()" title="全景鳥瞰 (六島與中央城堡)" aria-label="全景鳥瞰">🌐</button>
       </div>
     </main>
 

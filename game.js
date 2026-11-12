@@ -1268,76 +1268,165 @@ function initCanvas() {
 
 function initTouchControls() {
     if (!canvas) return;
-    let lastTouchX = 0, lastTouchY = 0;
+
+    let touchMode = 'NONE'; // 'NONE' | 'PAN' | 'PINCH'
+    let lastPanX = 0, lastPanY = 0;
     let touchStartX = 0, touchStartY = 0;
-    let isPinching = false;
-    let pinchStartDist = 0;
-    let pinchStartZoom = 1.0;
     let touchMoved = false;
 
+    // Pinch zoom state
+    let pinchStartDist = 0;
+    let pinchStartZoom = 1.0;
+    let pinchStartWorldX = 0, pinchStartWorldY = 0;
+
+    function getLocalPos(touch) {
+        const rect = canvas.getBoundingClientRect();
+        return {
+            x: touch.clientX - rect.left,
+            y: touch.clientY - rect.top
+        };
+    }
+
     canvas.addEventListener('touchstart', (e) => {
+        // Prevent default browser gesture (like page-level pinch zoom or pull refresh)
+        e.preventDefault();
+
         if (e.touches.length === 1) {
-            isPinching = false;
-            lastTouchX = e.touches[0].clientX;
-            lastTouchY = e.touches[0].clientY;
-            touchStartX = lastTouchX;
-            touchStartY = lastTouchY;
+            touchMode = 'PAN';
+            const pos = getLocalPos(e.touches[0]);
+            lastPanX = pos.x;
+            lastPanY = pos.y;
+            touchStartX = pos.x;
+            touchStartY = pos.y;
             touchMoved = false;
-        } else if (e.touches.length === 2) {
-            isPinching = true;
+        } else if (e.touches.length >= 2) {
+            touchMode = 'PINCH';
             touchMoved = true;
-            const dx = e.touches[0].clientX - e.touches[1].clientX;
-            const dy = e.touches[0].clientY - e.touches[1].clientY;
-            pinchStartDist = Math.hypot(dx, dy);
+
+            const pos1 = getLocalPos(e.touches[0]);
+            const pos2 = getLocalPos(e.touches[1]);
+            const dx = pos1.x - pos2.x;
+            const dy = pos1.y - pos2.y;
+            pinchStartDist = Math.max(10, Math.hypot(dx, dy));
             pinchStartZoom = Game.camera.zoom;
+
+            // Focal midpoint between the two fingers in canvas coordinates
+            const midX = (pos1.x + pos2.x) / 2;
+            const midY = (pos1.y + pos2.y) / 2;
+
+            // Corresponding world coordinates directly under the midpoint
+            pinchStartWorldX = (midX - Game.camera.x) / pinchStartZoom;
+            pinchStartWorldY = (midY - Game.camera.y) / pinchStartZoom;
         }
-    }, { passive: true });
+    }, { passive: false });
 
     canvas.addEventListener('touchmove', (e) => {
-        if (e.touches.length === 1 && !isPinching) {
-            const curX = e.touches[0].clientX;
-            const curY = e.touches[0].clientY;
-            const dx = curX - lastTouchX;
-            const dy = curY - lastTouchY;
-            if (Math.hypot(curX - touchStartX, curY - touchStartY) > 8) {
+        e.preventDefault();
+
+        if (e.touches.length === 1 && touchMode === 'PAN') {
+            const pos = getLocalPos(e.touches[0]);
+            const dx = pos.x - lastPanX;
+            const dy = pos.y - lastPanY;
+
+            if (Math.hypot(pos.x - touchStartX, pos.y - touchStartY) > 6) {
                 touchMoved = true;
                 Game.camera.dragDist = 20;
             }
+
             Game.camera.x += dx;
             Game.camera.y += dy;
-            lastTouchX = curX;
-            lastTouchY = curY;
-        } else if (e.touches.length === 2 && isPinching) {
-            const dx = e.touches[0].clientX - e.touches[1].clientX;
-            const dy = e.touches[0].clientY - e.touches[1].clientY;
+            lastPanX = pos.x;
+            lastPanY = pos.y;
+        } else if (e.touches.length >= 2) {
+            touchMode = 'PINCH';
+            touchMoved = true;
+
+            const pos1 = getLocalPos(e.touches[0]);
+            const pos2 = getLocalPos(e.touches[1]);
+            const dx = pos1.x - pos2.x;
+            const dy = pos1.y - pos2.y;
             const curDist = Math.hypot(dx, dy);
+
             if (pinchStartDist > 0) {
                 const scale = curDist / pinchStartDist;
                 const newZoom = Math.max(0.4, Math.min(2.5, pinchStartZoom * scale));
-                const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-                const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-                const rect = canvas.getBoundingClientRect();
-                const localX = midX - rect.left;
-                const localY = midY - rect.top;
-                Game.camera.x = localX - (localX - Game.camera.x) * (newZoom / Game.camera.zoom);
-                Game.camera.y = localY - (localY - Game.camera.y) * (newZoom / Game.camera.zoom);
+
+                // Current midpoint between the two fingers
+                const curMidX = (pos1.x + pos2.x) / 2;
+                const curMidY = (pos1.y + pos2.y) / 2;
+
+                // Lock world point under current midpoint (zooms around fingers & pans smoothly)
                 Game.camera.zoom = newZoom;
+                Game.camera.x = curMidX - pinchStartWorldX * newZoom;
+                Game.camera.y = curMidY - pinchStartWorldY * newZoom;
             }
         }
-    }, { passive: true });
+    }, { passive: false });
 
     canvas.addEventListener('touchend', (e) => {
-        if (!touchMoved && e.changedTouches.length > 0) {
-            const touch = e.changedTouches[0];
-            const rect = canvas.getBoundingClientRect();
-            const mouseX = touch.clientX - rect.left;
-            const mouseY = touch.clientY - rect.top;
-            handleTileAction(mouseX, mouseY);
-        }
+        e.preventDefault();
+
         if (e.touches.length === 0) {
-            isPinching = false;
+            if (!touchMoved && e.changedTouches.length > 0) {
+                const pos = getLocalPos(e.changedTouches[0]);
+                handleTileAction(pos.x, pos.y);
+            }
+            touchMode = 'NONE';
+            pinchStartDist = 0;
+        } else if (e.touches.length === 1) {
+            // Smooth transition back to 1-finger panning from current position
+            touchMode = 'PAN';
+            const pos = getLocalPos(e.touches[0]);
+            lastPanX = pos.x;
+            lastPanY = pos.y;
+            touchStartX = pos.x;
+            touchStartY = pos.y;
         }
-    }, { passive: true });
+    }, { passive: false });
+
+    canvas.addEventListener('touchcancel', (e) => {
+        touchMode = 'NONE';
+        pinchStartDist = 0;
+    });
+}
+
+// ==================== On-Screen Zoom Controls (平板縮放快捷按鈕) ====================
+function zoomIn() {
+    changeZoom(1.2);
+}
+
+function zoomOut() {
+    changeZoom(0.833);
+}
+
+function changeZoom(factor) {
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const cx = (rect && rect.width > 100) ? (rect.width / 2) : (window.innerWidth / 2);
+    const cy = (rect && rect.height > 100) ? (rect.height / 2) : (window.innerHeight / 2);
+    const oldZoom = Game.camera.zoom;
+    const newZoom = Math.max(0.4, Math.min(2.5, oldZoom * factor));
+    if (Math.abs(newZoom - oldZoom) < 0.001) return;
+
+    // Keep center of screen fixed in world space
+    const wx = (cx - Game.camera.x) / oldZoom;
+    const wy = (cy - Game.camera.y) / oldZoom;
+
+    Game.camera.zoom = newZoom;
+    Game.camera.x = Math.round(cx - wx * newZoom);
+    Game.camera.y = Math.round(cy - wy * newZoom);
+}
+
+function viewOverview() {
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const w = (rect && rect.width > 300) ? rect.width : window.innerWidth;
+    const h = (rect && rect.height > 300) ? rect.height : (window.innerHeight - 48);
+
+    Game.camera.zoom = 0.65;
+    Game.camera.x = Math.round(w / 2);
+    Game.camera.y = Math.round(h / 2);
+    logBattle(`🌐 已切換為【全景鳥瞰視野】，展示六島與中央城堡全景！`);
 }
 
 function resetCamera() {
