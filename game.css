@@ -1443,6 +1443,28 @@ body, html {
   box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
 }
 
+.room-toggle-btn {
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: bold;
+  border: 1px solid #c8ab78;
+  border-radius: 6px;
+  background: #fff;
+  color: #5c381e;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.room-toggle-btn:hover {
+  background: #fdf8eb;
+  border-color: #27ae60;
+}
+.room-toggle-btn.active {
+  background: linear-gradient(180deg, #27ae60 0%, #1e8449 100%);
+  color: #fff;
+  border-color: #145a32;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+}
+
 
 /* Wood Select in Header Nav */
 .wood-select {

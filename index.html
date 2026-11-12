@@ -14,10 +14,15 @@
         <div class="match-dropdown" title="PaGamO 城堡爭奪戰 - 中排灣語決賽">
           <span>🏰 城堡爭奪戰 ▾</span>
         </div>
-        <div class="nav-pill room-pill" onclick="promptChangeRoomId()" title="點擊更換競賽房號（所有裝置輸入相同房號即可跨螢幕同場即時計分與競賽）">
-          <span style="color:#ffd166; font-size:12px; font-weight:bold;">🏟️ 房號:</span>
-          <strong id="navRoomId" style="color:#2ecc71; margin-left:2px; font-size:13px;">wangjia2026</strong>
-          <span style="font-size:11px; color:#f1c40f; margin-left:2px; text-decoration:underline; cursor:pointer;">[換房]</span>
+        <div class="nav-pill room-pill" id="navRoomPill" title="選擇競賽房間（不同裝置選擇相同房號即可跨裝置連線同場競賽）">
+          <span style="color:#ffd166; font-size:12px; font-weight:bold;">🏟️ 房間:</span>
+          <select id="roomSelect" class="wood-select" onchange="switchRoom(this.value)" style="font-weight:bold; color:#2ecc71; cursor:pointer;">
+            <option value="room1" selected>第 1 號房</option>
+            <option value="room2">第 2 號房</option>
+            <option value="room3">第 3 號房</option>
+            <option value="room4">第 4 號房</option>
+            <option value="room5">第 5 號房</option>
+          </select>
         </div>
         <div class="nav-pill nav-mode-pill">
           <span style="color:#ffd166; font-size:12px; font-weight:bold;">賽制:</span>
@@ -217,6 +222,19 @@
           <button class="modal-close" onclick="closeTeamLoginModal()">✕</button>
         </div>
         <div style="padding: 16px 20px;">
+          <!-- Room Selector Tabs (1-5 號房選項) -->
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px; background:rgba(0,0,0,0.04); padding:6px 12px; border-radius:8px; border:1px solid #d4c5a0; flex-wrap:wrap;">
+            <span style="font-weight:bold; color:#5c381e; font-size:13px;">🏟️ 選擇房間：</span>
+            <div style="display:flex; gap:6px; flex-wrap:wrap;" id="modalRoomButtons">
+              <button class="room-toggle-btn active" data-room="room1" onclick="switchRoom('room1')">1 號房</button>
+              <button class="room-toggle-btn" data-room="room2" onclick="switchRoom('room2')">2 號房</button>
+              <button class="room-toggle-btn" data-room="room3" onclick="switchRoom('room3')">3 號房</button>
+              <button class="room-toggle-btn" data-room="room4" onclick="switchRoom('room4')">4 號房</button>
+              <button class="room-toggle-btn" data-room="room5" onclick="switchRoom('room5')">5 號房</button>
+            </div>
+            <span style="font-size:11px; color:#7f5539; margin-left:auto;">（同房間平板與電腦自動連線同場）</span>
+          </div>
+
           <!-- Play Mode Switcher Tabs (比賽模式 vs 練習模式) -->
           <div class="mode-toggle-bar" style="margin-bottom: 8px;">
             <button id="playModeBtnTourn" class="mode-toggle-btn active" onclick="switchPlayMode('TOURNAMENT')">
@@ -385,6 +403,17 @@
           <button class="modal-close" onclick="closeSettingsModal()">✕</button>
         </div>
         <div style="padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; font-size: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <label><strong>競賽房間：</strong></label>
+            <select id="cfgRoomSelect" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #ccc; font-weight:bold; color:#27ae60;" onchange="switchRoom(this.value)">
+              <option value="room1">第 1 號房 (預設)</option>
+              <option value="room2">第 2 號房</option>
+              <option value="room3">第 3 號房</option>
+              <option value="room4">第 4 號房</option>
+              <option value="room5">第 5 號房</option>
+            </select>
+          </div>
+
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <label><strong>遊玩模式：</strong></label>
             <select id="cfgPlayMode" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #ccc; font-weight:bold;" onchange="switchPlayMode(this.value)">

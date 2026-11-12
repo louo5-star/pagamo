@@ -29,8 +29,8 @@ const Game = {
     hasStarted: false,
     gameSpeed: 1,
 
-    // Real-Time Room & Networking
-    roomId: 'wangjia2026',
+    // Real-Time Room & Networking (1-5 號房選項，預設第 1 號房)
+    roomId: 'room1',
     floatingTexts: [],
     mqttClient: null,
 
@@ -433,16 +433,35 @@ function broadcastSync(data) {
     } catch (e) {}
 }
 
+function getRoomLabel(roomId) {
+    const map = {
+        'room1': '第 1 號房',
+        'room2': '第 2 號房',
+        'room3': '第 3 號房',
+        'room4': '第 4 號房',
+        'room5': '第 5 號房',
+        '1': '第 1 號房',
+        '2': '第 2 號房',
+        '3': '第 3 號房',
+        '4': '第 4 號房',
+        '5': '第 5 號房'
+    };
+    return map[roomId] || `${roomId} 號房`;
+}
+
 function promptChangeRoomId() {
-    const cur = Game.roomId || 'wangjia2026';
-    const newRoom = prompt('請輸入競賽房間代碼 (所有選手與裁判輸入相同代碼即可跨裝置即時比賽與計分)：', cur);
-    if (newRoom && newRoom.trim() && newRoom.trim() !== cur) {
-        switchRoom(newRoom.trim());
+    const cur = Game.roomId || 'room1';
+    const num = prompt('請選擇競賽房間 (1-5 號房)：', cur.replace('room', ''));
+    if (num && num.trim()) {
+        switchRoom(num.trim());
     }
 }
 
 function switchRoom(newRoomId) {
-    if (!newRoomId || newRoomId === Game.roomId) return;
+    if (!newRoomId) return;
+    if (/^[1-5]$/.test(newRoomId)) newRoomId = 'room' + newRoomId;
+    if (newRoomId === Game.roomId) return;
+
     const oldTopic = `pagamo/room/${Game.roomId}`;
     Game.roomId = newRoomId;
 
@@ -453,8 +472,17 @@ function switchRoom(newRoomId) {
         window.history.replaceState({}, '', url.toString());
     } catch (e) {}
 
-    const navRoomEl = document.getElementById('navRoomId');
-    if (navRoomEl) navRoomEl.textContent = newRoomId;
+    // Update Room Select dropdowns in nav and settings
+    const roomSelect = document.getElementById('roomSelect');
+    if (roomSelect) roomSelect.value = newRoomId;
+    const cfgRoomSelect = document.getElementById('cfgRoomSelect');
+    if (cfgRoomSelect) cfgRoomSelect.value = newRoomId;
+
+    // Update room toggle buttons in team select modal
+    const roomBtns = document.querySelectorAll('.room-toggle-btn');
+    roomBtns.forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-room') === newRoomId);
+    });
 
     if (Game.mqttClient && Game.mqttClient.connected) {
         try { Game.mqttClient.unsubscribe(oldTopic); } catch(e){}
@@ -476,7 +504,8 @@ function switchRoom(newRoomId) {
         };
     } catch(e){}
 
-    logBattle(`🏟️ 已切換進入競賽房間：【${newRoomId}】`);
+    const label = getRoomLabel(newRoomId);
+    logBattle(`🏟️ 已切換進入競賽房間：【${label}】！同房間各裝置將即時連線競賽！`);
     broadcastSync({ type: 'REQUEST_SYNC_STATE' });
 }
 
@@ -2737,6 +2766,10 @@ function openTeamLoginModal() {
         btnTourn.classList.toggle('active', Game.playMode === 'TOURNAMENT');
         btnPract.classList.toggle('active', Game.playMode === 'PRACTICE');
     }
+    const roomBtns = document.querySelectorAll('.room-toggle-btn');
+    roomBtns.forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-room') === Game.roomId);
+    });
     document.getElementById('teamLoginModal').style.display = 'flex';
 }
 
@@ -3091,6 +3124,8 @@ function renderQBankList(categoryFilter, searchTerm) {
 
 // ==================== Game Settings Modal ====================
 function openSettingsModal() {
+    const cfgRoomSelect = document.getElementById('cfgRoomSelect');
+    if (cfgRoomSelect) cfgRoomSelect.value = Game.roomId;
     const cfgPlayMode = document.getElementById('cfgPlayMode');
     if (cfgPlayMode) cfgPlayMode.value = Game.playMode;
     const cfgMatchMode = document.getElementById('cfgMatchMode');
@@ -3110,6 +3145,11 @@ function applySettings() {
         updateTimerDisplay();
     }
 
+    const selectedRoom = document.getElementById('cfgRoomSelect') ? document.getElementById('cfgRoomSelect').value : Game.roomId;
+    if (selectedRoom && selectedRoom !== Game.roomId) {
+        switchRoom(selectedRoom);
+    }
+
     const selectedPlayMode = document.getElementById('cfgPlayMode') ? document.getElementById('cfgPlayMode').value : Game.playMode;
     if (selectedPlayMode && selectedPlayMode !== Game.playMode) {
         switchPlayMode(selectedPlayMode);
@@ -3121,7 +3161,7 @@ function applySettings() {
     }
 
     closeSettingsModal();
-    logBattle(`⚙️ 設定已套用：模式【${Game.playMode === 'TOURNAMENT' ? '比賽模式' : '練習模式'}】｜ 競賽時長 ${durationMins} 分鐘 ｜ 賽制: ${Game.matchMode === '2TEAMS' ? '雙隊對決' : '四隊爭霸'}`);
+    logBattle(`⚙️ 設定已套用：房間【${getRoomLabel(Game.roomId)}】｜ 模式【${Game.playMode === 'TOURNAMENT' ? '比賽模式' : '練習模式'}】｜ 競賽時長 ${durationMins} 分鐘 ｜ 賽制: ${Game.matchMode === '2TEAMS' ? '雙隊對決' : '四隊爭霸'}`);
     updateUI();
 }
 
@@ -3146,20 +3186,33 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     } catch (e) {}
 
-    // Initialize Room ID
+    // Initialize Room ID (Default: room1, 1-5 號房選項)
     try {
         const urlParams = new URLSearchParams(window.location.search);
-        const rParam = urlParams.get('room');
+        let rParam = urlParams.get('room');
         if (rParam && rParam.trim()) {
-            Game.roomId = rParam.trim();
+            rParam = rParam.trim();
+            if (/^[1-5]$/.test(rParam)) rParam = 'room' + rParam;
+            Game.roomId = rParam;
         } else {
             const savedRoom = localStorage.getItem('pagamo_room_id');
-            if (savedRoom && savedRoom.trim()) Game.roomId = savedRoom.trim();
+            if (savedRoom && savedRoom.trim()) {
+                let s = savedRoom.trim();
+                if (/^[1-5]$/.test(s)) s = 'room' + s;
+                if (s === 'wangjia2026') s = 'room1';
+                Game.roomId = s;
+            } else {
+                Game.roomId = 'room1';
+            }
         }
-    } catch (e) {}
+    } catch (e) {
+        Game.roomId = 'room1';
+    }
 
-    const navRoomEl = document.getElementById('navRoomId');
-    if (navRoomEl) navRoomEl.textContent = Game.roomId;
+    const roomSelect = document.getElementById('roomSelect');
+    if (roomSelect) roomSelect.value = Game.roomId;
+    const cfgRoomSelect = document.getElementById('cfgRoomSelect');
+    if (cfgRoomSelect) cfgRoomSelect.value = Game.roomId;
 
     // Connect to MQTT & Local Network Sync
     initNetworkSync();
