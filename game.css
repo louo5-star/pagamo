@@ -28,23 +28,58 @@
   margin: 0;
   padding: 0;
   user-select: none;
+  -webkit-user-select: none;
+  scrollbar-width: thin;
+  scrollbar-color: #c8ab78 rgba(0, 0, 0, 0.06);
+}
+
+/* ==================== Universal Modern Scrollbars (Chrome, Edge, Safari, Firefox) ==================== */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb {
+  background: #c8ab78;
+  border-radius: 4px;
+  border: 1px solid rgba(62, 39, 22, 0.25);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #915a31;
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 body, html {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  font-family: "PingFang TC", "Microsoft JhengHei", "Heiti TC", sans-serif;
+  position: fixed;
+  top: 0;
+  left: 0;
+  font-family: "PingFang TC", "Microsoft JhengHei", "Heiti TC", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background-color: var(--water-bg);
   color: #333;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 #app {
-  position: relative;
+  position: fixed;
+  top: 0;
+  left: 0;
   width: 100vw;
+  width: 100%;
   height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 /* ==================== Top Header Bar ==================== */
@@ -810,7 +845,11 @@ body, html {
   border-radius: 16px;
   box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
   overflow: hidden;
-  max-width: 90vw;
+  max-width: 92vw;
+  max-height: 92vh;
+  max-height: 92dvh;
+  display: flex;
+  flex-direction: column;
   opacity: 1 !important;
 }
 @keyframes popIn {
@@ -819,6 +858,7 @@ body, html {
 }
 
 .modal-header {
+  flex-shrink: 0;
   background: linear-gradient(180deg, var(--wood-light) 0%, var(--wood-med) 100%);
   color: #ffe8b3;
   padding: 12px 20px;
@@ -826,6 +866,14 @@ body, html {
   align-items: center;
   justify-content: space-between;
   border-bottom: 3px solid var(--wood-border);
+}
+
+.modal-scroll-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
 }
 .modal-title {
   font-size: 18px;
@@ -1037,6 +1085,7 @@ body, html {
 }
 
 .modal-footer {
+  flex-shrink: 0;
   background: #eee4cf;
   padding: 12px 20px;
   display: flex;
@@ -1134,12 +1183,51 @@ body, html {
 
 
 /* ==================== 6 Teams Styles & Badges ==================== */
-.badge-t1 { background: #27ae60; color: #fff; }
-.badge-t2 { background: #0984e3; color: #fff; }
-.badge-t3 { background: #6c5ce7; color: #fff; }
-.badge-t4 { background: #d63031; color: #fff; }
-.badge-t5 { background: #9b59b6; color: #fff; }
-.badge-t6 { background: #e67e22; color: #fff; }
+.badge-t1 { background: #6c5ce7; color: #fff; } /* 望嘉勇士隊 */
+.badge-t2 { background: #27ae60; color: #fff; } /* 望嘉小尖兵 */
+.badge-t3 { background: #0984e3; color: #fff; } /* 望嘉先鋒隊 */
+.badge-t4 { background: #9b59b6; color: #fff; } /* 風那裡女團 */
+.badge-t5 { background: #d63031; color: #fff; } /* 族夢隊 */
+.badge-t6 { background: #e67e22; color: #fff; } /* 戰鬥瘋隊 */
+
+.mode-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 6px;
+}
+@media (max-width: 680px) {
+  .mode-grid-4 {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+.team-selector-bar {
+  background: #fdf6e2;
+  border: 1px solid #d4c5a0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.team-picker-select {
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 2px solid #c8ab78;
+  background: #fff;
+  font-weight: bold;
+  font-size: 13px;
+  color: #3e2716;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.15s;
+}
+.team-picker-select:hover {
+  border-color: #27ae60;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
 
 .badge-alliance-a { background: #1b4f72; color: #a9cce3; border: 1px solid #2980b9; }
 .badge-alliance-b { background: #78281f; color: #f5b7b1; border: 1px solid #c0392b; }
@@ -1482,7 +1570,9 @@ body, html {
   color: #fff;
 }
 
-/* ==================== Responsive Layout for Tablets & Small Displays ==================== */
+/* ==================== Responsive Layout for Tablets, Phones & Desktops ==================== */
+
+/* 1. Large Tablet / Compact Laptop (<= 1024px) */
 @media (max-width: 1024px) {
   .top-nav {
     padding: 4px 8px;
@@ -1515,8 +1605,7 @@ body, html {
     left: 10px;
   }
   .map-controls {
-    top: 130px;
-    left: 10px;
+    display: none !important; /* Hide legacy left buttons on tablets & mobile; use floating controls */
   }
   .player-hud {
     bottom: 12px;
@@ -1524,32 +1613,40 @@ body, html {
     padding: 8px 12px;
   }
   .hud-avatar-wrapper {
-    width: 56px;
-    height: 56px;
+    width: 52px;
+    height: 52px;
   }
   .energy-bar-wrap {
-    width: 150px;
+    width: 140px;
   }
   .hud-stats-mini {
     gap: 8px;
     font-size: 10px;
   }
   .battle-log-wrap {
-    width: 260px;
+    width: 250px;
     bottom: 12px;
     right: 10px;
   }
 }
 
+/* 2. Small Tablets & Phones in Portrait (<= 768px) */
 @media (max-width: 768px) {
   .top-nav {
-    padding: 4px 6px;
-    gap: 4px;
-    justify-content: center;
+    padding: 3px 6px;
+    gap: 5px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    min-height: 42px;
+  }
+  .top-nav::-webkit-scrollbar {
+    display: none;
   }
   .nav-left, .nav-center, .nav-right {
-    flex-wrap: wrap;
-    justify-content: center;
+    flex-shrink: 0;
     gap: 4px;
   }
   .nav-matchup-pill {
@@ -1565,31 +1662,24 @@ body, html {
     max-width: 135px;
   }
   .timer-disc {
-    width: 86px;
-    height: 86px;
+    width: 76px;
+    height: 76px;
     border-width: 3px;
   }
   .timer-disc .timer-title {
-    font-size: 10px;
-    top: -10px;
-    padding: 1px 6px;
+    font-size: 9.5px;
+    top: -9px;
+    padding: 1px 5px;
   }
   .hourglass-graphic {
-    width: 34px;
-    height: 34px;
+    width: 28px;
+    height: 28px;
   }
   .timer-digits {
-    font-size: 13px;
+    font-size: 12px;
   }
   .map-controls {
-    top: 105px;
-    left: 8px;
-    gap: 4px;
-  }
-  .ctrl-btn {
-    width: 32px;
-    height: 32px;
-    font-size: 14px;
+    display: none !important; /* Hide duplicate left controls on mobile; use bottom-right floating controls */
   }
   .player-hud {
     bottom: 8px;
@@ -1600,27 +1690,37 @@ body, html {
     max-width: calc(100vw - 16px);
   }
   .hud-avatar-wrapper {
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
   }
   .hud-name {
-    font-size: 13px;
+    font-size: 12.5px;
   }
   .energy-bar-wrap {
-    width: 120px;
-    height: 14px;
+    width: 115px;
+    height: 13px;
   }
   .hud-stats-mini {
-    font-size: 10px;
+    font-size: 9.5px;
     gap: 6px;
     flex-wrap: wrap;
   }
   .battle-log-wrap {
     display: none;
   }
+  .map-floating-controls {
+    right: 10px;
+    bottom: 68px;
+    gap: 6px;
+  }
+  .map-ctrl-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+  }
   .modal-content {
     max-width: 96vw;
-    border-width: 2px;
+    border-width: 2.5px;
     border-radius: 12px;
   }
   .question-modal {
@@ -1630,8 +1730,8 @@ body, html {
     gap: 8px;
   }
   .q-option-btn {
-    padding: 10px 12px;
-    font-size: 14px;
+    padding: 9px 12px;
+    font-size: 13.5px;
     min-height: 44px;
   }
   .team-select-modal {
@@ -1639,19 +1739,330 @@ body, html {
   }
   .team-select-grid {
     grid-template-columns: 1fr;
-    max-height: 55vh;
+    max-height: 52vh;
   }
 }
 
+/* 3. Mobile Phones (<= 480px) */
 @media (max-width: 480px) {
+  .top-nav {
+    min-height: 40px;
+    max-height: 42px;
+    padding: 2px 5px;
+    gap: 4px;
+  }
   .match-dropdown {
     display: none;
   }
-  .top-nav {
-    padding: 3px;
+  .room-pill {
+    padding: 2px 6px;
+    font-size: 10.5px;
+  }
+  .nav-pill {
+    padding: 2px 6px;
+    font-size: 10.5px;
   }
   .wood-btn {
     padding: 3px 6px;
+    font-size: 10.5px;
+    border-radius: 5px;
+  }
+  .sync-badge {
+    padding: 2px 6px;
     font-size: 10px;
+  }
+  .timer-container {
+    top: 6px;
+    left: 6px;
+  }
+  .timer-disc {
+    width: 66px;
+    height: 66px;
+    border-width: 2.5px;
+  }
+  .timer-disc .timer-title {
+    font-size: 8.5px;
+    top: -8px;
+    padding: 0 4px;
+  }
+  .hourglass-graphic {
+    width: 22px;
+    height: 22px;
+  }
+  .timer-digits {
+    font-size: 11px;
+  }
+  .leaderboard-panel {
+    right: 6px;
+    top: 6px;
+  }
+  .leaderboard-panel.collapsed {
+    max-width: 125px;
+  }
+  .player-hud {
+    bottom: 6px;
+    left: 6px;
+    padding: 5px 8px;
+    gap: 6px;
+  }
+  .hud-avatar-wrapper {
+    width: 36px;
+    height: 36px;
+  }
+  .hud-name {
+    font-size: 11.5px;
+  }
+  .energy-bar-wrap {
+    width: 95px;
+    height: 11px;
+  }
+  .hud-stats-mini {
+    font-size: 9px;
+    gap: 4px;
+  }
+  .map-floating-controls {
+    right: 8px;
+    bottom: 62px;
+    gap: 5px;
+  }
+  .map-ctrl-btn {
+    width: 38px;
+    height: 38px;
+    font-size: 15px;
+  }
+  .modal-content {
+    max-width: 98vw;
+    border-width: 2px;
+    border-radius: 10px;
+  }
+  .modal-header {
+    padding: 9px 14px;
+  }
+  .modal-title {
+    font-size: 15px;
+    gap: 5px;
+  }
+  .modal-footer {
+    padding: 9px 14px;
+  }
+  .question-body {
+    padding: 12px 14px;
+    gap: 10px;
+  }
+  .q-text {
+    font-size: 15px;
+  }
+  .q-option-btn {
+    padding: 8px 10px;
+    font-size: 13px;
+    min-height: 42px;
+  }
+  .filter-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+    scrollbar-width: none;
+  }
+  .filter-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .ftab-btn {
+    padding: 3px 7px;
+    font-size: 11px;
+    flex-shrink: 0;
+  }
+}
+
+/* 4. Short Viewports & Mobile Landscape (<= 520px height) */
+@media (max-height: 520px) {
+  .top-nav {
+    min-height: 34px;
+    max-height: 36px;
+    padding: 2px 6px;
+    gap: 4px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .top-nav::-webkit-scrollbar {
+    display: none;
+  }
+  .wood-btn {
+    padding: 2px 6px;
+    font-size: 10px;
+    min-height: 26px;
+  }
+  .nav-pill {
+    padding: 2px 5px;
+    font-size: 10px;
+  }
+  .wood-select {
+    font-size: 10.5px;
+    padding: 1px 2px;
+  }
+  .timer-container {
+    top: 4px;
+    left: 6px;
+  }
+  .timer-disc {
+    width: 48px;
+    height: 48px;
+    border-width: 2px;
+  }
+  .timer-disc .timer-title {
+    font-size: 7.5px;
+    top: -7px;
+    padding: 0 3px;
+  }
+  .hourglass-graphic {
+    width: 16px;
+    height: 16px;
+  }
+  .timer-digits {
+    font-size: 9.5px;
+  }
+  .timer-unit {
+    display: none;
+  }
+  .map-controls {
+    display: none; /* In landscape, use bottom-right floating controls */
+  }
+  .player-hud {
+    bottom: 4px;
+    left: 6px;
+    padding: 3px 6px;
+    gap: 5px;
+    border-radius: 8px;
+  }
+  .hud-avatar-wrapper {
+    width: 28px;
+    height: 28px;
+  }
+  .hud-name {
+    font-size: 10.5px;
+  }
+  .energy-bar-wrap {
+    width: 80px;
+    height: 9px;
+  }
+  .hud-stats-mini {
+    font-size: 8.5px;
+    gap: 4px;
+  }
+  .battle-log-wrap {
+    display: none !important;
+  }
+  .map-floating-controls {
+    right: 6px;
+    bottom: 6px;
+    gap: 4px;
+  }
+  .map-ctrl-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 13px;
+  }
+  .leaderboard-panel {
+    top: 4px;
+    right: 6px;
+    max-height: 85vh;
+  }
+  .leaderboard-panel.collapsed {
+    width: auto;
+    max-width: none;
+  }
+  .leaderboard-panel.collapsed .lb-ribbon-tab {
+    white-space: nowrap;
+    padding: 3px 8px;
+    font-size: 10px;
+    gap: 4px;
+  }
+  .players-list {
+    max-height: 160px;
+  }
+
+  /* Compact Modal in Landscape */
+  .modal-content {
+    max-height: 96vh;
+    max-height: 96dvh;
+    border-width: 2px;
+    border-radius: 10px;
+  }
+  .modal-header {
+    padding: 6px 12px;
+  }
+  .modal-title {
+    font-size: 14px;
+  }
+  .modal-close {
+    font-size: 16px;
+    padding: 1px 4px;
+  }
+  .modal-footer {
+    padding: 6px 12px;
+    gap: 8px;
+  }
+  .modal-footer .wood-btn {
+    padding: 3px 8px;
+    font-size: 11px;
+  }
+  .question-modal {
+    width: 94vw;
+    max-width: 660px;
+  }
+  .question-body {
+    padding: 6px 10px;
+    gap: 4px;
+  }
+  .q-target-banner {
+    padding: 2px 6px;
+    font-size: 10px;
+  }
+  .q-text {
+    font-size: 12.5px;
+    line-height: 1.25;
+    padding: 0;
+  }
+  /* 2x2 Grid Layout for options in low-height landscape view */
+  .q-options-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+  }
+  .q-option-btn {
+    min-height: 32px;
+    padding: 4px 8px;
+    font-size: 11.5px;
+    gap: 5px;
+  }
+  .opt-label {
+    width: 18px;
+    height: 18px;
+    font-size: 10px;
+  }
+  .q-explanation {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+  .team-select-modal {
+    width: 95vw !important;
+  }
+  .team-select-grid {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 6px;
+    max-height: 48vh;
+  }
+  .team-select-card {
+    padding: 6px 8px;
+    gap: 4px;
+  }
+  .results-body {
+    padding: 10px 14px;
+    gap: 10px;
+  }
+  .winner-trophy {
+    font-size: 28px;
+  }
+  .winner-title {
+    font-size: 18px;
   }
 }

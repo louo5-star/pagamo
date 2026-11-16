@@ -37,9 +37,9 @@ const Game = {
     // Play Mode: 'TOURNAMENT' (預設: 比賽模式，按下開始比賽才可以開始進行占地、作答、計分) or 'PRACTICE' (練習模式: 隨時可作答)
     playMode: 'TOURNAMENT',
 
-    // Match Mode: '2TEAMS' (2隊6人, 一隊3人) or '4TEAMS' (4隊12人, 一隊3人)
+    // Match Mode: '1VS1' (2人), '2VS2' (4人), '2TEAMS' (6人), '4TEAMS' (12人)
     matchMode: '2TEAMS',
-    activeTeamIds: ['T1', 'T4'], // Default: 望嘉小尖兵 vs 族夢團
+    activeTeamIds: ['T1', 'T5'], // Default: 望嘉勇士隊 vs 族夢隊
 
     // Current local player identity
     myPlayer: {
@@ -49,18 +49,18 @@ const Game = {
     },
     currentTeamId: 'T1',
 
-    // 6 Teams (Each has 3 Player Slots)
+    // 6 Teams (預設順序：望嘉勇士隊、望嘉小尖兵、望嘉先鋒隊、風那裡女團、族夢隊、戰鬥瘋隊)
     teams: {
         'T1': {
             id: 'T1',
-            name: '望嘉小尖兵',
+            name: '望嘉勇士隊',
             alliance: '望嘉聯隊',
             allianceId: 'ALLIANCE_A',
-            color: '#27ae60',
-            lightColor: '#2ecc71',
-            darkColor: '#145a32',
+            color: '#6c5ce7',
+            lightColor: '#a29bfe',
+            darkColor: '#2c2c54',
             badgeClass: 'badge-t1',
-            icon: '🛡️',
+            icon: '🏹',
             energy: 1500,
             correctCount: 0,
             wrongCount: 0,
@@ -74,14 +74,14 @@ const Game = {
         },
         'T2': {
             id: 'T2',
-            name: '望嘉先鋒隊',
+            name: '望嘉小尖兵',
             alliance: '望嘉聯隊',
             allianceId: 'ALLIANCE_A',
-            color: '#0984e3',
-            lightColor: '#74b9ff',
-            darkColor: '#0a3d62',
+            color: '#27ae60',
+            lightColor: '#2ecc71',
+            darkColor: '#145a32',
             badgeClass: 'badge-t2',
-            icon: '⚡',
+            icon: '🛡️',
             energy: 1500,
             correctCount: 0,
             wrongCount: 0,
@@ -95,14 +95,14 @@ const Game = {
         },
         'T3': {
             id: 'T3',
-            name: '望嘉勇士隊',
+            name: '望嘉先鋒隊',
             alliance: '望嘉聯隊',
             allianceId: 'ALLIANCE_A',
-            color: '#6c5ce7',
-            lightColor: '#a29bfe',
-            darkColor: '#2c2c54',
+            color: '#0984e3',
+            lightColor: '#74b9ff',
+            darkColor: '#0a3d62',
             badgeClass: 'badge-t3',
-            icon: '🏹',
+            icon: '⚡',
             energy: 1500,
             correctCount: 0,
             wrongCount: 0,
@@ -116,14 +116,14 @@ const Game = {
         },
         'T4': {
             id: 'T4',
-            name: '族夢團',
+            name: '風那裡女團',
             alliance: '部落聯隊',
             allianceId: 'ALLIANCE_B',
-            color: '#d63031',
-            lightColor: '#ff7675',
-            darkColor: '#78281f',
+            color: '#9b59b6',
+            lightColor: '#e056fd',
+            darkColor: '#512e5f',
             badgeClass: 'badge-t4',
-            icon: '🌟',
+            icon: '🌸',
             energy: 1500,
             correctCount: 0,
             wrongCount: 0,
@@ -137,14 +137,14 @@ const Game = {
         },
         'T5': {
             id: 'T5',
-            name: '風那裡女團',
+            name: '族夢隊',
             alliance: '部落聯隊',
             allianceId: 'ALLIANCE_B',
-            color: '#9b59b6',
-            lightColor: '#e056fd',
-            darkColor: '#512e5f',
+            color: '#d63031',
+            lightColor: '#ff7675',
+            darkColor: '#78281f',
             badgeClass: 'badge-t5',
-            icon: '🌸',
+            icon: '🌟',
             energy: 1500,
             correctCount: 0,
             wrongCount: 0,
@@ -613,7 +613,24 @@ function handleIncomingSync(data) {
             switchPlayMode(data.playMode, false);
         }
     } else if (data.type === 'MODE_CHANGE') {
+        if (Array.isArray(data.activeTeamIds) && data.activeTeamIds.length > 0) {
+            Game.activeTeamIds = data.activeTeamIds;
+        }
         switchMatchMode(data.mode, false);
+    } else if (data.type === 'TEAMS_CHANGE') {
+        if (Array.isArray(data.activeTeamIds) && data.activeTeamIds.length > 0) {
+            Game.activeTeamIds = data.activeTeamIds;
+            if (!Game.activeTeamIds.includes(Game.currentTeamId)) {
+                Game.currentTeamId = Game.activeTeamIds[0];
+                Game.myPlayer.teamId = Game.activeTeamIds[0];
+            }
+            initMapState(false);
+            updateUI();
+            renderTeamSelectorBar();
+            renderCfgTeamSelector();
+            renderTeamSelectCards();
+            logBattle('🚩 同區域已同步出戰隊伍設定！');
+        }
     } else if (data.type === 'RESET_MATCH') {
         restartMatch(false);
     } else if (data.type === 'REFRESH_QUESTIONS') {
@@ -810,36 +827,42 @@ function switchPlayMode(mode, shouldBroadcast = true) {
     }
 }
 
-// ==================== Match Mode & Island Allocation ====================
+// ==================== Match Mode & Pre-Match Team Selection ====================
+const ALL_TEAMS_ORDER = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6'];
+if (typeof window !== 'undefined') {
+    window.ALL_TEAMS_ORDER = ALL_TEAMS_ORDER;
+}
+
+function getModeMaxSlots(mode = Game.matchMode) {
+    if (mode === '1VS1') return 1;
+    if (mode === '2VS2') return 2;
+    return 3;
+}
+
 function switchMatchMode(mode, shouldBroadcast = true) {
-    if (mode !== '2TEAMS' && mode !== '4TEAMS') return;
+    if (mode !== '1VS1' && mode !== '2VS2' && mode !== '2TEAMS' && mode !== '4TEAMS') return;
     Game.matchMode = mode;
 
-    if (mode === '2TEAMS') {
-        // 2 Teams (3 players per team = 6 players)
-        Game.activeTeamIds = ['T1', 'T4']; // 望嘉小尖兵 VS 族夢團
-        if (Game.map && Game.map.tiles) {
-            const extraCenters = [[4, -8], [8, -4], [4, 4], [-4, 8], [-8, 4], [-4, -4]];
-            const hexDirs = [[0, 0], [0, -1], [1, -1], [1, 0], [0, 1], [-1, 1], [-1, 0]];
-            extraCenters.forEach(c => {
-                hexDirs.forEach(([dq, dr]) => {
-                    const k = `${c[0] + dq},${c[1] + dr}`;
-                    if (Game.map.tiles[k]) Game.map.tiles[k].type = 'water';
-                    delete Game.tileOwners[k];
-                });
-            });
-        }
-        if (Game.map && window.MAP_PRESET && window.MAP_PRESET.islands) {
-            Game.map.islands = window.MAP_PRESET.islands.slice(0, 6);
+    if (mode === '4TEAMS') {
+        // 4 Teams (3 players per team = 12 players)
+        if (!Array.isArray(Game.activeTeamIds) || Game.activeTeamIds.length !== 4) {
+            Game.activeTeamIds = ['T1', 'T2', 'T3', 'T4'];
         }
     } else {
-        // 4 Teams (3 players per team = 12 players)
-        Game.activeTeamIds = ['T1', 'T2', 'T3', 'T4'];
+        // 2 Teams (1VS1: 2 players; 2VS2: 4 players; 2TEAMS: 6 players)
+        if (!Array.isArray(Game.activeTeamIds) || Game.activeTeamIds.length !== 2) {
+            Game.activeTeamIds = ['T1', 'T5']; // 望嘉勇士隊 VS 族夢隊
+        }
     }
 
     if (!Game.activeTeamIds.includes(Game.currentTeamId)) {
         Game.currentTeamId = Game.activeTeamIds[0];
         Game.myPlayer.teamId = Game.activeTeamIds[0];
+    }
+
+    const maxSlots = getModeMaxSlots(mode);
+    if (Game.myPlayer.slot > maxSlots) {
+        Game.myPlayer.slot = 1;
     }
 
     // Update Mode Select Dropdown & Buttons
@@ -849,150 +872,321 @@ function switchMatchMode(mode, shouldBroadcast = true) {
     const cfgModeEl = document.getElementById('cfgMatchMode');
     if (cfgModeEl) cfgModeEl.value = mode;
 
+    const btn1v1 = document.getElementById('modeBtn1v1');
+    const btn2v2 = document.getElementById('modeBtn2v2');
     const btn2 = document.getElementById('modeBtn2');
     const btn4 = document.getElementById('modeBtn4');
-    if (btn2 && btn4) {
-        btn2.classList.toggle('active', mode === '2TEAMS');
-        btn4.classList.toggle('active', mode === '4TEAMS');
+    if (btn1v1) btn1v1.classList.toggle('active', mode === '1VS1');
+    if (btn2v2) btn2v2.classList.toggle('active', mode === '2VS2');
+    if (btn2) btn2.classList.toggle('active', mode === '2TEAMS');
+    if (btn4) btn4.classList.toggle('active', mode === '4TEAMS');
+
+    initMapState(false);
+    updateUI();
+    renderTeamSelectorBar();
+    renderCfgTeamSelector();
+    renderTeamSelectCards();
+
+    let modeDesc = '';
+    if (mode === '1VS1') modeDesc = '1對1 模式 (2隊 · 各1人單挑 · 2座島嶼 · 2人同場)';
+    else if (mode === '2VS2') modeDesc = '2對2 模式 (2隊 · 各2人同心 · 4座島嶼 · 4人同場)';
+    else if (mode === '2TEAMS') modeDesc = '雙隊對決 (2隊 · 各3人標準 · 6座島嶼 · 6人同場)';
+    else modeDesc = '四隊爭霸 (4隊 · 各3人共鬥 · 12座島嶼 · 12人同場)';
+
+    logBattle(`⚙️ 賽制切換為：【${modeDesc}】，每位選手能量 500 點，初始總積分皆為 0 分！`);
+
+    if (shouldBroadcast) {
+        broadcastSync({
+            type: 'MODE_CHANGE',
+            mode: mode,
+            activeTeamIds: Game.activeTeamIds
+        });
+    }
+}
+
+function changeActiveTeam(teamIndex, newTeamId, shouldBroadcast = true) {
+    if (!Game.teams[newTeamId]) return;
+    if (Game.activeTeamIds[teamIndex] === newTeamId) return;
+
+    // Prevent duplicate team: Swap if newTeamId already selected by another slot
+    const existingIndex = Game.activeTeamIds.indexOf(newTeamId);
+    if (existingIndex !== -1) {
+        const oldTeamId = Game.activeTeamIds[teamIndex];
+        Game.activeTeamIds[existingIndex] = oldTeamId;
+    }
+    Game.activeTeamIds[teamIndex] = newTeamId;
+
+    // If current player's team is not among active teams, redirect
+    if (!Game.activeTeamIds.includes(Game.currentTeamId)) {
+        Game.currentTeamId = newTeamId;
+        Game.myPlayer.teamId = newTeamId;
     }
 
     initMapState(false);
     updateUI();
+    renderTeamSelectorBar();
+    renderCfgTeamSelector();
     renderTeamSelectCards();
 
-    const modeName = mode === '2TEAMS' ? '雙隊對決 (2隊 · 6人同場)' : '四隊爭霸 (4隊 · 12人同場)';
-    logBattle(`⚙️ 賽制切換為：【${modeName}】，一隊3人，初始總積分皆為 0 分！`);
+    logBattle(`🚩 出戰隊伍已更新：【${Game.teams[newTeamId].name}】已就位出戰！`);
 
     if (shouldBroadcast) {
-        broadcastSync({ type: 'MODE_CHANGE', mode });
+        broadcastSync({
+            type: 'TEAMS_CHANGE',
+            activeTeamIds: Game.activeTeamIds
+        });
     }
+}
+
+function renderTeamSelectorBar() {
+    const bar = document.getElementById('teamSelectorBar');
+    if (!bar) return;
+
+    const is4 = Game.matchMode === '4TEAMS';
+    const activeIds = Game.activeTeamIds;
+
+    let html = `
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; width:100%;">
+            <span style="font-weight:bold; color:#5c381e; font-size:13px;">🚩 出戰隊伍選擇：</span>
+    `;
+
+    if (!is4) {
+        // 2 Teams picker (隊伍 A vs 隊伍 B)
+        const teamA = Game.teams[activeIds[0]] || Game.teams['T1'];
+        const teamB = Game.teams[activeIds[1]] || Game.teams['T5'];
+
+        html += `
+            <div style="display:flex; align-items:center; gap:6px;">
+                <span style="font-size:12px; font-weight:bold; color:${teamA.color};">隊伍 A：</span>
+                <select class="team-picker-select" onchange="changeActiveTeam(0, this.value)">
+                    ${ALL_TEAMS_ORDER.map(tid => {
+                        const t = Game.teams[tid];
+                        return `<option value="${tid}" ${tid === teamA.id ? 'selected' : ''}>${t.icon} ${t.name}</option>`;
+                    }).join('')}
+                </select>
+            </div>
+            <span style="font-weight:bold; color:#d35400; font-size:13px;">VS</span>
+            <div style="display:flex; align-items:center; gap:6px;">
+                <span style="font-size:12px; font-weight:bold; color:${teamB.color};">隊伍 B：</span>
+                <select class="team-picker-select" onchange="changeActiveTeam(1, this.value)">
+                    ${ALL_TEAMS_ORDER.map(tid => {
+                        const t = Game.teams[tid];
+                        return `<option value="${tid}" ${tid === teamB.id ? 'selected' : ''}>${t.icon} ${t.name}</option>`;
+                    }).join('')}
+                </select>
+            </div>
+            <span style="font-size:11px; color:#7f5539; margin-left:auto;">（自由選6隊，選同隊自動對調）</span>
+        `;
+    } else {
+        // 4 Teams picker (隊伍 1 ~ 4)
+        html += `
+            <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                ${[0, 1, 2, 3].map(i => {
+                    const tid = activeIds[i] || ALL_TEAMS_ORDER[i];
+                    const t = Game.teams[tid];
+                    return `
+                        <div style="display:flex; align-items:center; gap:4px;">
+                            <span style="font-size:12px; font-weight:bold; color:${t.color};">隊伍${i + 1}：</span>
+                            <select class="team-picker-select" onchange="changeActiveTeam(${i}, this.value)">
+                                ${ALL_TEAMS_ORDER.map(optId => {
+                                    const optTeam = Game.teams[optId];
+                                    return `<option value="${optId}" ${optId === tid ? 'selected' : ''}>${optTeam.icon} ${optTeam.name}</option>`;
+                                }).join('')}
+                            </select>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+            <span style="font-size:11px; color:#7f5539; margin-left:auto;">（選同隊自動對調）</span>
+        `;
+    }
+
+    html += `</div>`;
+    bar.innerHTML = html;
+}
+
+function renderCfgTeamSelector() {
+    const grid = document.getElementById('cfgTeamSelectGrid');
+    if (!grid) return;
+
+    const is4 = Game.matchMode === '4TEAMS';
+    const activeIds = Game.activeTeamIds;
+
+    let html = '';
+    if (!is4) {
+        const teamA = Game.teams[activeIds[0]] || Game.teams['T1'];
+        const teamB = Game.teams[activeIds[1]] || Game.teams['T5'];
+        html = `
+            <div style="display:flex; align-items:center; gap:6px;">
+                <span style="font-size:12px; font-weight:bold; color:${teamA.color};">隊伍 A：</span>
+                <select class="team-picker-select" onchange="changeActiveTeam(0, this.value)">
+                    ${ALL_TEAMS_ORDER.map(tid => {
+                        const t = Game.teams[tid];
+                        return `<option value="${tid}" ${tid === teamA.id ? 'selected' : ''}>${t.icon} ${t.name}</option>`;
+                    }).join('')}
+                </select>
+            </div>
+            <span style="font-weight:bold; color:#d35400; font-size:13px;">VS</span>
+            <div style="display:flex; align-items:center; gap:6px;">
+                <span style="font-size:12px; font-weight:bold; color:${teamB.color};">隊伍 B：</span>
+                <select class="team-picker-select" onchange="changeActiveTeam(1, this.value)">
+                    ${ALL_TEAMS_ORDER.map(tid => {
+                        const t = Game.teams[tid];
+                        return `<option value="${tid}" ${tid === teamB.id ? 'selected' : ''}>${t.icon} ${t.name}</option>`;
+                    }).join('')}
+                </select>
+            </div>
+        `;
+    } else {
+        html = [0, 1, 2, 3].map(i => {
+            const tid = activeIds[i] || ALL_TEAMS_ORDER[i];
+            const t = Game.teams[tid];
+            return `
+                <div style="display:flex; align-items:center; gap:4px;">
+                    <span style="font-size:12px; font-weight:bold; color:${t.color};">隊伍${i + 1}：</span>
+                    <select class="team-picker-select" onchange="changeActiveTeam(${i}, this.value)">
+                        ${ALL_TEAMS_ORDER.map(optId => {
+                            const optTeam = Game.teams[optId];
+                            return `<option value="${optId}" ${optId === tid ? 'selected' : ''}>${optTeam.icon} ${optTeam.name}</option>`;
+                        }).join('')}
+                    </select>
+                </div>
+            `;
+        }).join('');
+    }
+    grid.innerHTML = html;
 }
 
 function initMapState(reroll = false) {
     Game.map = window.MAP_PRESET;
     Game.tileOwners = {};
 
-    const activeTeams = Game.activeTeamIds.map(id => Game.teams[id]);
+    const hexDirs = [[0, 0], [0, -1], [1, -1], [1, 0], [0, 1], [-1, 1], [-1, 0]];
+    const allPossibleCenters = [
+        [0, -8],   // 0 (北)
+        [4, -8],   // 1
+        [8, -8],   // 2 (東北)
+        [8, -4],   // 3
+        [8, 0],    // 4 (東南/東)
+        [4, 4],    // 5
+        [0, 8],    // 6 (南)
+        [-4, 8],   // 7
+        [-8, 8],   // 8 (西南)
+        [-8, 4],   // 9
+        [-8, 0],   // 10 (西北/西)
+        [-4, -4]   // 11
+    ];
 
-    if (Game.matchMode === '2TEAMS') {
-        // 2 Teams (6 players total, 3 members per team)
-        // 6 Islands arranged in ring [0, 1, 2, 3, 4, 5] alternating A, B, A, B, A, B:
-        // Island 0: Team A · 隊員 1 (北)
-        // Island 1: Team B · 隊員 1 (東北)
-        // Island 2: Team A · 隊員 2 (東南)
-        // Island 3: Team B · 隊員 2 (南)
-        // Island 4: Team A · 隊員 3 (西南)
-        // Island 5: Team B · 隊員 3 (西北)
-        // Every member has their OWN separate island!
-        // No two adjacent islands belong to the same team!
-        const islandLayout = [
-            { teamIdx: 0, slot: 1, locName: '北方海域基地 (北)' },
-            { teamIdx: 1, slot: 1, locName: '東北海域基地 (東北)' },
-            { teamIdx: 0, slot: 2, locName: '東南海域基地 (東南)' },
-            { teamIdx: 1, slot: 2, locName: '南方海域基地 (南)' },
-            { teamIdx: 0, slot: 3, locName: '西南海域基地 (西南)' },
-            { teamIdx: 1, slot: 3, locName: '西北海域基地 (西北)' }
-        ];
-
-        // Ensure exactly 6 islands
-        if (Game.map.islands.length > 6) {
-            Game.map.islands = Game.map.islands.slice(0, 6);
-        }
-
-        islandLayout.forEach((assign, idx) => {
-            const team = activeTeams[assign.teamIdx];
-            if (!team) return;
-            const island = Game.map.islands[idx];
-            if (island) {
-                island.assignedTeam = team.id;
-                island.assignedMemberSlot = assign.slot;
-                island.locName = assign.locName;
-                island.name = `${team.name} · 隊員 ${assign.slot} 基地 (${assign.locName})`;
-                if (team.members && team.members[assign.slot - 1]) {
-                    team.members[assign.slot - 1].islandName = assign.locName;
-                    team.members[assign.slot - 1].islandIdx = idx;
-                    team.members[assign.slot - 1].islandCenter = island.center;
-                }
-                island.hexes.forEach(([q, r]) => {
-                    const key = `${q},${r}`;
-                    Game.tileOwners[key] = {
-                        teamId: team.id,
-                        memberSlot: assign.slot
-                    };
-                    if (Game.map.tiles[key]) {
-                        Game.map.tiles[key].type = 'island';
-                    }
-                });
-            }
-        });
-
-        if (activeTeams[0]) activeTeams[0].islandIdx = 0;
-        if (activeTeams[1]) activeTeams[1].islandIdx = 1;
-    } else {
-        // 4 Teams (12 players total, 3 members per team) -> 12 Islands around the ring!
-        // Alternating 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3 around the ring:
-        const centers12 = [
-            [0, -8],   // Island 0 (北)
-            [4, -8],   // Island 1
-            [8, -8],   // Island 2 (東北)
-            [8, -4],   // Island 3
-            [8, 0],    // Island 4 (東南)
-            [4, 4],    // Island 5
-            [0, 8],    // Island 6 (南)
-            [-4, 8],   // Island 7
-            [-8, 8],   // Island 8 (西南)
-            [-8, 4],   // Island 9
-            [-8, 0],   // Island 10 (西北)
-            [-4, -4]   // Island 11
-        ];
-
-        const islandOrder12 = [
-            { teamIdx: 0, slot: 1 }, // 0: Team 1 隊員1
-            { teamIdx: 1, slot: 1 }, // 1: Team 2 隊員1
-            { teamIdx: 2, slot: 1 }, // 2: Team 3 隊員1
-            { teamIdx: 3, slot: 1 }, // 3: Team 4 隊員1
-            { teamIdx: 0, slot: 2 }, // 4: Team 1 隊員2
-            { teamIdx: 1, slot: 2 }, // 5: Team 2 隊員2
-            { teamIdx: 2, slot: 2 }, // 6: Team 3 隊員2
-            { teamIdx: 3, slot: 2 }, // 7: Team 4 隊員2
-            { teamIdx: 0, slot: 3 }, // 8: Team 1 隊員3
-            { teamIdx: 1, slot: 3 }, // 9: Team 2 隊員3
-            { teamIdx: 2, slot: 3 }, // 10: Team 3 隊員3
-            { teamIdx: 3, slot: 3 }  // 11: Team 4 隊員3
-        ];
-
-        const hexDirs = [[0, 0], [0, -1], [1, -1], [1, 0], [0, 1], [-1, 1], [-1, 0]];
-        Game.map.islands = centers12.map((center, idx) => {
-            const assign = islandOrder12[idx];
-            const team = activeTeams[assign.teamIdx] || activeTeams[0];
-            const hexes = hexDirs.map(([dq, dr]) => [center[0] + dq, center[1] + dr]);
-            return {
-                id: idx,
-                name: `${team.name} · 隊員 ${assign.slot} 基地`,
-                center: center,
-                assignedTeam: team.id,
-                assignedMemberSlot: assign.slot,
-                hexes: hexes
-            };
-        });
-
-        Game.map.islands.forEach(island => {
-            island.hexes.forEach(([q, r]) => {
-                const key = `${q},${r}`;
-                Game.tileOwners[key] = {
-                    teamId: island.assignedTeam,
-                    memberSlot: island.assignedMemberSlot
-                };
-                if (!Game.map.tiles[key]) {
-                    Game.map.tiles[key] = { q, r, type: 'island', points: 3 };
-                } else {
-                    Game.map.tiles[key].type = 'island';
+    // Clean all 12 potential island centers to water tiles first
+    if (Game.map && Game.map.tiles) {
+        allPossibleCenters.forEach(c => {
+            hexDirs.forEach(([dq, dr]) => {
+                const k = `${c[0] + dq},${c[1] + dr}`;
+                if (Game.map.tiles[k]) {
+                    Game.map.tiles[k].type = 'water';
                 }
             });
         });
     }
 
-    logBattle(`🏁 比賽就緒！每位選手分佔獨立基地島嶼（相鄰島皆為敵隊，絕非隊友），初始積分皆為 0 分！`);
+    const activeTeams = Game.activeTeamIds.map(id => Game.teams[id]);
+
+    let islandLayout = [];
+
+    if (Game.matchMode === '1VS1') {
+        // 1對1 模式 (2隊 · 各1人單挑 · 2座島嶼對峙)
+        // Island 0: Team A · 隊長 (北 [0, -8])
+        // Island 1: Team B · 隊長 (南 [0, 8])
+        islandLayout = [
+            { teamIdx: 0, slot: 1, center: [0, -8], locName: '北方海域基地 (北)' },
+            { teamIdx: 1, slot: 1, center: [0, 8], locName: '南方海域基地 (南)' }
+        ];
+    } else if (Game.matchMode === '2VS2') {
+        // 2對2 模式 (2隊 · 各2人同心 · 4座島嶼十字對稱交錯 A-B-A-B)
+        // Island 0: Team A · 隊員 1 (北 [0, -8])
+        // Island 1: Team B · 隊員 1 (東 [8, 0])
+        // Island 2: Team A · 隊員 2 (南 [0, 8])
+        // Island 3: Team B · 隊員 2 (西 [-8, 0])
+        islandLayout = [
+            { teamIdx: 0, slot: 1, center: [0, -8], locName: '北方海域基地 (北)' },
+            { teamIdx: 1, slot: 1, center: [8, 0], locName: '東方海域基地 (東)' },
+            { teamIdx: 0, slot: 2, center: [0, 8], locName: '南方海域基地 (南)' },
+            { teamIdx: 1, slot: 2, center: [-8, 0], locName: '西方海域基地 (西)' }
+        ];
+    } else if (Game.matchMode === '2TEAMS') {
+        // 雙隊對決 (2隊 · 各3人官方規格 · 6座島嶼交錯 A-B-A-B-A-B)
+        islandLayout = [
+            { teamIdx: 0, slot: 1, center: [0, -8], locName: '北方海域基地 (北)' },
+            { teamIdx: 1, slot: 1, center: [8, -8], locName: '東北海域基地 (東北)' },
+            { teamIdx: 0, slot: 2, center: [8, 0], locName: '東南海域基地 (東南)' },
+            { teamIdx: 1, slot: 2, center: [0, 8], locName: '南方海域基地 (南)' },
+            { teamIdx: 0, slot: 3, center: [-8, 8], locName: '西南海域基地 (西南)' },
+            { teamIdx: 1, slot: 3, center: [-8, 0], locName: '西北海域基地 (西北)' }
+        ];
+    } else {
+        // 四隊爭霸 (4隊 · 各3人共鬥 · 12座島嶼時鐘交錯 1-2-3-4-1-2-3-4-1-2-3-4)
+        islandLayout = [
+            { teamIdx: 0, slot: 1, center: [0, -8], locName: '北方海域基地 (北)' },
+            { teamIdx: 1, slot: 1, center: [4, -8], locName: '東北偏北海域基地' },
+            { teamIdx: 2, slot: 1, center: [8, -8], locName: '東北海域基地 (東北)' },
+            { teamIdx: 3, slot: 1, center: [8, -4], locName: '東偏北海域基地' },
+            { teamIdx: 0, slot: 2, center: [8, 0], locName: '東南海域基地 (東南)' },
+            { teamIdx: 1, slot: 2, center: [4, 4], locName: '東南偏南海域基地' },
+            { teamIdx: 2, slot: 2, center: [0, 8], locName: '南方海域基地 (南)' },
+            { teamIdx: 3, slot: 2, center: [-4, 8], locName: '西南偏南海域基地' },
+            { teamIdx: 0, slot: 3, center: [-8, 8], locName: '西南海域基地 (西南)' },
+            { teamIdx: 1, slot: 3, center: [-8, 4], locName: '西偏南海域基地' },
+            { teamIdx: 2, slot: 3, center: [-8, 0], locName: '西北海域基地 (西北)' },
+            { teamIdx: 3, slot: 3, center: [-4, -4], locName: '西北偏北海域基地' }
+        ];
+    }
+
+    Game.map.islands = islandLayout.map((item, idx) => {
+        const team = activeTeams[item.teamIdx] || activeTeams[0];
+        const hexes = hexDirs.map(([dq, dr]) => [item.center[0] + dq, item.center[1] + dr]);
+        return {
+            id: idx,
+            name: `${team.name} · 隊員 ${item.slot} 基地 (${item.locName})`,
+            locName: item.locName,
+            center: item.center,
+            assignedTeam: team.id,
+            assignedMemberSlot: item.slot,
+            hexes: hexes
+        };
+    });
+
+    Game.map.islands.forEach(island => {
+        const team = Game.teams[island.assignedTeam];
+        if (team && team.members && team.members[island.assignedMemberSlot - 1]) {
+            team.members[island.assignedMemberSlot - 1].islandName = island.locName;
+            team.members[island.assignedMemberSlot - 1].islandIdx = island.id;
+            team.members[island.assignedMemberSlot - 1].islandCenter = island.center;
+        }
+        island.hexes.forEach(([q, r]) => {
+            const key = `${q},${r}`;
+            Game.tileOwners[key] = {
+                teamId: island.assignedTeam,
+                memberSlot: island.assignedMemberSlot
+            };
+            if (!Game.map.tiles[key]) {
+                Game.map.tiles[key] = { q, r, type: 'island', points: 3 };
+            } else {
+                Game.map.tiles[key].type = 'island';
+            }
+        });
+    });
+
+    if (activeTeams[0]) activeTeams[0].islandIdx = 0;
+    if (activeTeams[1]) activeTeams[1].islandIdx = 1;
+
+    logBattle(`🏁 比賽就緒！當前模式共 ${Game.map.islands.length} 座獨立島嶼（相鄰島皆為敵隊，絕非隊友），初始積分皆為 0 分！`);
+}
+
+if (typeof window !== 'undefined') {
+    window.switchMatchMode = switchMatchMode;
+    window.changeActiveTeam = changeActiveTeam;
+    window.getModeMaxSlots = getModeMaxSlots;
+    window.initMapState = initMapState;
 }
 
 // ==================== Adjacency & Reachability ====================
@@ -1083,6 +1277,10 @@ function computeTeamStats(teamId) {
         territoryScore,
         totalScore
     };
+}
+
+if (typeof window !== 'undefined') {
+    window.computeTeamStats = computeTeamStats;
 }
 
 // ==================== Game Loop & Timer ====================
@@ -1306,6 +1504,11 @@ function submitPlayerAnswer(selectedIdx) {
     const explanationEl = document.getElementById('qExplanation');
     explanationEl.innerHTML = `<strong>【族語解析】</strong><br>${q.explanation.replace(/\n/g, '<br>')}`;
     explanationEl.style.display = 'block';
+    setTimeout(() => {
+        try {
+            explanationEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } catch (e) {}
+    }, 60);
 
     const targetKey = q.targetKey;
     const targetTile = Game.map.tiles[targetKey];
@@ -1622,7 +1825,8 @@ function viewOverview() {
     const w = (rect && rect.width > 300) ? rect.width : window.innerWidth;
     const h = (rect && rect.height > 300) ? rect.height : (window.innerHeight - 48);
 
-    Game.camera.zoom = 0.65;
+    const isSmall = (w < 600 || h < 600);
+    Game.camera.zoom = isSmall ? 0.46 : (w < 1024 ? 0.56 : 0.65);
     Game.camera.x = Math.round(w / 2);
     Game.camera.y = Math.round(h / 2);
     logBattle(`🌐 已切換為【全景鳥瞰視野】，展示六島與中央城堡全景！`);
@@ -1637,10 +1841,11 @@ function resetCamera() {
     const p = canvas.parentElement;
     const w = (p && p.clientWidth > 300) ? p.clientWidth : (window.innerWidth || 1200);
     const h = (p && p.clientHeight > 300) ? p.clientHeight : (Math.max(600, window.innerHeight - 48));
-    // Center of map (0,0) in playable area (offset slightly for right leaderboard)
-    Game.camera.x = Math.round((w - 200) / 2);
+    const isSmall = (w < 600 || h < 600);
+    const offsetRight = (w > 900) ? 200 : 0;
+    Game.camera.x = Math.round((w - offsetRight) / 2);
     Game.camera.y = Math.round(h / 2);
-    Game.camera.zoom = 1.0;
+    Game.camera.zoom = isSmall ? 0.75 : 1.0;
 }
 
 function focusMyIsland() {
@@ -1674,7 +1879,8 @@ function focusMyIsland() {
         h = window.innerHeight ? (window.innerHeight - 48) : 800;
     }
 
-    Game.camera.zoom = 1.05;
+    // Adaptive zoom: phone (0.82), tablet (0.95), desktop (1.05)
+    Game.camera.zoom = (w < 600) ? 0.82 : (w < 1024 ? 0.95 : 1.05);
     Game.camera.x = Math.round(w / 2 - x * Game.camera.zoom);
     Game.camera.y = Math.round(h / 2 - y * Game.camera.zoom);
 }
@@ -2570,11 +2776,19 @@ function updateLeaderboard() {
     // Sort by official total score descending
     activeTeams.sort((a, b) => b.stats.totalScore - a.stats.totalScore);
 
+    const maxSlots = getModeMaxSlots();
+
     // Header Title
     const titleEl = document.getElementById('lbHeaderTitle');
     if (titleEl) {
         const prefix = Game.playMode === 'PRACTICE' ? '📖 練習模式戰況' : '👑 即時戰況排行榜';
-        titleEl.textContent = Game.matchMode === '2TEAMS' ? `${prefix} (2隊對決)` : `${prefix} (4隊爭霸)`;
+        const modeTitles = {
+            '1VS1': '(1對1 單挑)',
+            '2VS2': '(2對2 雙人)',
+            '2TEAMS': '(2隊對決)',
+            '4TEAMS': '(4隊爭霸)'
+        };
+        titleEl.textContent = `${prefix} ${modeTitles[Game.matchMode] || '(2隊對決)'}`;
     }
 
     const modeLabelEl = document.getElementById('lbModeLabel');
@@ -2582,7 +2796,8 @@ function updateLeaderboard() {
         if (Game.playMode === 'PRACTICE') {
             modeLabelEl.textContent = '自由練習 · 隨時作答拓殖 · 500能量自動補充';
         } else {
-            modeLabelEl.textContent = '一隊3人 (每人500能量) · 初始0分';
+            const slotsText = maxSlots === 1 ? '每隊1人 (個人500能量)' : `一隊${maxSlots}人 (每人500能量)`;
+            modeLabelEl.textContent = `${slotsText} · 初始0分`;
         }
     }
 
@@ -2592,18 +2807,26 @@ function updateLeaderboard() {
     const scA = document.getElementById('allianceAScore');
     const scB = document.getElementById('allianceBScore');
 
-    if (Game.matchMode === '2TEAMS') {
+    if (Game.matchMode !== '4TEAMS') {
         const tA = Game.teams[Game.activeTeamIds[0]] || Game.teams['T1'];
-        const tB = Game.teams[Game.activeTeamIds[1]] || Game.teams['T4'];
+        const tB = Game.teams[Game.activeTeamIds[1]] || Game.teams['T5'];
         const statsA = computeTeamStats(tA.id);
         const statsB = computeTeamStats(tB.id);
-        if (asbA) asbA.innerHTML = `${tA.name}: <strong id="allianceAScore">${statsA.totalScore}</strong> 分`;
-        if (asbB) asbB.innerHTML = `${tB.name}: <strong id="allianceBScore">${statsB.totalScore}</strong> 分`;
+        if (asbA) asbA.innerHTML = `<span style="color:${tA.color}">●</span> ${tA.name}: <strong id="allianceAScore">${statsA.totalScore}</strong> 分`;
+        if (asbB) asbB.innerHTML = `<span style="color:${tB.color}">●</span> ${tB.name}: <strong id="allianceBScore">${statsB.totalScore}</strong> 分`;
 
         const total = (statsA.totalScore + statsB.totalScore);
         const pctA = total > 0 ? Math.round((statsA.totalScore / total) * 100) : 50;
-        document.getElementById('allianceAFill').style.width = `${pctA}%`;
-        document.getElementById('allianceBFill').style.width = `${100 - pctA}%`;
+        const fillA = document.getElementById('allianceAFill');
+        const fillB = document.getElementById('allianceBFill');
+        if (fillA) {
+            fillA.style.width = `${pctA}%`;
+            fillA.style.background = tA.color;
+        }
+        if (fillB) {
+            fillB.style.width = `${100 - pctA}%`;
+            fillB.style.background = tB.color;
+        }
     } else {
         // 4 Teams Comparison
         if (asbA) asbA.innerHTML = `領先: <strong>${activeTeams[0].name}</strong> (${activeTeams[0].stats.totalScore}分)`;
@@ -2623,6 +2846,7 @@ function updateLeaderboard() {
         };
 
         const rankIcon = idx === 0 ? '👑' : `${idx + 1}.`;
+        const energyBadgeText = maxSlots === 1 ? '⚡ 500能量' : `⚡ ${maxSlots}人各500`;
 
         row.innerHTML = `
             <div class="pr-left">
@@ -2644,7 +2868,7 @@ function updateLeaderboard() {
             </div>
             <div class="pr-right">
                 <span class="pr-pts">${t.stats.totalScore} 分</span>
-                <span class="pr-energy" title="每位隊員個人能量各500點">⚡ 3人各500</span>
+                <span class="pr-energy" title="每位隊員個人能量各500點">${energyBadgeText}</span>
             </div>
         `;
         listContainer.appendChild(row);
@@ -2653,20 +2877,20 @@ function updateLeaderboard() {
     // Update Nav Banner Pill
     const bannerPill = document.getElementById('matchAlliancePill');
     if (bannerPill) {
-        if (Game.matchMode === '2TEAMS') {
+        if (Game.matchMode !== '4TEAMS') {
             const teamA = Game.teams[Game.activeTeamIds[0]] || Game.teams['T1'];
-            const teamB = Game.teams[Game.activeTeamIds[1]] || Game.teams['T4'];
+            const teamB = Game.teams[Game.activeTeamIds[1]] || Game.teams['T5'];
             bannerPill.innerHTML = `
-                <span class="team-badge ${teamA.badgeClass}">${teamA.name} (3人)</span>
+                <span class="team-badge ${teamA.badgeClass}">${teamA.name} (${maxSlots}人)</span>
                 <span style="font-size:12px; font-weight:bold; color:#f1c40f;">VS</span>
-                <span class="team-badge ${teamB.badgeClass}">${teamB.name} (3人)</span>
+                <span class="team-badge ${teamB.badgeClass}">${teamB.name} (${maxSlots}人)</span>
             `;
         } else {
-            bannerPill.innerHTML = `
-                <span class="team-badge badge-alliance-a">望嘉聯隊 (2隊)</span>
-                <span style="font-size:12px; font-weight:bold; color:#f1c40f;">VS</span>
-                <span class="team-badge badge-alliance-b">部落聯隊 (2隊)</span>
-            `;
+            const badges = Game.activeTeamIds.map(id => {
+                const team = Game.teams[id] || Game.teams['T1'];
+                return `<span class="team-badge ${team.badgeClass}">${team.name} (3人)</span>`;
+            }).join(' <span style="font-size:11px; font-weight:bold; color:#f1c40f;">VS</span> ');
+            bannerPill.innerHTML = badges;
         }
     }
 }
@@ -2757,8 +2981,9 @@ function updatePlayerHUD() {
     }
 }
 
-// ==================== Team & Seat Selection Modal (一隊3人) ====================
+// ==================== Team & Seat Selection Modal ====================
 function openTeamLoginModal() {
+    renderTeamSelectorBar();
     renderTeamSelectCards();
     const btnTourn = document.getElementById('playModeBtnTourn');
     const btnPract = document.getElementById('playModeBtnPract');
@@ -2766,6 +2991,15 @@ function openTeamLoginModal() {
         btnTourn.classList.toggle('active', Game.playMode === 'TOURNAMENT');
         btnPract.classList.toggle('active', Game.playMode === 'PRACTICE');
     }
+    const btn1v1 = document.getElementById('modeBtn1v1');
+    const btn2v2 = document.getElementById('modeBtn2v2');
+    const btn2 = document.getElementById('modeBtn2');
+    const btn4 = document.getElementById('modeBtn4');
+    if (btn1v1) btn1v1.classList.toggle('active', Game.matchMode === '1VS1');
+    if (btn2v2) btn2v2.classList.toggle('active', Game.matchMode === '2VS2');
+    if (btn2) btn2.classList.toggle('active', Game.matchMode === '2TEAMS');
+    if (btn4) btn4.classList.toggle('active', Game.matchMode === '4TEAMS');
+
     const roomBtns = document.querySelectorAll('.room-toggle-btn');
     roomBtns.forEach(btn => {
         btn.classList.toggle('active', btn.getAttribute('data-room') === Game.roomId);
@@ -2777,6 +3011,11 @@ function closeTeamLoginModal() {
     document.getElementById('teamLoginModal').style.display = 'none';
     if (!Game.isSpectator) {
         focusMyIsland();
+    }
+
+    // On mobile devices / portrait tablets (<= 768px or height <= 520px), auto-collapse the leaderboard to maximize map arena
+    if (typeof window !== 'undefined' && (window.innerWidth <= 768 || window.innerHeight <= 520)) {
+        toggleLeaderboard(true);
     }
 }
 
@@ -2797,11 +3036,31 @@ function renderTeamSelectCards() {
     const nameInput = document.getElementById('playerNameInput');
     if (nameInput) nameInput.value = Game.myPlayer.name;
 
-    // Show active teams based on match mode
+    renderTeamSelectorBar();
+
+    const maxSlots = getModeMaxSlots();
+    const modeLabels = {
+        '1VS1': '1對1 單挑 · 每隊 1 人 · 共 2 人',
+        '2VS2': '2對2 雙人 · 每隊 2 人 · 共 4 人',
+        '2TEAMS': '雙隊對決 · 每隊 3 人 · 共 6 人',
+        '4TEAMS': '四隊爭霸 · 每隊 3 人 · 共 12 人'
+    };
+    const titleEl = document.getElementById('teamModalTitle');
+    if (titleEl) {
+        titleEl.textContent = `🎮 參賽隊伍與席位選擇 (${modeLabels[Game.matchMode] || '一隊 3 人'})`;
+    }
+    const hintEl = document.getElementById('teamModalRuleHint');
+    if (hintEl) {
+        hintEl.innerHTML = `💡 規則：<strong>一隊 ${maxSlots} 人</strong>，每位隊員擁有 <strong>500 點個人能量</strong>，<strong>分佔不同獨立海域島嶼（相鄰皆為敵隊，絕非隊友）</strong>！初始積分為 0 分。`;
+    }
+
     const displayTeamIds = Game.activeTeamIds;
+    const slotsArray = Array.from({ length: maxSlots }, (_, i) => i + 1);
+    const initialTerritories = maxSlots * 7;
 
     displayTeamIds.forEach(tId => {
         const t = Game.teams[tId];
+        if (!t) return;
         const stats = computeTeamStats(t.id);
         const isCurrentTeam = t.id === Game.currentTeamId;
 
@@ -2822,20 +3081,20 @@ function renderTeamSelectCards() {
             <div class="tsc-details">
                 <div>📍 基地分配：每位隊員分佔獨立海域島嶼（相鄰皆為敵隊，絕非隊友）</div>
                 <div>⚡ 隊員能量：每位隊員個人 500 點（獨立計量，答對-6 / 答錯-15）</div>
-                <div>🚩 團隊領地：${stats.territories} 塊（3位隊員各佔一島，共 21 塊初始領地）｜ 總積分：<strong>${stats.totalScore}</strong> 分</div>
+                <div>🚩 團隊領地：${stats.territories} 塊（${maxSlots}位隊員各佔一島，共 ${initialTerritories} 塊初始領地）｜ 總積分：<strong>${stats.totalScore}</strong> 分</div>
             </div>
 
-            <!-- 3 Player Seats (一隊 3 人，各自獨立海域基地) -->
+            <!-- Player Seats (根據賽制動態生成席位) -->
             <div class="tsc-slots-wrap">
                 <div class="tsc-slots-title">
                     <span>👥 隊員席位與獨立基地 (點選入座)：</span>
                     <span style="color:#7f5539;">點選席位加入</span>
                 </div>
-                <div class="tsc-slots-grid">
-                    ${[1, 2, 3].map(slot => {
+                <div class="tsc-slots-grid" style="${maxSlots === 1 ? 'grid-template-columns: 1fr;' : ''}">
+                    ${slotsArray.map(slot => {
                         const isMySlot = isCurrentTeam && Game.myPlayer.slot === slot;
-                        const member = t.members[slot - 1];
-                        const memberEnergy = (member && typeof member.energy === 'number') ? member.energy : 500;
+                        const member = (t.members && t.members[slot - 1]) ? t.members[slot - 1] : { energy: 500 };
+                        const memberEnergy = (typeof member.energy === 'number') ? member.energy : 500;
                         const isOccupied = member && member.isOccupied;
                         const memName = (member && member.name) ? member.name : (slot === 1 ? '隊長' : `隊員 ${slot}`);
                         const isl = (Game.map && Game.map.islands) ? Game.map.islands.find(x => x.assignedTeam === t.id && x.assignedMemberSlot === slot) : null;
@@ -2979,12 +3238,14 @@ function endMatch(shouldBroadcast = true) {
     const teamTableBody = document.getElementById('resTeamsStatsBody');
     teamTableBody.innerHTML = '';
 
+    const maxSlots = getModeMaxSlots();
+
     activeTeams.forEach((t, idx) => {
-        const energiesStr = t.members.map((m, i) => `P${i + 1}:${typeof m.energy === 'number' ? m.energy : 500}`).join(' ｜ ');
+        const energiesStr = t.members.slice(0, maxSlots).map((m, i) => `P${i + 1}:${typeof m.energy === 'number' ? m.energy : 500}`).join(' ｜ ');
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${idx === 0 ? '👑 總冠軍' : idx + 1}</td>
-            <td><strong style="color:${t.color}">${t.name} (3人)</strong></td>
+            <td><strong style="color:${t.color}">${t.name} (${maxSlots}人)</strong></td>
             <td><span class="team-badge ${t.allianceId === 'ALLIANCE_A' ? 'badge-alliance-a' : 'badge-alliance-b'}">${t.alliance}</span></td>
             <td><strong style="color:#b87b00; font-size:16px">${t.stats.totalScore}</strong></td>
             <td>${t.stats.castles} 座 (${t.stats.castles * 100}分)</td>
@@ -3048,10 +3309,16 @@ function restartMatch(shouldBroadcast = true) {
 }
 
 function exportResultsCSV() {
+    const maxSlots = getModeMaxSlots();
+    const modeLabel = Game.matchMode === '1VS1' ? '1對1 模式 (2隊 · 2人單挑)'
+        : (Game.matchMode === '2VS2' ? '2對2 模式 (2隊 · 4人雙人)'
+        : (Game.matchMode === '2TEAMS' ? '雙隊對決 (2隊 · 6人官方規格)'
+        : '四隊爭霸 (4隊 · 12人全場同賽)'));
+
     let csv = '\uFEFF';
     csv += 'PaGamO 城堡爭奪賽 - 總決賽中排灣語競賽成績單\n';
-    csv += `競賽時長,20 分鐘\n`;
-    csv += `賽制模式,${Game.matchMode === '2TEAMS' ? '雙隊對決 (2隊 · 6人)' : '四隊爭霸 (4隊 · 12人)'} (一隊3人 · 每人500能量)\n`;
+    csv += `競賽時長,${Math.round(Game.config.totalDuration / 60)} 分鐘\n`;
+    csv += `賽制模式,${modeLabel} (每隊${maxSlots}人 · 每人500能量)\n`;
     csv += `團隊總積分採計公式,特殊地形積分加總 + Σ [ (答對數 × 7) + (新佔領地數 × 3) ] (初始積分為0)\n\n`;
     csv += `名次,隊伍名稱,所屬陣營,總積分,城堡數,碉堡數,砲台數,答對數,答錯數,新佔領地數,隊員剩餘能量\n`;
 
@@ -3061,7 +3328,7 @@ function exportResultsCSV() {
     })).sort((a, b) => b.stats.totalScore - a.stats.totalScore);
 
     activeTeams.forEach((t, idx) => {
-        const memEnergies = t.members.map((m, i) => `隊員${i + 1}:${m.energy || 500}`).join(';');
+        const memEnergies = t.members.slice(0, maxSlots).map((m, i) => `隊員${i + 1}:${m.energy || 500}`).join(';');
         csv += `${idx + 1},${t.name},${t.alliance},${t.stats.totalScore},${t.stats.castles},${t.stats.bunkers},${t.stats.cannons},${t.correctCount},${t.wrongCount},${t.stats.newTerritories},"${memEnergies}"\n`;
     });
 
@@ -3130,6 +3397,11 @@ function openSettingsModal() {
     if (cfgPlayMode) cfgPlayMode.value = Game.playMode;
     const cfgMatchMode = document.getElementById('cfgMatchMode');
     if (cfgMatchMode) cfgMatchMode.value = Game.matchMode;
+    renderCfgTeamSelector();
+    const cfgHint = document.getElementById('cfgRuleHint');
+    if (cfgHint) {
+        cfgHint.innerHTML = `💡 規則提示：一隊 ${getModeMaxSlots()} 人。每位隊員個人能量 500 點（獨立計量），答對消耗 6 點能量，答錯消耗 15 點能量。<br>特殊地形積分：城堡 100 分、碉堡 80 分、砲台 50 分。一開始總積分為 0 分！`;
+    }
     document.getElementById('settingsModal').style.display = 'flex';
 }
 
@@ -3161,7 +3433,11 @@ function applySettings() {
     }
 
     closeSettingsModal();
-    logBattle(`⚙️ 設定已套用：區域【${getRoomLabel(Game.roomId)}】｜ 模式【${Game.playMode === 'TOURNAMENT' ? '比賽模式' : '練習模式'}】｜ 競賽時長 ${durationMins} 分鐘 ｜ 賽制: ${Game.matchMode === '2TEAMS' ? '雙隊對決' : '四隊爭霸'}`);
+    const modeDesc = Game.matchMode === '1VS1' ? '1對1 (2人)'
+        : (Game.matchMode === '2VS2' ? '2對2 (4人)'
+        : (Game.matchMode === '2TEAMS' ? '雙隊對決 (6人)'
+        : '四隊爭霸 (12人)'));
+    logBattle(`⚙️ 設定已套用：區域【${getRoomLabel(Game.roomId)}】｜ 模式【${Game.playMode === 'TOURNAMENT' ? '比賽模式' : '練習模式'}】｜ 競賽時長 ${durationMins} 分鐘 ｜ 賽制: ${modeDesc}`);
     updateUI();
 }
 
@@ -3233,6 +3509,11 @@ window.addEventListener('DOMContentLoaded', () => {
         focusMyIsland();
     }
 
+    // On mobile devices / portrait tablets (<= 768px or height <= 520px), auto-collapse the leaderboard to maximize map arena
+    if (typeof window !== 'undefined' && (window.innerWidth <= 768 || window.innerHeight <= 520)) {
+        toggleLeaderboard(true);
+    }
+
     // Load sprite assets asynchronously in background
     initAssets(() => {});
 
@@ -3269,5 +3550,10 @@ window.addEventListener('load', () => {
         focusMyIsland();
     } else {
         resetCamera();
+    }
+
+    // On mobile devices / portrait tablets (<= 768px or height <= 520px), auto-collapse the leaderboard to maximize map arena
+    if (typeof window !== 'undefined' && (window.innerWidth <= 768 || window.innerHeight <= 520)) {
+        toggleLeaderboard(true);
     }
 });
