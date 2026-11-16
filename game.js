@@ -555,6 +555,17 @@ function switchRoom(newRoomId) {
     const qModal = document.getElementById('questionModal');
     if (qModal) qModal.style.display = 'none';
 
+    // Vacate previous seat in old room if leaving
+    if (!Game.isSpectator && isCurrentUserSeated() && Game.currentTeamId && Game.myPlayer.slot > 0) {
+        const oldTeam = Game.teams[Game.currentTeamId];
+        if (oldTeam && oldTeam.members && oldTeam.members[Game.myPlayer.slot - 1]) {
+            if (oldTeam.members[Game.myPlayer.slot - 1].clientId === myClientId) {
+                oldTeam.members[Game.myPlayer.slot - 1].isOccupied = false;
+                oldTeam.members[Game.myPlayer.slot - 1].clientId = null;
+            }
+        }
+    }
+
     // 5. Load or Initialize the new room's state as an independent match!
     const savedState = loadRoomState(newRoomId);
 
@@ -589,12 +600,15 @@ function switchRoom(newRoomId) {
             t.energy = 500 * (t.members ? t.members.length : 3);
         });
 
-        // Re-seat local player if player is seated
-        if (!Game.isSpectator && Game.myPlayer.slot > 0 && Game.teams[Game.currentTeamId] && Game.teams[Game.currentTeamId].members && Game.teams[Game.currentTeamId].members[Game.myPlayer.slot - 1]) {
-            const mem = Game.teams[Game.currentTeamId].members[Game.myPlayer.slot - 1];
-            mem.isOccupied = true;
-            mem.clientId = myClientId;
-            mem.name = Game.myPlayer.name;
+        // In a brand new zone: DO NOT preset player to Team 1 Slot 1! Player starts unseated.
+        if (!Game.isSpectator) {
+            Game.myPlayer.slot = 0;
+            Game.currentTeamId = '';
+            Game.myPlayer.teamId = '';
+            try {
+                localStorage.removeItem('pagamo_logged_in_team');
+                localStorage.removeItem('pagamo_logged_in_slot');
+            } catch (e) {}
         }
 
         // Initialize fresh map state for this zone
@@ -629,6 +643,37 @@ function switchRoom(newRoomId) {
                 playBtn.className = 'wood-btn';
             }
         }
+
+        // In restored zone: only re-seat if this client was already seated here before!
+        if (!Game.isSpectator) {
+            let foundTeam = null;
+            let foundSlot = 0;
+            if (savedState.teams) {
+                Object.values(savedState.teams).forEach(t => {
+                    if (t.members) {
+                        t.members.forEach((m, idx) => {
+                            if (m.clientId === myClientId && m.isOccupied) {
+                                foundTeam = t.id;
+                                foundSlot = idx + 1;
+                            }
+                        });
+                    }
+                });
+            }
+            if (foundTeam && foundSlot > 0) {
+                Game.currentTeamId = foundTeam;
+                Game.myPlayer.teamId = foundTeam;
+                Game.myPlayer.slot = foundSlot;
+            } else {
+                Game.myPlayer.slot = 0;
+                Game.currentTeamId = '';
+                Game.myPlayer.teamId = '';
+                try {
+                    localStorage.removeItem('pagamo_logged_in_team');
+                    localStorage.removeItem('pagamo_logged_in_slot');
+                } catch (e) {}
+            }
+        }
     }
 
     // 6. Update UI, dropdowns, and timer display
@@ -660,7 +705,7 @@ function switchRoom(newRoomId) {
         const newTopic = `pagamo/room/${Game.roomId}`;
         Game.mqttClient.subscribe(newTopic, () => {
             broadcastSync({ type: 'REQUEST_SYNC_STATE' });
-            if (!Game.isSpectator && Game.myPlayer.slot > 0 && Game.teams[Game.currentTeamId]) {
+            if (!Game.isSpectator && isCurrentUserSeated() && Game.myPlayer.slot > 0 && Game.teams[Game.currentTeamId]) {
                 broadcastSync({
                     type: 'JOIN_SLOT',
                     teamId: Game.currentTeamId,
@@ -693,7 +738,7 @@ function switchRoom(newRoomId) {
 
     // 9. Request state from any existing peers in this zone
     broadcastSync({ type: 'REQUEST_SYNC_STATE' });
-    if (!Game.isSpectator && Game.myPlayer.slot > 0 && Game.teams[Game.currentTeamId]) {
+    if (!Game.isSpectator && isCurrentUserSeated() && Game.myPlayer.slot > 0 && Game.teams[Game.currentTeamId]) {
         broadcastSync({
             type: 'JOIN_SLOT',
             teamId: Game.currentTeamId,
@@ -889,9 +934,14 @@ function handleIncomingSync(data) {
     } else if (data.type === 'TEAMS_CHANGE') {
         if (Array.isArray(data.activeTeamIds) && data.activeTeamIds.length > 0) {
             Game.activeTeamIds = data.activeTeamIds;
-            if (!Game.activeTeamIds.includes(Game.currentTeamId)) {
-                Game.currentTeamId = Game.activeTeamIds[0];
-                Game.myPlayer.teamId = Game.activeTeamIds[0];
+            if (isCurrentUserSeated() && !Game.activeTeamIds.includes(Game.currentTeamId)) {
+                Game.currentTeamId = '';
+                Game.myPlayer.teamId = '';
+                Game.myPlayer.slot = 0;
+            } else if (!isCurrentUserSeated()) {
+                Game.currentTeamId = '';
+                Game.myPlayer.teamId = '';
+                Game.myPlayer.slot = 0;
             }
             initMapState(false);
             updateUI();
@@ -1177,14 +1227,28 @@ function switchMatchMode(mode, shouldBroadcast = true) {
         }
     }
 
-    if (!Game.activeTeamIds.includes(Game.currentTeamId)) {
-        Game.currentTeamId = Game.activeTeamIds[0];
-        Game.myPlayer.teamId = Game.activeTeamIds[0];
-    }
-
     const maxSlots = getModeMaxSlots(mode);
-    if (Game.myPlayer.slot > maxSlots) {
-        Game.myPlayer.slot = 1;
+
+    // When switching match mode, DO NOT preset user into Team 1 Slot 1!
+    if (isCurrentUserSeated()) {
+        if (!Game.activeTeamIds.includes(Game.currentTeamId) || Game.myPlayer.slot > maxSlots) {
+            const prevTeam = Game.teams[Game.currentTeamId];
+            if (prevTeam && prevTeam.members && prevTeam.members[Game.myPlayer.slot - 1]) {
+                prevTeam.members[Game.myPlayer.slot - 1].isOccupied = false;
+                prevTeam.members[Game.myPlayer.slot - 1].clientId = null;
+            }
+            Game.currentTeamId = '';
+            Game.myPlayer.teamId = '';
+            Game.myPlayer.slot = 0;
+            try {
+                localStorage.removeItem('pagamo_logged_in_team');
+                localStorage.removeItem('pagamo_logged_in_slot');
+            } catch (e) {}
+        }
+    } else {
+        Game.currentTeamId = '';
+        Game.myPlayer.teamId = '';
+        Game.myPlayer.slot = 0;
     }
 
     // Update Mode Select Dropdown & Buttons
@@ -1238,10 +1302,25 @@ function changeActiveTeam(teamIndex, newTeamId, shouldBroadcast = true) {
     }
     Game.activeTeamIds[teamIndex] = newTeamId;
 
-    // If current player's team is not among active teams, redirect
-    if (!Game.activeTeamIds.includes(Game.currentTeamId)) {
-        Game.currentTeamId = newTeamId;
-        Game.myPlayer.teamId = newTeamId;
+    // When changing active teams for the matchup, DO NOT preset user into Team 1 Slot 1!
+    // If player was seated in a team that was replaced, vacate and reset to unseated.
+    if (isCurrentUserSeated() && !Game.activeTeamIds.includes(Game.currentTeamId)) {
+        const prevTeam = Game.teams[Game.currentTeamId];
+        if (prevTeam && prevTeam.members && prevTeam.members[Game.myPlayer.slot - 1]) {
+            prevTeam.members[Game.myPlayer.slot - 1].isOccupied = false;
+            prevTeam.members[Game.myPlayer.slot - 1].clientId = null;
+        }
+        Game.currentTeamId = '';
+        Game.myPlayer.teamId = '';
+        Game.myPlayer.slot = 0;
+        try {
+            localStorage.removeItem('pagamo_logged_in_team');
+            localStorage.removeItem('pagamo_logged_in_slot');
+        } catch (e) {}
+    } else if (!isCurrentUserSeated()) {
+        Game.currentTeamId = '';
+        Game.myPlayer.teamId = '';
+        Game.myPlayer.slot = 0;
     }
 
     initMapState(false);
@@ -3183,6 +3262,10 @@ function updateLeaderboard() {
         const row = document.createElement('div');
         row.className = `player-row ${t.id === Game.currentTeamId ? 'active-player' : ''}`;
         row.onclick = () => {
+            if (!isCurrentUserSeated()) {
+                openTeamLoginModal();
+                return;
+            }
             selectTeam(t.id, Game.myPlayer.slot);
             focusMyIsland();
         };
@@ -3421,7 +3504,7 @@ function updateMyPlayerName(name) {
     } catch (e) {}
 
     // If currently occupying a slot, synchronize new name with teammates and peers
-    if (!Game.isSpectator && Game.teams[Game.currentTeamId] && Game.teams[Game.currentTeamId].members) {
+    if (!Game.isSpectator && isCurrentUserSeated() && Game.teams[Game.currentTeamId] && Game.teams[Game.currentTeamId].members) {
         const mem = Game.teams[Game.currentTeamId].members[Game.myPlayer.slot - 1];
         if (mem) {
             mem.name = Game.myPlayer.name;
@@ -3453,7 +3536,7 @@ function renderTeamSelectCards() {
     container.innerHTML = '';
 
     const nameInput = document.getElementById('playerNameInput');
-    if (nameInput) nameInput.value = Game.myPlayer.name;
+    if (nameInput) nameInput.value = (Game.myPlayer.name === '選手' || Game.myPlayer.name === '選手 1') ? '' : Game.myPlayer.name;
 
     renderTeamSelectorBar();
 
@@ -3515,16 +3598,16 @@ function renderTeamSelectCards() {
         const t = Game.teams[tId];
         if (!t) return;
         const stats = computeTeamStats(t.id);
-        const isCurrentTeam = t.id === Game.currentTeamId;
+        const isMyTeam = isCurrentUserSeated() && (t.id === Game.currentTeamId);
 
         const card = document.createElement('div');
-        card.className = `team-select-card ${isCurrentTeam && !Game.isSpectator ? 'active-login' : ''}`;
+        card.className = `team-select-card ${isMyTeam ? 'active-login' : ''}`;
 
         card.innerHTML = `
             <div class="tsc-header">
                 <span class="tsc-alliance ${t.allianceId === 'ALLIANCE_A' ? 'badge-alliance-a' : 'badge-alliance-b'}">${t.alliance}</span>
-                <span class="tsc-status-badge" style="color:${isCurrentTeam && !Game.isSpectator ? '#27ae60' : '#888'};">
-                    ${isCurrentTeam && !Game.isSpectator ? '🟢 您在此隊' : '參賽隊伍'}
+                <span class="tsc-status-badge" style="color:${isMyTeam ? '#27ae60' : '#888'};">
+                    ${isMyTeam ? '🟢 您在此隊' : '參賽隊伍'}
                 </span>
             </div>
             <div class="tsc-title-row">
@@ -3552,7 +3635,7 @@ function renderTeamSelectCards() {
                         const islandLoc = isl ? (isl.locName || isl.name) : (member?.islandName || (slot === 1 ? '北方海域基地' : (slot === 2 ? '東南海域基地' : '西南海域基地')));
 
                         const isOccupiedByOther = Boolean(member.isOccupied && member.clientId && member.clientId !== myClientId);
-                        const isMySlot = !Game.isSpectator && !isOccupiedByOther && (member.clientId === myClientId || (isCurrentTeam && Game.myPlayer.slot === slot && member.isOccupied));
+                        const isMySlot = isCurrentUserSeated() && (t.id === Game.currentTeamId) && (Game.myPlayer.slot === slot);
 
                         let btnClass = 'tsc-slot-btn';
                         let label = `席位 ${slot} (${slot === 1 ? '隊長' : '隊員'})`;

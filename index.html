@@ -56,7 +56,7 @@
         <!-- Current Active Logged In Player / Team Pill -->
         <div class="team-pill-indicator" onclick="openTeamLoginModal()" title="點擊切換操作隊伍與席位">
           <span style="font-size:12px; color:#f7e1b5;">👤 席位:</span>
-          <strong id="navCurrentPlayerBadge" class="team-badge badge-t1">望嘉勇士隊 · 隊員1</strong>
+          <strong id="navCurrentPlayerBadge" class="team-badge" style="background:#e67e22;">⚠️ 尚未入座 (點此選隊)</strong>
           <span style="font-size:10px; color:#f1c40f; text-decoration:underline;">[選隊/換位]</span>
         </div>
       </div>
@@ -272,7 +272,7 @@
           <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; background:#fff; padding:8px 14px; border-radius:8px; border:1px solid #d4c5a0; flex-wrap:wrap; gap:8px;">
             <div style="display:flex; align-items:center; gap:8px;">
               <label style="font-weight:bold; color:#5c381e;">👤 您的選手姓名：</label>
-              <input type="text" id="playerNameInput" placeholder="請輸入姓名 (如: 小明)" value="選手 1" style="padding:5px 12px; border-radius:6px; border:1px solid #c8ab78; font-size:13px; width:160px;" oninput="updateMyPlayerName(this.value)">
+              <input type="text" id="playerNameInput" placeholder="請輸入姓名 (如: 小明)" value="" style="padding:5px 12px; border-radius:6px; border:1px solid #c8ab78; font-size:13px; width:160px;" oninput="updateMyPlayerName(this.value)">
             </div>
             <div style="display:flex; align-items:center; gap:6px;">
               <button class="wood-btn" style="background:#2c3e50; border-color:#4a6572; font-size:12px; padding:4px 10px;" onclick="selectSpectatorMode()" title="裁判或投影大螢幕請點此，不佔用選手席位">
