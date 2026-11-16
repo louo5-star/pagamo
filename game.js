@@ -42,13 +42,13 @@ const Game = {
     matchMode: '2TEAMS',
     activeTeamIds: ['T1', 'T5'], // Default: 望嘉勇士隊 vs 族夢隊
 
-    // Current local player identity
+    // Current local player identity (0 = unseated before selecting)
     myPlayer: {
-        name: '選手 1',
-        teamId: 'T1',
-        slot: 1
+        name: '選手',
+        teamId: '',
+        slot: 0
     },
-    currentTeamId: 'T1',
+    currentTeamId: '',
 
     // 6 Teams (預設順序：望嘉勇士隊、望嘉小尖兵、望嘉先鋒隊、風那裡女團、族夢隊、戰鬥瘋隊)
     teams: {
@@ -349,7 +349,7 @@ function connectMQTT() {
                     if (!err) {
                         // Request state from peers in the room
                         broadcastSync({ type: 'REQUEST_SYNC_STATE' });
-                        if (!Game.isSpectator && Game.teams[Game.currentTeamId]) {
+                        if (!Game.isSpectator && Game.myPlayer.slot > 0 && Game.teams[Game.currentTeamId]) {
                             broadcastSync({
                                 type: 'JOIN_SLOT',
                                 teamId: Game.currentTeamId,
@@ -590,7 +590,7 @@ function switchRoom(newRoomId) {
         });
 
         // Re-seat local player if player is seated
-        if (!Game.isSpectator && Game.teams[Game.currentTeamId] && Game.teams[Game.currentTeamId].members && Game.teams[Game.currentTeamId].members[Game.myPlayer.slot - 1]) {
+        if (!Game.isSpectator && Game.myPlayer.slot > 0 && Game.teams[Game.currentTeamId] && Game.teams[Game.currentTeamId].members && Game.teams[Game.currentTeamId].members[Game.myPlayer.slot - 1]) {
             const mem = Game.teams[Game.currentTeamId].members[Game.myPlayer.slot - 1];
             mem.isOccupied = true;
             mem.clientId = myClientId;
@@ -660,7 +660,7 @@ function switchRoom(newRoomId) {
         const newTopic = `pagamo/room/${Game.roomId}`;
         Game.mqttClient.subscribe(newTopic, () => {
             broadcastSync({ type: 'REQUEST_SYNC_STATE' });
-            if (!Game.isSpectator && Game.teams[Game.currentTeamId]) {
+            if (!Game.isSpectator && Game.myPlayer.slot > 0 && Game.teams[Game.currentTeamId]) {
                 broadcastSync({
                     type: 'JOIN_SLOT',
                     teamId: Game.currentTeamId,
@@ -693,7 +693,7 @@ function switchRoom(newRoomId) {
 
     // 9. Request state from any existing peers in this zone
     broadcastSync({ type: 'REQUEST_SYNC_STATE' });
-    if (!Game.isSpectator && Game.teams[Game.currentTeamId]) {
+    if (!Game.isSpectator && Game.myPlayer.slot > 0 && Game.teams[Game.currentTeamId]) {
         broadcastSync({
             type: 'JOIN_SLOT',
             teamId: Game.currentTeamId,
@@ -797,6 +797,30 @@ function handleIncomingSync(data) {
         }
     } else if (data.type === 'JOIN_SLOT') {
         const { teamId, slot, playerName, prevTeamId, prevSlot, clientId } = data;
+        const targetTeam = Game.teams[teamId];
+        const targetMember = (targetTeam && targetTeam.members) ? targetTeam.members[slot - 1] : null;
+
+        // Anti-Hijack Guard: If this slot is ALREADY occupied by another client, REJECT!
+        if (targetMember && targetMember.isOccupied && targetMember.clientId && targetMember.clientId !== clientId) {
+            console.warn(`[Anti-Hijack] Rejected unauthorized JOIN_SLOT from ${clientId} for occupied slot ${teamId}-${slot}`);
+            if (targetMember.clientId === myClientId) {
+                broadcastSync({
+                    type: 'JOIN_SLOT',
+                    teamId: teamId,
+                    slot: slot,
+                    playerName: Game.myPlayer.name,
+                    clientId: myClientId
+                });
+            }
+            return;
+        }
+
+        // Capacity Guard: If the match is already full of other players, reject new joins!
+        if (clientId && (!targetMember || (!targetMember.isOccupied && isMatchFull()))) {
+            console.warn(`[Capacity-Guard] Rejected JOIN_SLOT from ${clientId} because match is full!`);
+            return;
+        }
+
         // 1. Vacate previous slot if provided
         if (prevTeamId && prevSlot && Game.teams[prevTeamId] && Game.teams[prevTeamId].members && Game.teams[prevTeamId].members[prevSlot - 1]) {
             Game.teams[prevTeamId].members[prevSlot - 1].isOccupied = false;
@@ -821,7 +845,7 @@ function handleIncomingSync(data) {
             Game.teams[teamId].members[slot - 1].isOccupied = true;
             Game.teams[teamId].members[slot - 1].clientId = clientId || null;
         }
-        // If this device was pointing to this slot, but another client claimed it, evict local player from this slot
+        // If this device was default-pointing or sitting in this slot, but another client legitimately claimed it, evict local player from this slot
         if (!Game.isSpectator && Game.currentTeamId === teamId && Game.myPlayer.slot === slot && clientId && clientId !== myClientId) {
             Game.myPlayer.slot = 0;
             try { localStorage.removeItem('pagamo_logged_in_slot'); } catch(e){}
@@ -1103,6 +1127,38 @@ function getModeMaxSlots(mode = Game.matchMode) {
     if (mode === '1VS1') return 1;
     if (mode === '2VS2') return 2;
     return 3;
+}
+
+function getMatchSeatCapacity() {
+    const maxSlots = getModeMaxSlots();
+    return maxSlots * (Game.activeTeamIds ? Game.activeTeamIds.length : 2);
+}
+
+function getOccupiedSeatsCount() {
+    const maxSlots = getModeMaxSlots();
+    let count = 0;
+    (Game.activeTeamIds || []).forEach(tId => {
+        const t = Game.teams[tId];
+        if (t && t.members) {
+            for (let i = 0; i < maxSlots; i++) {
+                if (t.members[i] && t.members[i].isOccupied) count++;
+            }
+        }
+    });
+    return count;
+}
+
+function isMatchFull() {
+    return getOccupiedSeatsCount() >= getMatchSeatCapacity();
+}
+
+function isCurrentUserSeated() {
+    if (Game.isSpectator) return false;
+    if (!Game.currentTeamId || !Game.myPlayer || !Game.myPlayer.slot || Game.myPlayer.slot < 1) return false;
+    const t = Game.teams[Game.currentTeamId];
+    if (!t || !t.members) return false;
+    const m = t.members[Game.myPlayer.slot - 1];
+    return Boolean(m && m.isOccupied && m.clientId === myClientId);
 }
 
 function switchMatchMode(mode, shouldBroadcast = true) {
@@ -1452,6 +1508,10 @@ if (typeof window !== 'undefined') {
     window.switchMatchMode = switchMatchMode;
     window.changeActiveTeam = changeActiveTeam;
     window.getModeMaxSlots = getModeMaxSlots;
+    window.getMatchSeatCapacity = getMatchSeatCapacity;
+    window.getOccupiedSeatsCount = getOccupiedSeatsCount;
+    window.isMatchFull = isMatchFull;
+    window.isCurrentUserSeated = isCurrentUserSeated;
     window.initMapState = initMapState;
 }
 
@@ -1657,6 +1717,12 @@ function updateTimerDisplay() {
 function openQuestionModal(tileKey, force = false) {
     if (Game.isSpectator) {
         if (typeof alert === 'function') alert('🎙️ 您目前是「裁判 / 大螢幕觀戰席」，僅供全場戰況觀看與發令計時。\n如需親自攻佔領地與答題，請點選上方「選隊入座」選擇您的隊伍席位！');
+        return;
+    }
+
+    if (!isCurrentUserSeated()) {
+        if (typeof alert === 'function') alert('⚠️ 您尚未加入任何隊伍席位！\n請先點選「👤 選隊」加入出戰席位或觀戰席。');
+        openTeamLoginModal();
         return;
     }
 
@@ -2098,11 +2164,7 @@ function viewOverview() {
     logBattle(`🌐 已切換為【全景鳥瞰視野】，展示六島與中央城堡全景！`);
 }
 
-function resetCamera() {
-    if (!Game.isSpectator && Game.currentTeamId && Game.myPlayer && Game.myPlayer.slot) {
-        focusMyIsland();
-        return;
-    }
+function centerCameraView() {
     if (!canvas) return;
     const p = canvas.parentElement;
     const w = (p && p.clientWidth > 300) ? p.clientWidth : (window.innerWidth || 1200);
@@ -2114,9 +2176,17 @@ function resetCamera() {
     Game.camera.zoom = isSmall ? 0.75 : 1.0;
 }
 
+function resetCamera() {
+    if (!Game.isSpectator && isCurrentUserSeated()) {
+        focusMyIsland();
+        return;
+    }
+    centerCameraView();
+}
+
 function focusMyIsland() {
-    if (Game.isSpectator) {
-        resetCamera();
+    if (Game.isSpectator || !isCurrentUserSeated()) {
+        centerCameraView();
         return;
     }
 
@@ -2211,6 +2281,12 @@ function handleTileAction(mouseX, mouseY) {
 
     if (Game.isSpectator) {
         logBattle(`ℹ️ 裁判觀戰模式：點選領地 (${k}) · ${tile.type}`);
+        return;
+    }
+
+    if (!isCurrentUserSeated()) {
+        logBattle(`⚠️ 尚未入座：請先點選「👤 選隊」加入出戰席位或觀戰席！`);
+        openTeamLoginModal();
         return;
     }
 
@@ -3199,6 +3275,28 @@ function updatePlayerHUD() {
         return;
     }
 
+    if (!isCurrentUserSeated()) {
+        const hudName = document.getElementById('hudPlayerName');
+        if (hudName) hudName.textContent = `⚠️ 尚未入座 (點擊選隊)`;
+        const teamBadge = document.getElementById('hudTeamBadge');
+        if (teamBadge) {
+            teamBadge.textContent = '未入座';
+            teamBadge.className = 'hud-team-tag';
+            teamBadge.style.background = '#7f8c8d';
+        }
+        const navBadge = document.getElementById('navCurrentPlayerBadge');
+        if (navBadge) {
+            navBadge.textContent = '⚠️ 尚未入座 (點此選隊)';
+            navBadge.className = 'team-badge';
+            navBadge.style.background = '#e67e22';
+        }
+        const energyLabel = document.getElementById('hudEnergyLabel');
+        if (energyLabel) energyLabel.textContent = `⚡ 請先選隊入座`;
+        const energyFill = document.getElementById('hudEnergyFill');
+        if (energyFill) energyFill.style.width = '0%';
+        return;
+    }
+
     const t = Game.teams[Game.currentTeamId];
     if (!t) return;
 
@@ -3273,10 +3371,40 @@ function openTeamLoginModal() {
     document.getElementById('teamLoginModal').style.display = 'flex';
 }
 
-function closeTeamLoginModal() {
-    document.getElementById('teamLoginModal').style.display = 'none';
-    if (!Game.isSpectator) {
+function confirmAndEnterGame() {
+    if (Game.isSpectator) {
+        closeTeamLoginModal(true);
+        return;
+    }
+    if (!isCurrentUserSeated()) {
+        if (isMatchFull()) {
+            alert(`⛔ 本區域出戰席位已額滿（共 ${getOccupiedSeatsCount()}/${getMatchSeatCapacity()} 人滿座）！\n本組合已無法再加入新選手。\n\n請選擇：\n1. 切換至上方「區域 2 ~ 5」參賽\n2. 點擊下方「🎙️ 裁判 / 大螢幕觀戰席」進入觀戰！`);
+        } else {
+            alert('⚠️ 請先點選隊伍中任一空位席位入座，或點選下方「🎙️ 裁判 / 大螢幕觀戰席」！');
+        }
+        return;
+    }
+    closeTeamLoginModal(true);
+}
+
+function closeTeamLoginModal(force = false) {
+    if (!force) {
+        if (!Game.isSpectator && !isCurrentUserSeated()) {
+            if (isMatchFull()) {
+                alert(`⛔ 本區域出戰席位已額滿！本組合無法再加入新選手。\n請切換至其他 2~5 區參賽，或點擊「🎙️ 裁判 / 大螢幕觀戰席」進入觀戰。`);
+                return;
+            } else {
+                alert('⚠️ 請先點選隊伍席位入座，或選擇觀戰席！');
+                return;
+            }
+        }
+    }
+    const modal = document.getElementById('teamLoginModal');
+    if (modal) modal.style.display = 'none';
+    if (!Game.isSpectator && isCurrentUserSeated()) {
         focusMyIsland();
+    } else {
+        resetCamera();
     }
 
     // On mobile devices / portrait tablets (<= 768px or height <= 520px), auto-collapse the leaderboard to maximize map arena
@@ -3345,6 +3473,40 @@ function renderTeamSelectCards() {
         hintEl.innerHTML = `💡 規則：<strong>一隊 ${maxSlots} 人</strong>，每位隊員擁有 <strong>500 點個人能量</strong>，<strong>分佔不同獨立海域島嶼（相鄰皆為敵隊，絕非隊友）</strong>！初始積分為 0 分。`;
     }
 
+    // Match Full Alert Banner
+    const fullBanner = document.getElementById('matchFullBannerWrap');
+    const isFull = isMatchFull();
+    const isSeated = isCurrentUserSeated();
+    const occupiedCount = getOccupiedSeatsCount();
+    const capacity = getMatchSeatCapacity();
+
+    if (fullBanner) {
+        if (isFull && !isSeated) {
+            fullBanner.style.display = 'block';
+            fullBanner.innerHTML = `
+                <div class="match-full-alert-banner">
+                    <div class="mf-title">⛔ 本區域出戰席位已額滿（共 ${occupiedCount}/${capacity} 人滿座）！</div>
+                    <div class="mf-desc">
+                        本組合已無法再加入新選手。請切換上方【區域 2 ~ 5】參賽，或點擊下方【🎙️ 裁判 / 大螢幕觀戰席】以觀戰身分進場。
+                    </div>
+                </div>
+            `;
+        } else if (isFull && isSeated) {
+            fullBanner.style.display = 'block';
+            fullBanner.innerHTML = `
+                <div class="match-full-alert-banner" style="background:rgba(46, 204, 113, 0.15); border-color:#2ecc71;">
+                    <div class="mf-title" style="color:#27ae60;">🟢 本場賽制出戰席位已全員就緒（共 ${occupiedCount}/${capacity} 人額滿）！</div>
+                    <div class="mf-desc" style="color:#2c3e50;">
+                        您已成功就座於【${Game.teams[Game.currentTeamId]?.name || ''} 席位 ${Game.myPlayer.slot}】，其他新進玩家已無法搶佔任何席位。
+                    </div>
+                </div>
+            `;
+        } else {
+            fullBanner.style.display = 'none';
+            fullBanner.innerHTML = '';
+        }
+    }
+
     const displayTeamIds = Game.activeTeamIds;
     const slotsArray = Array.from({ length: maxSlots }, (_, i) => i + 1);
     const initialTerritories = maxSlots * 7;
@@ -3408,10 +3570,16 @@ function renderTeamSelectCards() {
                             badgeHtml = `<span class="slot-badge slot-badge-locked">🔴 已有人選 · ⚡${memberEnergy}</span>`;
                             disabledAttr = 'disabled="disabled"';
                             clickAction = `promptSeatOccupied('${memName.replace(/'/g, "\\'")}')`;
+                        } else if (isFull && !isSeated) {
+                            btnClass = 'tsc-slot-btn locked';
+                            label = `⛔ 席位 ${slot} (已額滿)`;
+                            badgeHtml = `<span class="slot-badge slot-badge-locked">⛔ 已額滿</span>`;
+                            disabledAttr = 'disabled="disabled"';
+                            clickAction = `alert('⛔ 本區域出戰席位已額滿（共 ${occupiedCount}/${capacity} 人滿座）！本組合已無法再加入新選手。請切換其他區域或選取觀戰席。')`;
                         }
 
                         return `
-                            <button class="${btnClass}" ${disabledAttr} onclick="${clickAction}" style="display:flex; flex-direction:column; align-items:flex-start; text-align:left; gap:3px; padding:8px 10px;" title="${isOccupiedByOther ? `此席位已被【${memName}】選定入座，無法重複選取` : (isMySlot ? '您目前就座於此席位' : '點擊入座此席位')}">
+                            <button class="${btnClass}" ${disabledAttr} onclick="${clickAction}" style="display:flex; flex-direction:column; align-items:flex-start; text-align:left; gap:3px; padding:8px 10px;" title="${isOccupiedByOther ? `此席位已被【${memName}】選定入座，無法重複選取` : (isMySlot ? '您目前就座於此席位' : (isFull && !isSeated ? '此區域出戰席位已額滿，無法加入' : '點擊入座此席位'))}">
                                 <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
                                     <strong style="font-size:13px;">${label}</strong>
                                     ${badgeHtml}
@@ -3438,6 +3606,13 @@ function selectTeamSlot(teamId, slot) {
     const isMine = !Game.isSpectator && targetMember && targetMember.clientId === myClientId;
     if (targetMember && targetMember.isOccupied && !isMine && targetMember.clientId && targetMember.clientId !== myClientId) {
         promptSeatOccupied(targetMember.name || '其他選手');
+        renderTeamSelectCards();
+        return;
+    }
+
+    // Capacity Lockout: If user is not currently seated and match is full
+    if (!isCurrentUserSeated() && isMatchFull()) {
+        alert(`⛔ 本區域出戰席位已額滿（共 ${getOccupiedSeatsCount()}/${getMatchSeatCapacity()} 人滿座）！\n本組合已無法再加入新選手。\n\n請選擇：\n1. 切換至其他 2~5 區參賽\n2. 點擊「🎙️ 裁判 / 大螢幕觀戰席」進入大螢幕觀賽！`);
         renderTeamSelectCards();
         return;
     }
@@ -3561,6 +3736,9 @@ if (typeof window !== 'undefined') {
     window.selectTeamSlot = selectTeamSlot;
     window.selectTeam = selectTeam;
     window.selectSpectatorMode = selectSpectatorMode;
+    window.confirmAndEnterGame = confirmAndEnterGame;
+    window.closeTeamLoginModal = closeTeamLoginModal;
+    window.openTeamLoginModal = openTeamLoginModal;
     window.resetAllSeats = resetAllSeats;
     window.promptSeatOccupied = promptSeatOccupied;
     window.updateMyPlayerName = updateMyPlayerName;
@@ -3575,8 +3753,13 @@ function logBattle(msg) {
     item.innerHTML = msg;
     logBox.prepend(item);
 
-    while (logBox.children.length > 6) {
-        logBox.removeChild(logBox.lastChild);
+    while (logBox.children && logBox.children.length > 6) {
+        const last = logBox.lastChild || logBox.children[logBox.children.length - 1];
+        if (last && typeof logBox.removeChild === 'function') {
+            logBox.removeChild(last);
+        } else {
+            break;
+        }
     }
 }
 
@@ -3849,14 +4032,17 @@ window.addEventListener('DOMContentLoaded', () => {
             Game.myPlayer.teamId = savedTeam;
         }
 
-        const savedSlot = parseInt(localStorage.getItem('pagamo_logged_in_slot')) || 1;
-        if (!Game.isSpectator) {
-            Game.myPlayer.slot = savedSlot;
-            if (Game.teams[Game.currentTeamId] && Game.teams[Game.currentTeamId].members && Game.teams[Game.currentTeamId].members[savedSlot - 1]) {
-                Game.teams[Game.currentTeamId].members[savedSlot - 1].isOccupied = true;
-                Game.teams[Game.currentTeamId].members[savedSlot - 1].name = Game.myPlayer.name;
-                Game.teams[Game.currentTeamId].members[savedSlot - 1].clientId = myClientId;
+        const rawSlot = localStorage.getItem('pagamo_logged_in_slot');
+        const parsedSlot = (rawSlot !== null && rawSlot !== '') ? parseInt(rawSlot, 10) : 0;
+        if (!Game.isSpectator && parsedSlot > 0 && parsedSlot <= 3 && savedTeam && Game.teams[savedTeam]) {
+            Game.myPlayer.slot = parsedSlot;
+            if (Game.teams[Game.currentTeamId] && Game.teams[Game.currentTeamId].members && Game.teams[Game.currentTeamId].members[parsedSlot - 1]) {
+                Game.teams[Game.currentTeamId].members[parsedSlot - 1].isOccupied = true;
+                Game.teams[Game.currentTeamId].members[parsedSlot - 1].name = Game.myPlayer.name;
+                Game.teams[Game.currentTeamId].members[parsedSlot - 1].clientId = myClientId;
             }
+        } else if (!Game.isSpectator) {
+            Game.myPlayer.slot = 0;
         }
     } catch (e) {}
 
@@ -3903,8 +4089,10 @@ window.addEventListener('DOMContentLoaded', () => {
     if (cfgPlayModeSel) cfgPlayModeSel.value = 'TOURNAMENT';
     updateTimerDisplay();
     updateUI();
-    if (!Game.isSpectator) {
+    if (!Game.isSpectator && isCurrentUserSeated()) {
         focusMyIsland();
+    } else {
+        resetCamera();
     }
 
     // On mobile devices / portrait tablets (<= 768px or height <= 520px), auto-collapse the leaderboard to maximize map arena
@@ -3924,15 +4112,15 @@ window.addEventListener('DOMContentLoaded', () => {
     const modalParam = hash || params.get('modal');
 
     if (modalParam === 'none') {
-        closeTeamLoginModal();
+        closeTeamLoginModal(true);
     } else if (modalParam === 'qmodal') {
-        closeTeamLoginModal();
+        closeTeamLoginModal(true);
         openQuestionModal('0,-1', true);
     } else if (modalParam === 'results') {
-        closeTeamLoginModal();
+        closeTeamLoginModal(true);
         endMatch();
     } else if (modalParam === 'qbank') {
-        closeTeamLoginModal();
+        closeTeamLoginModal(true);
         openQBankModal();
     } else {
         // First time in session: open team login modal
@@ -3944,7 +4132,7 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 window.addEventListener('load', () => {
-    if (!Game.isSpectator) {
+    if (!Game.isSpectator && isCurrentUserSeated()) {
         focusMyIsland();
     } else {
         resetCamera();
