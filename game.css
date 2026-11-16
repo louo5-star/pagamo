@@ -1250,18 +1250,18 @@ body, html {
 
 /* ==================== Team Login Modal Styles ==================== */
 .team-select-modal {
-  width: 780px !important;
-  max-width: 95vw;
+  width: 840px !important;
+  max-width: 96vw;
 }
 .team-select-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 12px;
   margin-top: 10px;
-  max-height: 60vh;
+  max-height: 52vh;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding: 2px;
+  padding: 4px;
 }
 .team-select-card {
   background: linear-gradient(180deg, #fbf7ee 0%, #ede3ca 100%);
@@ -1452,22 +1452,22 @@ body, html {
 .tsc-slots-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 4px;
+  gap: 6px;
 }
 .tsc-slot-btn {
   background: #fff;
   border: 1px solid #c8ab78;
   border-radius: 6px;
-  padding: 5px 2px;
+  padding: 6px 5px;
   font-size: 11px;
   font-weight: bold;
   cursor: pointer;
-  text-align: center;
+  text-align: left;
   transition: all 0.15s;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 2px;
+  align-items: stretch;
+  gap: 3px;
   color: #4e342e;
 }
 .tsc-slot-btn:hover {
@@ -1482,16 +1482,41 @@ body, html {
   box-shadow: 0 0 8px rgba(39, 174, 96, 0.6);
 }
 .tsc-slot-btn.occupied {
-  background: #eae6df;
-  color: #888;
-  border-color: #ccc;
-  cursor: not-allowed;
+  background: #ede8df !important;
+  color: #7f7870 !important;
+  border: 1.5px dashed #b8a996 !important;
+  cursor: not-allowed !important;
+  opacity: 0.72;
+}
+.tsc-slot-btn.occupied.locked {
+  background: #ede8df !important;
+  color: #7f7870 !important;
+  border: 1.5px dashed #b8a996 !important;
+  cursor: not-allowed !important;
+  opacity: 0.72;
+  box-shadow: none !important;
+  transform: none !important;
+}
+.tsc-slot-btn.occupied.locked:hover {
+  background: #ede8df !important;
+  border-color: #e74c3c !important;
+  transform: none !important;
 }
 .slot-badge {
   font-size: 9px;
   padding: 1px 4px;
   border-radius: 4px;
   background: rgba(0,0,0,0.1);
+}
+.slot-badge-locked {
+  background: #e74c3c !important;
+  color: #ffffff !important;
+  font-weight: bold;
+}
+.slot-badge-mine {
+  background: rgba(255, 255, 255, 0.35) !important;
+  color: #ffffff !important;
+  font-weight: bold;
 }
 .tsc-slot-btn.my-slot .slot-badge {
   background: rgba(255,255,255,0.3);
