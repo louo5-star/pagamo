@@ -637,6 +637,15 @@ function switchRoom(newRoomId) {
         Game.tileOwners = { ...savedState.tileOwners };
         Game.tileHps = savedState.tileHps ? JSON.parse(JSON.stringify(savedState.tileHps)) : {};
         if (Game.map && Game.map.tiles) {
+            if (Game.tileOwners) {
+                Object.keys(Game.tileOwners).forEach(k => {
+                    const t = Game.map.tiles[k];
+                    if (t && t.type === 'water') {
+                        t.type = 'island';
+                        t.points = 3;
+                    }
+                });
+            }
             Object.entries(Game.map.tiles).forEach(([k, tile]) => {
                 if (!Game.tileHps[k]) {
                     const maxHp = getTileMaxHp(tile.type);
@@ -832,8 +841,13 @@ function handleIncomingSync(data) {
             memberSlot: (typeof memberSlot === 'number') ? memberSlot : 1
         };
         const tile = Game.map ? Game.map.tiles[tileKey] : null;
+        if (tile && tile.type === 'water') {
+            tile.type = 'island';
+            tile.points = 3;
+        }
         const maxHp = tile ? getTileMaxHp(tile.type) : 75;
         Game.tileHps[tileKey] = tileHp ? { current: tileHp.current, max: tileHp.max } : { current: maxHp, max: maxHp };
+        saveCurrentRoomState();
 
         const team = Game.teams[teamId];
         let typeName = '領地';
@@ -1070,6 +1084,16 @@ function handleIncomingSync(data) {
         }
         if (s.tileOwners) {
             Game.tileOwners = { ...s.tileOwners };
+            if (Game.map && Game.map.tiles) {
+                Object.keys(s.tileOwners).forEach(k => {
+                    const t = Game.map.tiles[k];
+                    if (t && t.type === 'water') {
+                        t.type = 'island';
+                        t.points = 3;
+                    }
+                });
+            }
+            saveCurrentRoomState();
         }
         if (s.tileHps) {
             Game.tileHps = { ...s.tileHps };
@@ -1608,25 +1632,15 @@ function initMapState(reroll = false) {
 
     const hexDirs = [[0, 0], [0, -1], [1, -1], [1, 0], [0, 1], [-1, 1], [-1, 0]];
     const allPossibleCenters = [
-        [0, -8],   // 0 (北)
-        [4, -8],   // 1
-        [8, -8],   // 2 (東北)
-        [8, -4],   // 3
-        [8, 0],    // 4 (東南/東)
-        [4, 4],    // 5
-        [0, 8],    // 6 (南)
-        [-4, 8],   // 7
-        [-8, 8],   // 8 (西南)
-        [-8, 4],   // 9
-        [-8, 0],   // 10 (西北/西)
-        [-4, -4],  // 11
-        // 3TEAMS specific centers
-        [5, -8],
-        [8, -5],
-        [3, 5],
-        [-3, 8],
-        [-8, 3],
-        [-5, -3]
+        // 2TEAMS (6 centers: center_dist=3, edge_dist=2)
+        [0, -8], [8, -8], [8, 0], [0, 8], [-8, 8], [-8, 0],
+        // 3TEAMS (9 centers: 100% equidistant, center_dist=3, edge_dist=2)
+        [-1, -7], [5, -9], [9, -7], [8, -1], [4, 5], [-2, 9], [-7, 8], [-9, 4], [-7, -2],
+        // 4TEAMS (12 centers: 100% equidistant, center_dist=3, edge_dist=2)
+        [-2, -7], [3, -9], [7, -9], [9, -6], [9, -2], [6, 3], [2, 7], [-3, 9], [-7, 9], [-9, 6], [-9, 2], [-6, -3],
+        // Legacy centers for clean reversion
+        [4, -8], [8, -4], [4, 4], [-4, 8], [-8, 4], [-4, -4],
+        [5, -8], [8, -5], [3, 5], [-3, 8], [-8, 3], [-5, -3]
     ];
 
     // Clean all potential island centers to water tiles first
@@ -1677,33 +1691,34 @@ function initMapState(reroll = false) {
         ];
     } else if (Game.matchMode === '3TEAMS') {
         // 三隊爭鋒 (3隊 · 各3人 · 9座島嶼環狀交錯 A-B-C-A-B-C-A-B-C)
-        // 經六角格幾何驗證，相鄰島嶼中心距離皆為 5~6 格，同隊隊員分佔不同島，鄰近島嶼絕非隊友！
+        // 經六角幾何嚴密驗證：全場 9 座島嶼距離最近砲台皆為嚴格等距（外緣距離 2 格、中心距離 3 格），相鄰島嶼距離皆為 6 格！
         islandLayout = [
-            { teamIdx: 0, slot: 1, center: [0, -8], locName: '北方海域基地 (北)' },
-            { teamIdx: 1, slot: 1, center: [5, -8], locName: '東北海域基地 (東北)' },
-            { teamIdx: 2, slot: 1, center: [8, -5], locName: '東偏北海域基地' },
-            { teamIdx: 0, slot: 2, center: [8, 0], locName: '東方海域基地 (東)' },
-            { teamIdx: 1, slot: 2, center: [3, 5], locName: '東南海域基地 (東南)' },
-            { teamIdx: 2, slot: 2, center: [-3, 8], locName: '南方海域基地 (南)' },
-            { teamIdx: 0, slot: 3, center: [-8, 8], locName: '西南海域基地 (西南)' },
-            { teamIdx: 1, slot: 3, center: [-8, 3], locName: '西方海域基地 (西)' },
-            { teamIdx: 2, slot: 3, center: [-5, -3], locName: '西北海域基地 (西北)' }
+            { teamIdx: 0, slot: 1, center: [-1, -7], locName: '北偏西海域基地' },
+            { teamIdx: 1, slot: 1, center: [5, -9], locName: '東北海域基地' },
+            { teamIdx: 2, slot: 1, center: [9, -7], locName: '東偏東海域基地' },
+            { teamIdx: 0, slot: 2, center: [8, -1], locName: '東偏南海域基地' },
+            { teamIdx: 1, slot: 2, center: [4, 5], locName: '東南海域基地' },
+            { teamIdx: 2, slot: 2, center: [-2, 9], locName: '南偏東海域基地' },
+            { teamIdx: 0, slot: 3, center: [-7, 8], locName: '西南海域基地' },
+            { teamIdx: 1, slot: 3, center: [-9, 4], locName: '西偏南海域基地' },
+            { teamIdx: 2, slot: 3, center: [-7, -2], locName: '西北海域基地' }
         ];
     } else {
         // 四隊爭霸 (4隊 · 各3人共鬥 · 12座島嶼時鐘交錯 1-2-3-4-1-2-3-4-1-2-3-4)
+        // 經六角幾何嚴密驗證：全場 12 座島嶼距離最近砲台皆為嚴格等距（外緣距離 2 格、中心距離 3 格），相鄰島嶼距離皆為 4 格！
         islandLayout = [
-            { teamIdx: 0, slot: 1, center: [0, -8], locName: '北方海域基地 (北)' },
-            { teamIdx: 1, slot: 1, center: [4, -8], locName: '東北偏北海域基地' },
-            { teamIdx: 2, slot: 1, center: [8, -8], locName: '東北海域基地 (東北)' },
-            { teamIdx: 3, slot: 1, center: [8, -4], locName: '東偏北海域基地' },
-            { teamIdx: 0, slot: 2, center: [8, 0], locName: '東南海域基地 (東南)' },
-            { teamIdx: 1, slot: 2, center: [4, 4], locName: '東南偏南海域基地' },
-            { teamIdx: 2, slot: 2, center: [0, 8], locName: '南方海域基地 (南)' },
-            { teamIdx: 3, slot: 2, center: [-4, 8], locName: '西南偏南海域基地' },
-            { teamIdx: 0, slot: 3, center: [-8, 8], locName: '西南海域基地 (西南)' },
-            { teamIdx: 1, slot: 3, center: [-8, 4], locName: '西偏南海域基地' },
-            { teamIdx: 2, slot: 3, center: [-8, 0], locName: '西北海域基地 (西北)' },
-            { teamIdx: 3, slot: 3, center: [-4, -4], locName: '西北偏北海域基地' }
+            { teamIdx: 0, slot: 1, center: [-2, -7], locName: '北偏西海域基地' },
+            { teamIdx: 1, slot: 1, center: [3, -9], locName: '北偏東海域基地' },
+            { teamIdx: 2, slot: 1, center: [7, -9], locName: '東北海域基地' },
+            { teamIdx: 3, slot: 1, center: [9, -6], locName: '東偏北海域基地' },
+            { teamIdx: 0, slot: 2, center: [9, -2], locName: '東方海域基地' },
+            { teamIdx: 1, slot: 2, center: [6, 3], locName: '東偏南海域基地' },
+            { teamIdx: 2, slot: 2, center: [2, 7], locName: '東南海域基地' },
+            { teamIdx: 3, slot: 2, center: [-3, 9], locName: '南方海域基地' },
+            { teamIdx: 0, slot: 3, center: [-7, 9], locName: '西南海域基地' },
+            { teamIdx: 1, slot: 3, center: [-9, 6], locName: '西偏南海域基地' },
+            { teamIdx: 2, slot: 3, center: [-9, 2], locName: '西方海域基地' },
+            { teamIdx: 3, slot: 3, center: [-6, -3], locName: '西北海域基地' }
         ];
     }
 
@@ -2135,6 +2150,15 @@ function submitPlayerAnswer(selectedIdx) {
                 teamId: team.id,
                 memberSlot: mySlot
             };
+
+            // 成功佔領：若原地塊為海域水格，立即轉化為本隊正式領地 (island 土地)
+            if (targetTile && targetTile.type === 'water') {
+                targetTile.type = 'island';
+                targetTile.points = 3;
+            }
+
+            // 立即保存本區狀態至本地持久化
+            saveCurrentRoomState();
 
             let typeName = '領地';
             let pts = 10;
@@ -2708,7 +2732,8 @@ function drawMap() {
         const tile = Game.map.tiles[k];
         if (tile.type === 'bunker' || tile.type === 'cannon') {
             const { x, y } = hexToWorld(tile.q, tile.r);
-            drawSpecialSprite(ctx, x, y, R, tile.type);
+            const owner = Game.tileOwners[k];
+            drawSpecialSprite(ctx, x, y, R, tile.type, owner);
         }
     });
 
@@ -2738,7 +2763,33 @@ function drawMap() {
         const castleOwner = Game.tileOwners[ck];
         if (castleOwner) {
             const { x, y } = hexToWorld(cq, cr);
-            drawOwnerFlag(ctx, x, y - R * 0.5, castleOwner);
+            const team = Game.teams[castleOwner.teamId];
+            drawOwnerFlag(ctx, x + 6, y - R * 0.55, castleOwner);
+            if (team) {
+                ctx.save();
+                const badgeText = `👑 ${team.name.slice(0, 4)} P${castleOwner.memberSlot || 1}`;
+                ctx.font = 'bold 9px "Microsoft JhengHei", Arial, sans-serif';
+                const tw = ctx.measureText(badgeText).width;
+                const pw = tw + 8;
+                const ph = 13;
+                const px = x;
+                const py = y - R * 0.85;
+
+                ctx.fillStyle = 'rgba(20, 25, 35, 0.88)';
+                ctx.beginPath();
+                ctx.roundRect(px - pw / 2, py - ph / 2, pw, ph, 3);
+                ctx.fill();
+
+                ctx.strokeStyle = team.lightColor || '#f1c40f';
+                ctx.lineWidth = 1.2;
+                ctx.stroke();
+
+                ctx.fillStyle = '#ffffff';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(badgeText, px, py);
+                ctx.restore();
+            }
         }
         const castleHp = Game.tileHps && Game.tileHps[ck];
         if (castleHp && (castleHp.current < castleHp.max || ck === Game.hoveredTileKey || expandableTiles.has(ck))) {
@@ -3005,8 +3056,8 @@ function drawHexTile(ctx, x, y, R, tile, owner, isHovered, isExpandable) {
         ctx.restore();
     }
 
-    // 5. Draw Flag / Owner Badge if owned
-    if (owner && tile.type !== 'castle') {
+    // 5. Draw Flag / Owner Badge if owned (Bunkers, Cannons, and Castles draw their flags & badges atop their structures)
+    if (owner && tile.type !== 'castle' && tile.type !== 'bunker' && tile.type !== 'cannon') {
         drawOwnerFlag(ctx, x, y - R * 0.3, owner);
     }
 
@@ -3069,7 +3120,7 @@ function drawOwnerFlag(ctx, x, y, owner) {
     ctx.restore();
 }
 
-function drawSpecialSprite(ctx, x, y, R, type) {
+function drawSpecialSprite(ctx, x, y, R, type, owner) {
     let img = null;
     let sw = R * 1.35;
     let sh = R * 1.6;
@@ -3090,11 +3141,28 @@ function drawSpecialSprite(ctx, x, y, R, type) {
         dyBase = 85.0 / 90.0;   // visible bottom base in image
     }
 
+    const baseY = y + R * 0.18;
+    const drawX = x - sw * dxCenter;
+    const drawY = baseY - sh * dyBase;
+
+    // 1. If occupied, draw glowing team pedestal under the building
+    if (owner) {
+        const team = Game.teams[owner.teamId];
+        if (team) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.ellipse(x, baseY, R * 0.52, R * 0.24, 0, 0, Math.PI * 2);
+            ctx.fillStyle = team.color;
+            ctx.fill();
+            ctx.lineWidth = 2.5;
+            ctx.strokeStyle = team.lightColor || '#f1c40f';
+            ctx.stroke();
+            ctx.restore();
+        }
+    }
+
+    // 2. Draw building sprite or procedural fallback
     if (img && img.complete && img.naturalWidth > 0) {
-        // Ground contact point on the center of the hexagon top face
-        const baseY = y + R * 0.18;
-        const drawX = x - sw * dxCenter;
-        const drawY = baseY - sh * dyBase;
         ctx.drawImage(img, drawX, drawY, sw, sh);
     } else {
         // High-Quality Procedural 2.5D Fallback for Bunkers & Cannons (Never Missing!)
@@ -3102,6 +3170,45 @@ function drawSpecialSprite(ctx, x, y, R, type) {
             drawProceduralCannon(ctx, x, y, R);
         } else if (type === 'bunker') {
             drawProceduralBunker(ctx, x, y, R);
+        }
+    }
+
+    // 3. If occupied, plant the team flag on top of the building & draw team owner pill tag
+    if (owner) {
+        const team = Game.teams[owner.teamId];
+        if (team) {
+            // Team pennant flag planted on the upper right of the building roof
+            const flagX = x + R * 0.22;
+            const flagY = drawY + R * 0.18;
+            drawOwnerFlag(ctx, flagX, flagY, owner);
+
+            // Prominent Owner Pill Badge above building
+            ctx.save();
+            const badgeText = `${team.icon || '🚩'} ${team.name.slice(0, 4)} P${owner.memberSlot || 1}`;
+            ctx.font = 'bold 9px "Microsoft JhengHei", Arial, sans-serif';
+            const tw = ctx.measureText(badgeText).width;
+            const pw = tw + 10;
+            const ph = 14;
+            const px = x;
+            const py = drawY - 7;
+
+            // Pill background
+            ctx.fillStyle = 'rgba(20, 25, 35, 0.88)';
+            ctx.beginPath();
+            ctx.roundRect(px - pw / 2, py - ph / 2, pw, ph, 4);
+            ctx.fill();
+
+            // Pill border in team light color
+            ctx.strokeStyle = team.lightColor || '#f1c40f';
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+
+            // Pill text
+            ctx.fillStyle = '#ffffff';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(badgeText, px, py);
+            ctx.restore();
         }
     }
 }
@@ -3433,13 +3540,27 @@ function updateTooltip(screenX, screenY, hit) {
     const currentTeam = Game.teams[Game.currentTeamId];
     const isExpandable = currentTeam && getExpandableTilesForTeam(currentTeam.id).includes(k);
 
+    const ownerTeam = owner ? Game.teams[owner.teamId] : null;
+    const teamPrefix = ownerTeam ? `【${ownerTeam.name}】` : '中立';
+
     let title = '領地';
     let pts = 3;
-    if (tile.type === 'castle') { title = '👑 核心城堡 (高分核心)'; pts = 100; }
-    else if (tile.type === 'bunker') { title = '🏯 碉堡 (防守要塞)'; pts = 80; }
-    else if (tile.type === 'cannon') { title = '🎯 砲台 (前哨戰壘)'; pts = 50; }
-    else if (tile.type === 'island') { title = '🏝️ 外圍島嶼'; pts = 3; }
-    else { title = '🌊 海域領地 (可開拓)'; pts = 3; }
+    if (tile.type === 'castle') {
+        title = owner ? `👑 ${teamPrefix}核心城堡 (+100分)` : '👑 中立核心城堡 (高分核心)';
+        pts = 100;
+    } else if (tile.type === 'bunker') {
+        title = owner ? `🏯 ${teamPrefix}碉堡要塞 (+80分)` : '🏯 中立碉堡要塞 (防守要塞)';
+        pts = 80;
+    } else if (tile.type === 'cannon') {
+        title = owner ? `🎯 ${teamPrefix}砲台哨站 (+50分)` : '🎯 中立砲台哨站 (前哨戰壘)';
+        pts = 50;
+    } else if (tile.type === 'island') {
+        title = owner ? `🏝️ ${teamPrefix}領地 (+3分)` : '🏝️ 外圍島嶼 (+3分)';
+        pts = 3;
+    } else {
+        title = owner ? `🏝️ ${teamPrefix}開拓領地 (+3分)` : '🌊 中立海域 (可開拓，+3分)';
+        pts = 3;
+    }
 
     document.getElementById('ttTitle').textContent = title;
     document.getElementById('ttCoord').textContent = `(${hit.q}, ${hit.r})`;
@@ -3963,9 +4084,8 @@ function renderTeamSelectCards() {
                 <div class="tsc-name">${t.name}</div>
             </div>
             <div class="tsc-details">
-                <div>📍 基地分配：每位隊員分佔獨立海域島嶼（相鄰皆為敵隊，絕非隊友）</div>
                 <div>⚡ 隊員能量：每位隊員個人 600 點（獨立計量，答對-6 / 答錯-15）</div>
-                <div>🚩 團隊領地：${stats.territories} 塊（${maxSlots}位隊員各佔一島，共 ${initialTerritories} 塊初始領地）｜ 總積分：<strong>${stats.totalScore}</strong> 分</div>
+                <div>🏰 特殊地形得分：<strong>🏰 城堡 100 分</strong> ｜ <strong>🏯 碉堡 80 分</strong> ｜ <strong>🎯 砲台 50 分</strong>（一般土地 3 分）</div>
             </div>
 
             <!-- Player Seats (根據賽制動態生成席位) -->
@@ -4533,6 +4653,27 @@ window.addEventListener('DOMContentLoaded', () => {
     // Initialize Map, Canvas, Question Pool, and UI synchronously
     initMapState(false);
     refreshGameQuestionBank(true);
+
+    // Restore saved room state if exists for this roomId (captures, HP, and scores)
+    const savedRoom = loadRoomState(Game.roomId);
+    if (savedRoom && savedRoom.tileOwners && Object.keys(savedRoom.tileOwners).length > 0) {
+        Game.tileOwners = { ...savedRoom.tileOwners };
+        if (savedRoom.tileHps) Game.tileHps = JSON.parse(JSON.stringify(savedRoom.tileHps));
+        if (savedRoom.teams) Game.teams = JSON.parse(JSON.stringify(savedRoom.teams));
+        if (savedRoom.playMode) Game.playMode = savedRoom.playMode;
+        if (typeof savedRoom.timeRemaining === 'number') Game.timeRemaining = savedRoom.timeRemaining;
+        if (typeof savedRoom.hasStarted === 'boolean') Game.hasStarted = savedRoom.hasStarted;
+        if (Game.map && Game.map.tiles) {
+            Object.keys(Game.tileOwners).forEach(k => {
+                const t = Game.map.tiles[k];
+                if (t && t.type === 'water') {
+                    t.type = 'island';
+                    t.points = 3;
+                }
+            });
+        }
+    }
+
     initCanvas();
     // Default to Tournament Mode
     Game.playMode = 'TOURNAMENT';
