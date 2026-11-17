@@ -11,7 +11,14 @@ const Game = {
         totalDuration: 1200, // 20 minutes = 1200 seconds
         correctEnergyCost: 6,
         wrongEnergyCost: 15,
-        maxEnergy: 500, // 每位隊員各自獨立 500 點個人能量
+        maxEnergy: 600, // 每位隊員各自獨立 600 點個人能量
+        attackDamage: 50, // 選手攻擊一次減少 50 土地血量
+        tileMaxHp: {
+            castle: 200,
+            bunker: 150,
+            cannon: 100,
+            default: 75
+        },
         specialPoints: {
             castle: 100,
             bunker: 80,
@@ -62,15 +69,15 @@ const Game = {
             darkColor: '#2c2c54',
             badgeClass: 'badge-t1',
             icon: '🏹',
-            energy: 1500,
+            energy: 1800,
             correctCount: 0,
             wrongCount: 0,
             islandIdx: 0,
             islandName: '北方海域島嶼',
             members: [
-                { slot: 1, name: '隊長', isOccupied: false, clientId: null, energy: 500 },
-                { slot: 2, name: '隊員 2', isOccupied: false, clientId: null, energy: 500 },
-                { slot: 3, name: '隊員 3', isOccupied: false, clientId: null, energy: 500 }
+                { slot: 1, name: '隊長', isOccupied: false, clientId: null, energy: 600 },
+                { slot: 2, name: '隊員 2', isOccupied: false, clientId: null, energy: 600 },
+                { slot: 3, name: '隊員 3', isOccupied: false, clientId: null, energy: 600 }
             ]
         },
         'T2': {
@@ -83,15 +90,15 @@ const Game = {
             darkColor: '#145a32',
             badgeClass: 'badge-t2',
             icon: '🛡️',
-            energy: 1500,
+            energy: 1800,
             correctCount: 0,
             wrongCount: 0,
             islandIdx: 1,
             islandName: '東北海域島嶼',
             members: [
-                { slot: 1, name: '隊長', isOccupied: false, clientId: null, energy: 500 },
-                { slot: 2, name: '隊員 2', isOccupied: false, clientId: null, energy: 500 },
-                { slot: 3, name: '隊員 3', isOccupied: false, clientId: null, energy: 500 }
+                { slot: 1, name: '隊長', isOccupied: false, clientId: null, energy: 600 },
+                { slot: 2, name: '隊員 2', isOccupied: false, clientId: null, energy: 600 },
+                { slot: 3, name: '隊員 3', isOccupied: false, clientId: null, energy: 600 }
             ]
         },
         'T3': {
@@ -104,15 +111,15 @@ const Game = {
             darkColor: '#0a3d62',
             badgeClass: 'badge-t3',
             icon: '⚡',
-            energy: 1500,
+            energy: 1800,
             correctCount: 0,
             wrongCount: 0,
             islandIdx: 2,
             islandName: '東南海域島嶼',
             members: [
-                { slot: 1, name: '隊長', isOccupied: false, clientId: null, energy: 500 },
-                { slot: 2, name: '隊員 2', isOccupied: false, clientId: null, energy: 500 },
-                { slot: 3, name: '隊員 3', isOccupied: false, clientId: null, energy: 500 }
+                { slot: 1, name: '隊長', isOccupied: false, clientId: null, energy: 600 },
+                { slot: 2, name: '隊員 2', isOccupied: false, clientId: null, energy: 600 },
+                { slot: 3, name: '隊員 3', isOccupied: false, clientId: null, energy: 600 }
             ]
         },
         'T4': {
@@ -125,15 +132,15 @@ const Game = {
             darkColor: '#512e5f',
             badgeClass: 'badge-t4',
             icon: '🌸',
-            energy: 1500,
+            energy: 1800,
             correctCount: 0,
             wrongCount: 0,
             islandIdx: 3,
             islandName: '南方海域島嶼',
             members: [
-                { slot: 1, name: '隊長', isOccupied: false, clientId: null, energy: 500 },
-                { slot: 2, name: '隊員 2', isOccupied: false, clientId: null, energy: 500 },
-                { slot: 3, name: '隊員 3', isOccupied: false, clientId: null, energy: 500 }
+                { slot: 1, name: '隊長', isOccupied: false, clientId: null, energy: 600 },
+                { slot: 2, name: '隊員 2', isOccupied: false, clientId: null, energy: 600 },
+                { slot: 3, name: '隊員 3', isOccupied: false, clientId: null, energy: 600 }
             ]
         },
         'T5': {
@@ -146,15 +153,15 @@ const Game = {
             darkColor: '#78281f',
             badgeClass: 'badge-t5',
             icon: '🌟',
-            energy: 1500,
+            energy: 1800,
             correctCount: 0,
             wrongCount: 0,
             islandIdx: 4,
             islandName: '西南海域島嶼',
             members: [
-                { slot: 1, name: '隊長', isOccupied: false, clientId: null, energy: 500 },
-                { slot: 2, name: '隊員 2', isOccupied: false, clientId: null, energy: 500 },
-                { slot: 3, name: '隊員 3', isOccupied: false, clientId: null, energy: 500 }
+                { slot: 1, name: '隊長', isOccupied: false, clientId: null, energy: 600 },
+                { slot: 2, name: '隊員 2', isOccupied: false, clientId: null, energy: 600 },
+                { slot: 3, name: '隊員 3', isOccupied: false, clientId: null, energy: 600 }
             ]
         },
         'T6': {
@@ -167,22 +174,23 @@ const Game = {
             darkColor: '#7e3805',
             badgeClass: 'badge-t6',
             icon: '⚔️',
-            energy: 1500,
+            energy: 1800,
             correctCount: 0,
             wrongCount: 0,
             islandIdx: 5,
             islandName: '西北海域島嶼',
             members: [
-                { slot: 1, name: '隊長', isOccupied: false, clientId: null, energy: 500 },
-                { slot: 2, name: '隊員 2', isOccupied: false, clientId: null, energy: 500 },
-                { slot: 3, name: '隊員 3', isOccupied: false, clientId: null, energy: 500 }
+                { slot: 1, name: '隊長', isOccupied: false, clientId: null, energy: 600 },
+                { slot: 2, name: '隊員 2', isOccupied: false, clientId: null, energy: 600 },
+                { slot: 3, name: '隊員 3', isOccupied: false, clientId: null, energy: 600 }
             ]
         }
     },
 
     // Map & Tiles
     map: null,
-    tileOwners: {}, // key: "q,r" -> { teamId: "T1" }
+    tileOwners: {}, // key: "q,r" -> { teamId: "T1", memberSlot: 1 }
+    tileHps: {}, // key: "q,r" -> { current: 75, max: 75 }
 
     // Viewport camera
     camera: {
@@ -494,6 +502,7 @@ function saveCurrentRoomState() {
         hasStarted: Boolean(Game.hasStarted),
         timeRemaining: typeof Game.timeRemaining === 'number' ? Game.timeRemaining : (Game.config.totalDuration || 1200),
         tileOwners: { ...Game.tileOwners },
+        tileHps: JSON.parse(JSON.stringify(Game.tileHps || {})),
         teams: JSON.parse(JSON.stringify(Game.teams)),
         savedAt: Date.now()
     };
@@ -586,18 +595,18 @@ function switchRoom(newRoomId) {
             playBtn.title = '裁判/老師點擊可同步啟動全體選手倒數計時';
         }
 
-        // Reset all teams, scores to 0, member energies to 500
+        // Reset all teams, scores to 0, member energies to 600
         Object.values(Game.teams).forEach(t => {
             t.correctCount = 0;
             t.wrongCount = 0;
             if (t.members) {
                 t.members.forEach(m => {
-                    m.energy = 500;
+                    m.energy = 600;
                     m.isOccupied = false;
                     m.clientId = null;
                 });
             }
-            t.energy = 500 * (t.members ? t.members.length : 3);
+            t.energy = 600 * (t.members ? t.members.length : 3);
         });
 
         // In a brand new zone: DO NOT preset player to Team 1 Slot 1! Player starts unseated.
@@ -626,6 +635,15 @@ function switchRoom(newRoomId) {
             Game.activeTeamIds = [...savedState.activeTeamIds];
         }
         Game.tileOwners = { ...savedState.tileOwners };
+        Game.tileHps = savedState.tileHps ? JSON.parse(JSON.stringify(savedState.tileHps)) : {};
+        if (Game.map && Game.map.tiles) {
+            Object.entries(Game.map.tiles).forEach(([k, tile]) => {
+                if (!Game.tileHps[k]) {
+                    const maxHp = getTileMaxHp(tile.type);
+                    Game.tileHps[k] = { current: maxHp, max: maxHp };
+                }
+            });
+        }
         if (savedState.teams) {
             Game.teams = JSON.parse(JSON.stringify(savedState.teams));
         }
@@ -753,11 +771,42 @@ function handleIncomingSync(data) {
     if (!data || !data.type) return;
     if (data.roomId && data.roomId !== Game.roomId) return;
 
-    if (data.type === 'CAPTURE') {
-        const { teamId, tileKey, memberSlot, memberEnergy, energy, correctCount, playerName, pointsAdded } = data;
+    if (data.type === 'ATTACK_TILE') {
+        const { teamId, tileKey, memberSlot, memberEnergy, energy, correctCount, playerName, damage, remainingHp, maxHp } = data;
         if (Game.teams[teamId]) {
             if (typeof memberSlot === 'number' && Game.teams[teamId].members && Game.teams[teamId].members[memberSlot - 1]) {
-                Game.teams[teamId].members[memberSlot - 1].energy = (typeof memberEnergy === 'number') ? memberEnergy : Math.max(0, (Game.teams[teamId].members[memberSlot - 1].energy || 500) - Game.config.correctEnergyCost);
+                Game.teams[teamId].members[memberSlot - 1].energy = (typeof memberEnergy === 'number') ? memberEnergy : Math.max(0, (Game.teams[teamId].members[memberSlot - 1].energy || 600) - Game.config.correctEnergyCost);
+            }
+            Game.teams[teamId].energy = Game.teams[teamId].members.reduce((sum, m) => sum + (m.energy || 0), 0);
+            if (typeof correctCount === 'number') Game.teams[teamId].correctCount = correctCount;
+        }
+        if (!Game.tileHps[tileKey]) {
+            const tile = Game.map && Game.map.tiles ? Game.map.tiles[tileKey] : null;
+            const fallbackMax = tile ? getTileMaxHp(tile.type) : 75;
+            Game.tileHps[tileKey] = { current: fallbackMax, max: fallbackMax };
+        }
+        Game.tileHps[tileKey].current = typeof remainingHp === 'number' ? remainingHp : Math.max(0, Game.tileHps[tileKey].current - (damage || 50));
+        if (typeof maxHp === 'number') Game.tileHps[tileKey].max = maxHp;
+
+        const team = Game.teams[teamId];
+        const tile = Game.map ? Game.map.tiles[tileKey] : null;
+        let typeName = '領地';
+        if (tile) {
+            if (tile.type === 'castle') typeName = '👑 核心城堡';
+            else if (tile.type === 'bunker') typeName = '🏯 碉堡';
+            else if (tile.type === 'cannon') typeName = '🎯 砲台';
+            const [tq, tr] = tileKey.split(',').map(Number);
+            const worldPos = hexToWorld(tq, tr);
+            addFloatingText(worldPos.x, worldPos.y - 20, `⚔️ -50 HP (${Game.tileHps[tileKey].current}/${Game.tileHps[tileKey].max})`, '#f39c12', false);
+        }
+        window.soundManager.playCorrect();
+        logBattle(`⚔️ 【${team ? team.name : teamId}】(${playerName || '選手'}) 答對題目，攻擊${typeName}造成 50 傷害！剩餘血量：${Game.tileHps[tileKey].current} / ${Game.tileHps[tileKey].max}`);
+        updateUI();
+    } else if (data.type === 'CAPTURE') {
+        const { teamId, tileKey, memberSlot, memberEnergy, energy, correctCount, playerName, pointsAdded, tileHp } = data;
+        if (Game.teams[teamId]) {
+            if (typeof memberSlot === 'number' && Game.teams[teamId].members && Game.teams[teamId].members[memberSlot - 1]) {
+                Game.teams[teamId].members[memberSlot - 1].energy = (typeof memberEnergy === 'number') ? memberEnergy : Math.max(0, (Game.teams[teamId].members[memberSlot - 1].energy || 600) - Game.config.correctEnergyCost);
             }
             Game.teams[teamId].energy = Game.teams[teamId].members.reduce((sum, m) => sum + (m.energy || 0), 0);
             if (typeof correctCount === 'number') Game.teams[teamId].correctCount = correctCount;
@@ -766,8 +815,11 @@ function handleIncomingSync(data) {
             teamId,
             memberSlot: (typeof memberSlot === 'number') ? memberSlot : 1
         };
-        const team = Game.teams[teamId];
         const tile = Game.map ? Game.map.tiles[tileKey] : null;
+        const maxHp = tile ? getTileMaxHp(tile.type) : 75;
+        Game.tileHps[tileKey] = tileHp ? { current: tileHp.current, max: tileHp.max } : { current: maxHp, max: maxHp };
+
+        const team = Game.teams[teamId];
         let typeName = '領地';
         if (tile) {
             if (tile.type === 'castle') {
@@ -788,13 +840,13 @@ function handleIncomingSync(data) {
             const pts = pointsAdded || (tile.type === 'castle' ? 107 : (tile.type === 'bunker' ? 87 : (tile.type === 'cannon' ? 57 : 10)));
             addFloatingText(worldPos.x, worldPos.y - 20, `+${pts}分!`, team ? team.lightColor : '#f1c40f', pts >= 50);
         }
-        logBattle(`⚔️【${team ? team.name : teamId}】${playerName ? `(${playerName})` : ''} 攻佔了 ${typeName}！`);
+        logBattle(`⚔️【${team ? team.name : teamId}】${playerName ? `(${playerName})` : ''} 成功將血量歸零，攻佔了 ${typeName}！`);
         updateUI();
     } else if (data.type === 'WRONG_ANSWER') {
         const { teamId, memberSlot, memberEnergy, energy, wrongCount, playerName, tileKey } = data;
         if (Game.teams[teamId]) {
             if (typeof memberSlot === 'number' && Game.teams[teamId].members && Game.teams[teamId].members[memberSlot - 1]) {
-                Game.teams[teamId].members[memberSlot - 1].energy = (typeof memberEnergy === 'number') ? memberEnergy : Math.max(0, (Game.teams[teamId].members[memberSlot - 1].energy || 500) - Game.config.wrongEnergyCost);
+                Game.teams[teamId].members[memberSlot - 1].energy = (typeof memberEnergy === 'number') ? memberEnergy : Math.max(0, (Game.teams[teamId].members[memberSlot - 1].energy || 600) - Game.config.wrongEnergyCost);
             }
             Game.teams[teamId].energy = Game.teams[teamId].members.reduce((sum, m) => sum + (m.energy || 0), 0);
             if (typeof wrongCount === 'number') Game.teams[teamId].wrongCount = wrongCount;
@@ -965,6 +1017,7 @@ function handleIncomingSync(data) {
             isRunning: Game.isRunning,
             timeRemaining: Game.timeRemaining,
             tileOwners: Game.tileOwners,
+            tileHps: Game.tileHps,
             teams: {}
         };
         Object.entries(Game.teams).forEach(([id, t]) => {
@@ -998,6 +1051,9 @@ function handleIncomingSync(data) {
         }
         if (s.tileOwners) {
             Game.tileOwners = { ...s.tileOwners };
+        }
+        if (s.tileHps) {
+            Game.tileHps = { ...s.tileHps };
         }
         if (s.teams) {
             Object.entries(s.teams).forEach(([id, tData]) => {
@@ -1279,7 +1335,7 @@ function switchMatchMode(mode, shouldBroadcast = true) {
     else if (mode === '2TEAMS') modeDesc = '雙隊對決 (2隊 · 各3人標準 · 6座島嶼 · 6人同場)';
     else modeDesc = '四隊爭霸 (4隊 · 各3人共鬥 · 12座島嶼 · 12人同場)';
 
-    logBattle(`⚙️ 賽制切換為：【${modeDesc}】，每位選手能量 500 點，初始總積分皆為 0 分！`);
+    logBattle(`⚙️ 賽制切換為：【${modeDesc}】，每位選手能量 600 點，初始總積分皆為 0 分！`);
 
     if (shouldBroadcast) {
         broadcastSync({
@@ -1458,9 +1514,17 @@ function renderCfgTeamSelector() {
     grid.innerHTML = html;
 }
 
+function getTileMaxHp(tileType) {
+    if (tileType === 'castle') return 200;
+    if (tileType === 'bunker') return 150;
+    if (tileType === 'cannon') return 100;
+    return 75; // 平常土地 (island, water, 或其他地塊)
+}
+
 function initMapState(reroll = false) {
     Game.map = window.MAP_PRESET;
     Game.tileOwners = {};
+    Game.tileHps = {};
 
     const hexDirs = [[0, 0], [0, -1], [1, -1], [1, 0], [0, 1], [-1, 1], [-1, 0]];
     const allPossibleCenters = [
@@ -1577,6 +1641,14 @@ function initMapState(reroll = false) {
         });
     });
 
+    // Initialize full HP for every tile on the board
+    if (Game.map && Game.map.tiles) {
+        Object.entries(Game.map.tiles).forEach(([k, tile]) => {
+            const maxHp = getTileMaxHp(tile.type);
+            Game.tileHps[k] = { current: maxHp, max: maxHp };
+        });
+    }
+
     if (activeTeams[0]) activeTeams[0].islandIdx = 0;
     if (activeTeams[1]) activeTeams[1].islandIdx = 1;
 
@@ -1592,6 +1664,7 @@ if (typeof window !== 'undefined') {
     window.isMatchFull = isMatchFull;
     window.isCurrentUserSeated = isCurrentUserSeated;
     window.initMapState = initMapState;
+    window.getTileMaxHp = getTileMaxHp;
 }
 
 // ==================== Adjacency & Reachability ====================
@@ -1819,19 +1892,19 @@ function openQuestionModal(tileKey, force = false) {
     if (!team) return;
 
     const mySlot = Game.myPlayer.slot || 1;
-    const myMember = (team.members && team.members[mySlot - 1]) ? team.members[mySlot - 1] : { energy: 500 };
-    let curEnergy = typeof myMember.energy === 'number' ? myMember.energy : 500;
+    const myMember = (team.members && team.members[mySlot - 1]) ? team.members[mySlot - 1] : { energy: 600 };
+    let curEnergy = typeof myMember.energy === 'number' ? myMember.energy : 600;
 
     if (curEnergy < Game.config.correctEnergyCost) {
         if (Game.playMode === 'PRACTICE') {
             // 練習模式：能量用盡時自動補充，保證可隨時繼續練習
-            myMember.energy = 500;
-            curEnergy = 500;
-            team.energy = team.members ? team.members.reduce((sum, m) => sum + (m.energy || 0), 0) : 500;
+            myMember.energy = 600;
+            curEnergy = 600;
+            team.energy = team.members ? team.members.reduce((sum, m) => sum + (m.energy || 0), 0) : 600;
             updateUI();
-            logBattle(`⚡ 練習模式：已為【${team.name}】(${Game.myPlayer.name}) 自動補充能量至 500 點！`);
+            logBattle(`⚡ 練習模式：已為【${team.name}】(${Game.myPlayer.name}) 自動補充能量至 600 點！`);
         } else {
-            if (typeof alert === 'function') alert(`⚡ 個人能量不足！答對一題需消耗 6 點能量，您目前個人能量僅剩 ${curEnergy} 點，無法出征！\n同隊其他隊員有其獨立的 500 點個人能量，可由隊友繼續出題攻佔。`);
+            if (typeof alert === 'function') alert(`⚡ 個人能量不足！答對一題需消耗 6 點能量，您目前個人能量僅剩 ${curEnergy} 點，無法出征！\n同隊其他隊員有其獨立的 600 點個人能量，可由隊友繼續出題攻佔。`);
             if (window.soundManager) window.soundManager.playWarning();
             return;
         }
@@ -1867,6 +1940,10 @@ function openQuestionModal(tileKey, force = false) {
         ownerTip = `原佔領者: 【${prevTeam ? prevTeam.name : prevOwner.teamId}】`;
     }
 
+    const tileHp = (Game.tileHps && Game.tileHps[tileKey]) || { current: getTileMaxHp(targetTile.type), max: getTileMaxHp(targetTile.type) };
+    const hitsNeeded = Math.ceil(tileHp.current / 50);
+    const hpColor = tileHp.current === tileHp.max ? '#2ecc71' : (tileHp.current <= 50 ? '#ff7675' : '#f39c12');
+
     document.getElementById('qSubjectBadge').textContent = q.subject || '中排灣語';
     const catBadge = document.getElementById('qCategoryBadge');
     if (catBadge) catBadge.textContent = q.category || '情境族語';
@@ -1876,8 +1953,8 @@ function openQuestionModal(tileKey, force = false) {
         : '<span class="team-badge" style="background:#d35400; font-size:11px; margin-right:4px;">🏆 比賽模式</span>';
 
     document.getElementById('qTargetBanner').innerHTML = `
-        <span>${modeBadge}目標: <strong>${targetName}</strong> (+${pts}分) ｜ ${ownerTip}</span>
-        <span class="q-energy-tip">⚡ 個人能量: ${curEnergy}/500 (答對 -6 ｜ 答錯 -15)</span>
+        <span>${modeBadge}目標: <strong>${targetName}</strong> (+${pts}分) ｜ 🛡️ 血量: <strong style="color:${hpColor};">${tileHp.current}/${tileHp.max} HP</strong> (攻擊-50，剩餘 ${hitsNeeded} 次佔領) ｜ ${ownerTip}</span>
+        <span class="q-energy-tip">⚡ 個人能量: ${curEnergy}/600 (答對 -6 ｜ 答錯 -15)</span>
     `;
 
     document.getElementById('qText').innerHTML = q.question.replace(/\n/g, '<br>');
@@ -1933,69 +2010,112 @@ function submitPlayerAnswer(selectedIdx) {
         window.soundManager.playCorrect();
 
         if (myMember) {
-            myMember.energy = Math.max(0, (myMember.energy || 500) - Game.config.correctEnergyCost);
+            myMember.energy = Math.max(0, (myMember.energy || 600) - Game.config.correctEnergyCost);
         }
         team.energy = team.members.reduce((sum, m) => sum + (m.energy || 0), 0);
         team.correctCount++;
 
-        Game.tileOwners[targetKey] = {
-            teamId: team.id,
-            memberSlot: mySlot
-        };
-
-        let typeName = '領地';
-        let pts = 10;
-        if (targetTile.type === 'castle') {
-            typeName = '👑 核心城堡';
-            pts = 107;
-            window.soundManager.playCaptureCastle();
-            showCastleCaptureBanner(team.name, Game.myPlayer.name);
-        } else if (targetTile.type === 'bunker') {
-            typeName = '🏯 碉堡';
-            pts = 87;
-        } else if (targetTile.type === 'cannon') {
-            typeName = '🎯 砲台';
-            pts = 57;
+        if (!Game.tileHps[targetKey]) {
+            const maxHp = getTileMaxHp(targetTile.type);
+            Game.tileHps[targetKey] = { current: maxHp, max: maxHp };
         }
+        const tileHp = Game.tileHps[targetKey];
+        const damage = 50;
+        tileHp.current = Math.max(0, tileHp.current - damage);
 
         const [tq, tr] = targetKey.split(',').map(Number);
         const worldPos = hexToWorld(tq, tr);
-        addFloatingText(worldPos.x, worldPos.y - 20, `+${pts}分!`, team.lightColor || '#f1c40f', pts >= 50);
 
-        if (prevOwner) {
-            const opponent = Game.teams[prevOwner.teamId];
-            logBattle(`⚔️ 【${team.name}】(${Game.myPlayer.name}) 奪取了【${opponent ? opponent.name : prevOwner.teamId}】的${typeName}！(+${pts}分)`);
+        if (tileHp.current <= 0) {
+            // === 血量歸 0，成功佔領領地！ ===
+            tileHp.current = tileHp.max; // 易主後重置滿血
+            Game.tileOwners[targetKey] = {
+                teamId: team.id,
+                memberSlot: mySlot
+            };
+
+            let typeName = '領地';
+            let pts = 10;
+            if (targetTile.type === 'castle') {
+                typeName = '👑 核心城堡';
+                pts = 107;
+                window.soundManager.playCaptureCastle();
+                showCastleCaptureBanner(team.name, Game.myPlayer.name);
+            } else if (targetTile.type === 'bunker') {
+                typeName = '🏯 碉堡';
+                pts = 87;
+            } else if (targetTile.type === 'cannon') {
+                typeName = '🎯 砲台';
+                pts = 57;
+            }
+
+            addFloatingText(worldPos.x, worldPos.y - 20, `+${pts}分!`, team.lightColor || '#f1c40f', pts >= 50);
+
+            if (prevOwner) {
+                const opponent = Game.teams[prevOwner.teamId];
+                logBattle(`⚔️ 【${team.name}】(${Game.myPlayer.name}) 擊破最後防線，成功佔領【${opponent ? opponent.name : prevOwner.teamId}】的${typeName}！(+${pts}分)`);
+            } else {
+                logBattle(`🎉 【${team.name}】(${Game.myPlayer.name}) 答對題目血量歸零，成功佔領了${typeName}！(+${pts}分)`);
+            }
+
+            broadcastSync({
+                type: 'CAPTURE',
+                teamId: team.id,
+                tileKey: targetKey,
+                memberSlot: mySlot,
+                memberEnergy: myMember ? myMember.energy : 600,
+                energy: team.energy,
+                correctCount: team.correctCount,
+                playerName: Game.myPlayer.name,
+                pointsAdded: pts,
+                tileHp: { current: tileHp.max, max: tileHp.max }
+            });
+
+            setTimeout(() => {
+                closeQuestionModal();
+            }, 1600);
         } else {
-            logBattle(`🎉 【${team.name}】(${Game.myPlayer.name}) 答對題目，佔領了${typeName}！(+${pts}分)`);
+            // === 造成 50 點傷害，尚未歸 0，維持原主不更換 ===
+            let typeName = '領地';
+            if (targetTile.type === 'castle') typeName = '👑 核心城堡';
+            else if (targetTile.type === 'bunker') typeName = '🏯 碉堡';
+            else if (targetTile.type === 'cannon') typeName = '🎯 砲台';
+
+            addFloatingText(worldPos.x, worldPos.y - 20, `⚔️ -50 HP (${tileHp.current}/${tileHp.max})`, '#f39c12', false);
+
+            const hitsNeeded = Math.ceil(tileHp.current / 50);
+            logBattle(`⚔️ 【${team.name}】(${Game.myPlayer.name}) 答對題目，攻擊${typeName}造成 50 傷害！剩餘血量：${tileHp.current} / ${tileHp.max} (再攻擊 ${hitsNeeded} 次佔領)`);
+
+            broadcastSync({
+                type: 'ATTACK_TILE',
+                teamId: team.id,
+                tileKey: targetKey,
+                memberSlot: mySlot,
+                memberEnergy: myMember ? myMember.energy : 600,
+                energy: team.energy,
+                correctCount: team.correctCount,
+                playerName: Game.myPlayer.name,
+                damage: 50,
+                remainingHp: tileHp.current,
+                maxHp: tileHp.max
+            });
+
+            setTimeout(() => {
+                closeQuestionModal();
+            }, 1600);
         }
-
-        broadcastSync({
-            type: 'CAPTURE',
-            teamId: team.id,
-            tileKey: targetKey,
-            memberSlot: mySlot,
-            memberEnergy: myMember ? myMember.energy : 500,
-            energy: team.energy,
-            correctCount: team.correctCount,
-            playerName: Game.myPlayer.name,
-            pointsAdded: pts
-        });
-
-        setTimeout(() => {
-            closeQuestionModal();
-        }, 1600);
     } else {
         if (optionBtns[selectedIdx]) optionBtns[selectedIdx].classList.add('selected-wrong');
         if (optionBtns[q.answer]) optionBtns[q.answer].classList.add('selected-correct');
         window.soundManager.playWrong();
 
         if (myMember) {
-            myMember.energy = Math.max(0, (myMember.energy || 500) - Game.config.wrongEnergyCost);
+            myMember.energy = Math.max(0, (myMember.energy || 600) - Game.config.wrongEnergyCost);
         }
         team.energy = team.members.reduce((sum, m) => sum + (m.energy || 0), 0);
         team.wrongCount++;
 
-        const remEnergy = myMember ? myMember.energy : 500;
+        const remEnergy = myMember ? myMember.energy : 600;
         const [tq, tr] = targetKey.split(',').map(Number);
         const worldPos = hexToWorld(tq, tr);
         addFloatingText(worldPos.x, worldPos.y - 15, '⚡ -15 答錯', '#ff7675', false);
@@ -2519,6 +2639,11 @@ function drawMap() {
             const { x, y } = hexToWorld(cq, cr);
             drawOwnerFlag(ctx, x, y - R * 0.5, castleOwner);
         }
+        const castleHp = Game.tileHps && Game.tileHps[ck];
+        if (castleHp && (castleHp.current < castleHp.max || ck === Game.hoveredTileKey || expandableTiles.has(ck))) {
+            const { x, y } = hexToWorld(cq, cr);
+            drawTileHpBar(ctx, x, y - R * 0.1, R, castleHp.current, castleHp.max);
+        }
     });
 
     // 6. Draw Member Base Badges over Starting Islands
@@ -2655,17 +2780,79 @@ function drawFlatHexPath(ctx, cx, cy, R) {
     ctx.closePath();
 }
 
+function drawTileHpBar(ctx, x, y, R, currentHp, maxHp) {
+    ctx.save();
+    const barW = Math.max(28, Math.min(36, R * 1.15));
+    const barH = 5.5;
+    const barX = x - barW / 2;
+    const barY = y + R * 0.35;
+    const pct = Math.max(0, Math.min(1, currentHp / maxHp));
+
+    // Outer background pill
+    ctx.fillStyle = 'rgba(10, 15, 20, 0.88)';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    if (ctx.roundRect) {
+        ctx.roundRect(barX, barY, barW, barH, 2.5);
+    } else {
+        ctx.rect(barX, barY, barW, barH);
+    }
+    ctx.fill();
+    ctx.stroke();
+
+    // HP fill color
+    let fillCol = '#2ecc71'; // Green
+    if (pct <= 0.35) fillCol = '#e74c3c'; // Red
+    else if (pct <= 0.7) fillCol = '#f39c12'; // Orange/Yellow
+
+    if (pct > 0) {
+        ctx.fillStyle = fillCol;
+        ctx.beginPath();
+        const fillW = Math.max(2, (barW - 1) * pct);
+        if (ctx.roundRect) {
+            ctx.roundRect(barX + 0.5, barY + 0.5, fillW, barH - 1, 2);
+        } else {
+            ctx.rect(barX + 0.5, barY + 0.5, fillW, barH - 1);
+        }
+        ctx.fill();
+    }
+
+    // Mini text above bar: current / max HP
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 8px "Microsoft JhengHei", Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
+    ctx.shadowBlur = 3;
+    ctx.fillText(`${currentHp}/${maxHp}`, x, barY);
+
+    ctx.restore();
+}
+
 function drawHexTile(ctx, x, y, R, tile, owner, isHovered, isExpandable) {
+    const tileKey = `${tile.q},${tile.r}`;
+    const tileHp = (Game.tileHps && Game.tileHps[tileKey]) || { current: getTileMaxHp(tile.type), max: getTileMaxHp(tile.type) };
+    const isDamaged = tileHp.current < tileHp.max;
+
     if (tile.type === 'water' && !owner) {
-        if (isExpandable || isHovered) {
+        if (isExpandable || isHovered || isDamaged) {
             ctx.save();
             drawFlatHexPath(ctx, x, y, R);
-            ctx.fillStyle = isHovered ? 'rgba(255, 255, 255, 0.4)' : 'rgba(46, 204, 113, 0.2)';
+            if (isDamaged) {
+                ctx.fillStyle = 'rgba(231, 76, 60, 0.25)';
+                ctx.strokeStyle = '#e74c3c';
+            } else {
+                ctx.fillStyle = isHovered ? 'rgba(255, 255, 255, 0.4)' : 'rgba(46, 204, 113, 0.2)';
+                ctx.strokeStyle = isHovered ? '#f1c40f' : '#2ecc71';
+            }
             ctx.fill();
-            ctx.strokeStyle = isHovered ? '#f1c40f' : '#2ecc71';
             ctx.lineWidth = isHovered ? 2.5 : 2;
             ctx.setLineDash([4, 4]);
             ctx.stroke();
+
+            // Draw HP bar if damaged, hovered or expandable
+            drawTileHpBar(ctx, x, y, R, tileHp.current, tileHp.max);
             ctx.restore();
         }
         return;
@@ -2720,6 +2907,11 @@ function drawHexTile(ctx, x, y, R, tile, owner, isHovered, isExpandable) {
     // 5. Draw Flag / Owner Badge if owned
     if (owner && tile.type !== 'castle') {
         drawOwnerFlag(ctx, x, y - R * 0.3, owner);
+    }
+
+    // 6. Draw HP bar if damaged, hovered, or expandable
+    if (tile.type !== 'castle' && (isDamaged || isHovered || isExpandable)) {
+        drawTileHpBar(ctx, x, y, R, tileHp.current, tileHp.max);
     }
 
     ctx.restore();
@@ -3141,6 +3333,15 @@ function updateTooltip(screenX, screenY, hit) {
     document.getElementById('ttCoord').textContent = `(${hit.q}, ${hit.r})`;
     document.getElementById('ttPoints').textContent = `+${pts} 分`;
 
+    const tileHp = (Game.tileHps && Game.tileHps[k]) || { current: getTileMaxHp(tile.type), max: getTileMaxHp(tile.type) };
+    const hitsNeeded = Math.ceil(tileHp.current / 50);
+    const ttHpEl = document.getElementById('ttHp');
+    if (ttHpEl) {
+        const hpColor = tileHp.current === tileHp.max ? '#2ecc71' : (tileHp.current <= 50 ? '#e74c3c' : '#f39c12');
+        ttHpEl.style.color = hpColor;
+        ttHpEl.textContent = `🛡️ ${tileHp.current} / ${tileHp.max} HP (需再攻擊 ${hitsNeeded} 次)`;
+    }
+
     let ownerText = '中立 (未佔領)';
     if (owner) {
         const op = Game.teams[owner.teamId];
@@ -3215,9 +3416,9 @@ function updateLeaderboard() {
     const modeLabelEl = document.getElementById('lbModeLabel');
     if (modeLabelEl) {
         if (Game.playMode === 'PRACTICE') {
-            modeLabelEl.textContent = '自由練習 · 隨時作答拓殖 · 500能量自動補充';
+            modeLabelEl.textContent = '自由練習 · 隨時作答拓殖 · 600能量自動補充';
         } else {
-            const slotsText = maxSlots === 1 ? '每隊1人 (個人500能量)' : `一隊${maxSlots}人 (每人500能量)`;
+            const slotsText = maxSlots === 1 ? '每隊1人 (個人600能量)' : `一隊${maxSlots}人 (每人600能量)`;
             modeLabelEl.textContent = `${slotsText} · 初始0分`;
         }
     }
@@ -3271,7 +3472,7 @@ function updateLeaderboard() {
         };
 
         const rankIcon = idx === 0 ? '👑' : `${idx + 1}.`;
-        const energyBadgeText = maxSlots === 1 ? '⚡ 500能量' : `⚡ ${maxSlots}人各500`;
+        const energyBadgeText = maxSlots === 1 ? '⚡ 600能量' : `⚡ ${maxSlots}人各600`;
 
         row.innerHTML = `
             <div class="pr-left">
@@ -3293,7 +3494,7 @@ function updateLeaderboard() {
             </div>
             <div class="pr-right">
                 <span class="pr-pts">${t.stats.totalScore} 分</span>
-                <span class="pr-energy" title="每位隊員個人能量各500點">${energyBadgeText}</span>
+                <span class="pr-energy" title="每位隊員個人能量各600點">${energyBadgeText}</span>
             </div>
         `;
         listContainer.appendChild(row);
@@ -3395,10 +3596,10 @@ function updatePlayerHUD() {
     const avatarBg = document.getElementById('hudAvatarBg');
     if (avatarBg) avatarBg.setAttribute('fill', t.color);
 
-    // Individual Member Energy (500 max per player)
+    // Individual Member Energy (600 max per player)
     const mySlot = Game.myPlayer.slot || 1;
-    const myMember = (t.members && t.members[mySlot - 1]) ? t.members[mySlot - 1] : { energy: 500 };
-    const curEnergy = typeof myMember.energy === 'number' ? myMember.energy : 500;
+    const myMember = (t.members && t.members[mySlot - 1]) ? t.members[mySlot - 1] : { energy: 600 };
+    const curEnergy = typeof myMember.energy === 'number' ? myMember.energy : 600;
     const energyPct = Math.max(0, Math.min(100, (curEnergy / Game.config.maxEnergy) * 100));
 
     const hudEnergyFill = document.getElementById('hudEnergyFill');
@@ -3553,7 +3754,7 @@ function renderTeamSelectCards() {
     }
     const hintEl = document.getElementById('teamModalRuleHint');
     if (hintEl) {
-        hintEl.innerHTML = `💡 規則：<strong>一隊 ${maxSlots} 人</strong>，每位隊員擁有 <strong>500 點個人能量</strong>，<strong>分佔不同獨立海域島嶼（相鄰皆為敵隊，絕非隊友）</strong>！初始積分為 0 分。`;
+        hintEl.innerHTML = `💡 規則：<strong>一隊 ${maxSlots} 人</strong>，每位隊員擁有 <strong>600 點個人能量</strong>，<strong>分佔不同獨立海域島嶼（相鄰皆為敵隊，絕非隊友）</strong>！初始積分為 0 分。`;
     }
 
     // Match Full Alert Banner
@@ -3616,7 +3817,7 @@ function renderTeamSelectCards() {
             </div>
             <div class="tsc-details">
                 <div>📍 基地分配：每位隊員分佔獨立海域島嶼（相鄰皆為敵隊，絕非隊友）</div>
-                <div>⚡ 隊員能量：每位隊員個人 500 點（獨立計量，答對-6 / 答錯-15）</div>
+                <div>⚡ 隊員能量：每位隊員個人 600 點（獨立計量，答對-6 / 答錯-15）</div>
                 <div>🚩 團隊領地：${stats.territories} 塊（${maxSlots}位隊員各佔一島，共 ${initialTerritories} 塊初始領地）｜ 總積分：<strong>${stats.totalScore}</strong> 分</div>
             </div>
 
@@ -3628,8 +3829,8 @@ function renderTeamSelectCards() {
                 </div>
                 <div class="tsc-slots-grid" style="${maxSlots === 1 ? 'grid-template-columns: 1fr;' : ''}">
                     ${slotsArray.map(slot => {
-                        const member = (t.members && t.members[slot - 1]) ? t.members[slot - 1] : { energy: 500 };
-                        const memberEnergy = (typeof member.energy === 'number') ? member.energy : 500;
+                        const member = (t.members && t.members[slot - 1]) ? t.members[slot - 1] : { energy: 600 };
+                        const memberEnergy = (typeof member.energy === 'number') ? member.energy : 600;
                         const memName = (member && member.name) ? member.name : (slot === 1 ? '隊長' : `隊員 ${slot}`);
                         const isl = (Game.map && Game.map.islands) ? Game.map.islands.find(x => x.assignedTeam === t.id && x.assignedMemberSlot === slot) : null;
                         const islandLoc = isl ? (isl.locName || isl.name) : (member?.islandName || (slot === 1 ? '北方海域基地' : (slot === 2 ? '東南海域基地' : '西南海域基地')));
@@ -3887,7 +4088,7 @@ function endMatch(shouldBroadcast = true) {
     const maxSlots = getModeMaxSlots();
 
     activeTeams.forEach((t, idx) => {
-        const energiesStr = t.members.slice(0, maxSlots).map((m, i) => `P${i + 1}:${typeof m.energy === 'number' ? m.energy : 500}`).join(' ｜ ');
+        const energiesStr = t.members.slice(0, maxSlots).map((m, i) => `P${i + 1}:${typeof m.energy === 'number' ? m.energy : 600}`).join(' ｜ ');
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${idx === 0 ? '👑 總冠軍' : idx + 1}</td>
@@ -3948,16 +4149,16 @@ function restartMatch(shouldBroadcast = true) {
         t.correctCount = 0;
         t.wrongCount = 0;
         t.members.forEach(m => {
-            m.energy = 500;
+            m.energy = 600;
         });
-        t.energy = 500 * t.members.length;
+        t.energy = 600 * t.members.length;
     });
 
     initMapState(false);
     refreshGameQuestionBank(false);
     updateUI();
     resetCamera();
-    logBattle(`🔄 比賽已重設開局，每位選手能量恢復 500 點，積分歸 0，全新題庫已隨機換抽！`);
+    logBattle(`🔄 比賽已重設開局，每位選手能量恢復 600 點，積分歸 0，全新題庫已隨機換抽！`);
 
     if (shouldBroadcast) {
         broadcastSync({ type: 'RESET_MATCH' });
@@ -3974,7 +4175,7 @@ function exportResultsCSV() {
     let csv = '\uFEFF';
     csv += 'PaGamO 城堡爭奪賽 - 總決賽中排灣語競賽成績單\n';
     csv += `競賽時長,${Math.round(Game.config.totalDuration / 60)} 分鐘\n`;
-    csv += `賽制模式,${modeLabel} (每隊${maxSlots}人 · 每人500能量)\n`;
+    csv += `賽制模式,${modeLabel} (每隊${maxSlots}人 · 每人600能量)\n`;
     csv += `團隊總積分採計公式,特殊地形積分加總 + Σ [ (答對數 × 7) + (新佔領地數 × 3) ] (初始積分為0)\n\n`;
     csv += `名次,隊伍名稱,所屬陣營,總積分,城堡數,碉堡數,砲台數,答對數,答錯數,新佔領地數,隊員剩餘能量\n`;
 
@@ -3984,7 +4185,7 @@ function exportResultsCSV() {
     })).sort((a, b) => b.stats.totalScore - a.stats.totalScore);
 
     activeTeams.forEach((t, idx) => {
-        const memEnergies = t.members.slice(0, maxSlots).map((m, i) => `隊員${i + 1}:${m.energy || 500}`).join(';');
+        const memEnergies = t.members.slice(0, maxSlots).map((m, i) => `隊員${i + 1}:${m.energy || 600}`).join(';');
         csv += `${idx + 1},${t.name},${t.alliance},${t.stats.totalScore},${t.stats.castles},${t.stats.bunkers},${t.stats.cannons},${t.correctCount},${t.wrongCount},${t.stats.newTerritories},"${memEnergies}"\n`;
     });
 
@@ -4056,7 +4257,7 @@ function openSettingsModal() {
     renderCfgTeamSelector();
     const cfgHint = document.getElementById('cfgRuleHint');
     if (cfgHint) {
-        cfgHint.innerHTML = `💡 規則提示：一隊 ${getModeMaxSlots()} 人。每位隊員個人能量 500 點（獨立計量），答對消耗 6 點能量，答錯消耗 15 點能量。<br>特殊地形積分：城堡 100 分、碉堡 80 分、砲台 50 分。一開始總積分為 0 分！`;
+        cfgHint.innerHTML = `💡 規則提示：一隊 ${getModeMaxSlots()} 人。每位隊員個人能量 600 點（獨立計量），答對消耗 6 點能量，答錯消耗 15 點能量。<br>土地血量：平常土地 75、砲台 100、碉堡 150、城堡 200（攻擊一次減少 50 血量，歸 0 佔領）。一開始總積分為 0 分！`;
     }
     document.getElementById('settingsModal').style.display = 'flex';
 }

@@ -123,7 +123,7 @@
         </div>
         <div class="lb-header">
           <span class="lb-title" id="lbHeaderTitle">👑 即時戰況排行榜 (2隊對決)</span>
-          <span style="font-size:11px; color:#a2d2df;" id="lbModeLabel">一隊3人 (每人500能量) · 初始0分</span>
+          <span style="font-size:11px; color:#a2d2df;" id="lbModeLabel">一隊3人 (每人600能量) · 初始0分</span>
         </div>
 
         <!-- Alliance / Team Comparison Bar -->
@@ -172,7 +172,7 @@
           <div id="hudIslandLocation" style="font-size:11px; color:#ffd166; margin:2px 0 4px 0; font-weight:bold;">🏝️ 初始基地：北方海域基地 (7塊地)</div>
           <div class="energy-bar-wrap">
             <div id="hudEnergyFill" class="energy-fill"></div>
-            <div id="hudEnergyLabel" class="energy-label">⚡ 個人能量: 500 / 500</div>
+            <div id="hudEnergyLabel" class="energy-label">⚡ 個人能量: 600 / 600</div>
           </div>
           <div class="hud-stats-mini">
             <span>答對: <strong id="hudCorrectCount" style="color:#2ecc71">0</strong> 題</span>
@@ -193,6 +193,9 @@
         <div id="ttTitle" class="tooltip-title">🏰 城堡</div>
         <div class="tooltip-row">
           <span>坐標:</span> <strong id="ttCoord">(0, 0)</strong>
+        </div>
+        <div class="tooltip-row">
+          <span>土地血量:</span> <strong id="ttHp" style="color:#2ecc71">75 / 75 HP (需再攻擊 2 次)</strong>
         </div>
         <div class="tooltip-row">
           <span>積分加成:</span> <strong id="ttPoints" style="color:#2ecc71">+100 分</strong>
@@ -283,7 +286,7 @@
               </button>
             </div>
             <div style="font-size:12px; color:#7f5539; width:100%;" id="teamModalRuleHint">
-              💡 規則：<strong>一隊 3 人</strong>，每位隊員擁有 <strong>500 點個人能量</strong>，<strong>分佔不同獨立海域島嶼（相鄰皆為敵隊，絕非隊友）</strong>！初始積分為 0 分。
+              💡 規則：<strong>一隊 3 人</strong>，每位隊員擁有 <strong>600 點個人能量</strong>，<strong>分佔不同獨立海域島嶼（相鄰皆為敵隊，絕非隊友）</strong>！初始積分為 0 分。
             </div>
           </div>
 
@@ -363,7 +366,7 @@
                   <th>砲台 (50分)</th>
                   <th>答對得分 (×7)</th>
                   <th>新領地得分 (×3)</th>
-                  <th>隊員剩餘能量 (各500)</th>
+                  <th>隊員剩餘能量 (各600)</th>
                 </tr>
               </thead>
               <tbody id="resTeamsStatsBody">
@@ -472,8 +475,8 @@
           </div>
 
           <div id="cfgRuleHint" style="background: #fdf6e2; border: 1px solid #e2cb93; padding: 10px; border-radius: 8px; font-size: 12px; color: #7f5539;">
-            💡 規則提示：一隊 3 人。每位隊員個人能量 500 點（獨立計量），答對消耗 6 點能量，答錯消耗 15 點能量。<br>
-            特殊地形積分：城堡 100 分、碉堡 80 分、砲台 50 分。一開始總積分為 0 分！
+            💡 規則提示：一隊 3 人。每位隊員個人能量 600 點（獨立計量），答對消耗 6 點能量，答錯消耗 15 點能量。<br>
+            土地血量：平常土地 75、砲台 100、碉堡 150、城堡 200（攻擊一次減少 50 血量，歸 0 佔領）。一開始總積分為 0 分！
           </div>
         </div>
         <div class="modal-footer">
