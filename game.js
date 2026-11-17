@@ -1782,6 +1782,9 @@ if (typeof window !== 'undefined') {
     window.isCurrentUserSeated = isCurrentUserSeated;
     window.initMapState = initMapState;
     window.getTileMaxHp = getTileMaxHp;
+    window.getPlayerOwnedTiles = getPlayerOwnedTiles;
+    window.getTeamOwnedTiles = getTeamOwnedTiles;
+    window.getExpandableTilesForTeam = getExpandableTilesForTeam;
 }
 
 // ==================== Adjacency & Reachability ====================
@@ -1793,27 +1796,51 @@ function getHexNeighbors(q, r) {
     return directions.map(([dq, dr]) => `${q + dq},${r + dr}`);
 }
 
-function getTeamOwnedTiles(teamId) {
+function getPlayerOwnedTiles(teamId, memberSlot = null) {
     const keys = [];
     for (const [k, info] of Object.entries(Game.tileOwners)) {
         if (info.teamId === teamId) {
-            keys.push(k);
+            if (typeof memberSlot === 'number' && memberSlot > 0) {
+                const slot = (typeof info.memberSlot === 'number') ? info.memberSlot : 1;
+                if (slot === memberSlot) {
+                    keys.push(k);
+                }
+            } else {
+                keys.push(k);
+            }
         }
     }
     return keys;
 }
 
-function getExpandableTilesForTeam(teamId) {
-    const teamTiles = getTeamOwnedTiles(teamId);
+function getTeamOwnedTiles(teamId) {
+    return getPlayerOwnedTiles(teamId, null);
+}
+
+function getExpandableTilesForTeam(teamId, memberSlot = undefined) {
+    let targetSlot = memberSlot;
+    // When a player is seated, personal expansion strictly bounds to their own territory!
+    if (targetSlot === undefined) {
+        if (typeof isCurrentUserSeated === 'function' && isCurrentUserSeated()) {
+            if (Game.currentTeamId === teamId && Game.myPlayer && Game.myPlayer.slot > 0) {
+                targetSlot = Game.myPlayer.slot;
+            }
+        }
+    }
+    if (targetSlot === 'ALL' || targetSlot === null) {
+        targetSlot = null;
+    }
+
+    const ownedTiles = getPlayerOwnedTiles(teamId, targetSlot);
     const reachable = new Set();
 
-    teamTiles.forEach(tk => {
+    ownedTiles.forEach(tk => {
         const [q, r] = tk.split(',').map(Number);
         const neighbors = getHexNeighbors(q, r);
         neighbors.forEach(nk => {
             if (Game.map.tiles[nk]) {
                 const owner = Game.tileOwners[nk];
-                // Can attack if neutral or owned by opponent team
+                // Can attack if neutral or owned by opponent team (cannot attack own team's tiles)
                 if (!owner || owner.teamId !== teamId) {
                     reachable.add(nk);
                 }
@@ -2009,6 +2036,22 @@ function openQuestionModal(tileKey, force = false) {
     if (!team) return;
 
     const mySlot = Game.myPlayer.slot || 1;
+
+    // 個人領地開拓檢驗：每位選手只能攻佔自己領地周遭的地，不可越區攻佔隊友周遭的地！
+    if (!force) {
+        const expandable = getExpandableTilesForTeam(team.id, mySlot);
+        if (!expandable.includes(tileKey)) {
+            const teamAll = getExpandableTilesForTeam(team.id, 'ALL');
+            if (teamAll.includes(tileKey)) {
+                if (typeof alert === 'function') alert('⚠️ 無法進攻！\n此地塊僅與隊友領地相鄰，每位選手只能由「自己負責的領地周遭」進行開拓進攻！');
+            } else {
+                if (typeof alert === 'function') alert('⚠️ 無法開拓此地！\n該地塊必須與您個人的現有領地相鄰。');
+            }
+            if (window.soundManager) window.soundManager.playWarning();
+            return;
+        }
+    }
+
     const myMember = (team.members && team.members[mySlot - 1]) ? team.members[mySlot - 1] : { energy: 600 };
     let curEnergy = typeof myMember.energy === 'number' ? myMember.energy : 600;
 
@@ -2284,6 +2327,12 @@ function showCastleCaptureBanner(teamName, playerName) {
     setTimeout(() => {
         banner.style.display = 'none';
     }, 3200);
+}
+
+if (typeof window !== 'undefined') {
+    window.openQuestionModal = openQuestionModal;
+    window.submitPlayerAnswer = submitPlayerAnswer;
+    window.closeQuestionModal = closeQuestionModal;
 }
 
 // ==================== Canvas Rendering & Controls ====================
@@ -2625,8 +2674,9 @@ function handleTileAction(mouseX, mouseY) {
         return;
     }
 
-    // Check if tile is expandable for current team
-    const expandable = getExpandableTilesForTeam(team.id);
+    // Check if tile is expandable for current player's personal territory
+    const mySlot = (!Game.isSpectator && isCurrentUserSeated()) ? Game.myPlayer.slot : 1;
+    const expandable = getExpandableTilesForTeam(team.id, mySlot);
     if (expandable.includes(k)) {
         Game.selectedTargetKey = k;
         window.soundManager.playClick();
@@ -2634,9 +2684,19 @@ function handleTileAction(mouseX, mouseY) {
     } else {
         const owner = Game.tileOwners[k];
         if (owner && owner.teamId === team.id) {
-            logBattle(`ℹ️ 此領地為貴隊【${team.name}】所有（安全防線）`);
+            if (owner.memberSlot === mySlot) {
+                logBattle(`ℹ️ 此地塊為您個人現有領地，防線安全無虞！`);
+            } else {
+                logBattle(`🤝 此地塊為隊友（隊員 ${owner.memberSlot}）所有，隊友之間不可互相進攻！`);
+            }
         } else {
-            logBattle(`⚠️ 無法開拓此地：必須與貴隊現有領地相鄰！`);
+            // Check if it is adjacent to a teammate's territory
+            const teamAllExpandable = getExpandableTilesForTeam(team.id, 'ALL');
+            if (teamAllExpandable.includes(k)) {
+                logBattle(`⚠️ 無法進攻：此地塊僅與隊友領地相鄰！每位選手只能開拓進攻自己領地周遭的地！`);
+            } else {
+                logBattle(`⚠️ 無法開拓此地：必須與您個人的現有領地相鄰！`);
+            }
             window.soundManager.playWarning();
         }
     }
@@ -2701,7 +2761,8 @@ function drawMap() {
 
     const R = Game.map.grid_config.hex_radius;
     const currentTeam = Game.teams[Game.currentTeamId];
-    const expandableTiles = currentTeam ? new Set(getExpandableTilesForTeam(currentTeam.id)) : new Set();
+    const mySlot = (!Game.isSpectator && isCurrentUserSeated()) ? Game.myPlayer.slot : null;
+    const expandableTiles = currentTeam ? new Set(getExpandableTilesForTeam(currentTeam.id, mySlot)) : new Set();
 
     // 1. Water background is clean ocean (no wireframe mesh across entire sea, matching PaGamO screenshot)
     // Only expandable/hovered tiles have interactive highlights
@@ -3538,7 +3599,8 @@ function updateTooltip(screenX, screenY, hit) {
     const k = `${hit.q},${hit.r}`;
     const owner = Game.tileOwners[k];
     const currentTeam = Game.teams[Game.currentTeamId];
-    const isExpandable = currentTeam && getExpandableTilesForTeam(currentTeam.id).includes(k);
+    const mySlot = (!Game.isSpectator && isCurrentUserSeated()) ? Game.myPlayer.slot : null;
+    const isExpandable = currentTeam && getExpandableTilesForTeam(currentTeam.id, mySlot).includes(k);
 
     const ownerTeam = owner ? Game.teams[owner.teamId] : null;
     const teamPrefix = ownerTeam ? `【${ownerTeam.name}】` : '中立';
@@ -3600,11 +3662,22 @@ function updateTooltip(screenX, screenY, hit) {
             actionHint.className = 'tooltip-action-hint hint-attack';
         }
     } else if (owner && owner.teamId === currentTeam.id) {
-        actionHint.textContent = '🛡️ 我方現有領地';
-        actionHint.className = 'tooltip-action-hint hint-defend';
+        if (mySlot && owner.memberSlot === mySlot) {
+            actionHint.textContent = '🛡️ 我方個人領地（安全防線）';
+            actionHint.className = 'tooltip-action-hint hint-defend';
+        } else {
+            actionHint.textContent = `🤝 隊友領地 (隊員 ${owner.memberSlot}) · 不可進攻`;
+            actionHint.className = 'tooltip-action-hint hint-neutral';
+        }
     } else {
-        actionHint.textContent = '⛔ 尚未接壤（無法抵達）';
-        actionHint.className = 'tooltip-action-hint hint-unreachable';
+        const teamAllExpandable = currentTeam ? getExpandableTilesForTeam(currentTeam.id, 'ALL') : [];
+        if (teamAllExpandable.includes(k)) {
+            actionHint.textContent = '⛔ 僅與隊友領地相鄰（請由個人領地開拓）';
+            actionHint.className = 'tooltip-action-hint hint-unreachable';
+        } else {
+            actionHint.textContent = '⛔ 尚未接壤（無法抵達）';
+            actionHint.className = 'tooltip-action-hint hint-unreachable';
+        }
     }
 
     tooltip.style.left = `${screenX + 15}px`;
