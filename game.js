@@ -45,7 +45,7 @@ const Game = {
     // Play Mode: 'TOURNAMENT' (預設: 比賽模式，按下開始比賽才可以開始進行占地、作答、計分) or 'PRACTICE' (練習模式: 隨時可作答)
     playMode: 'TOURNAMENT',
 
-    // Match Mode: '1VS1' (2人), '2VS2' (4人), '2TEAMS' (6人), '4TEAMS' (12人)
+    // Match Mode: '1VS1' (2人), '2VS2' (4人), '2TEAMS' (6人), '3TEAMS' (9人), '4TEAMS' (12人)
     matchMode: '2TEAMS',
     activeTeamIds: ['T1', 'T5'], // Default: 望嘉勇士隊 vs 族夢隊
 
@@ -1268,13 +1268,18 @@ function isCurrentUserSeated() {
 }
 
 function switchMatchMode(mode, shouldBroadcast = true) {
-    if (mode !== '1VS1' && mode !== '2VS2' && mode !== '2TEAMS' && mode !== '4TEAMS') return;
+    if (mode !== '1VS1' && mode !== '2VS2' && mode !== '2TEAMS' && mode !== '3TEAMS' && mode !== '4TEAMS') return;
     Game.matchMode = mode;
 
     if (mode === '4TEAMS') {
         // 4 Teams (3 players per team = 12 players)
         if (!Array.isArray(Game.activeTeamIds) || Game.activeTeamIds.length !== 4) {
             Game.activeTeamIds = ['T1', 'T2', 'T3', 'T4'];
+        }
+    } else if (mode === '3TEAMS') {
+        // 3 Teams (3 players per team = 9 players)
+        if (!Array.isArray(Game.activeTeamIds) || Game.activeTeamIds.length !== 3) {
+            Game.activeTeamIds = ['T1', 'T3', 'T5']; // 望嘉勇士隊 vs 望嘉先鋒隊 vs 族夢隊
         }
     } else {
         // 2 Teams (1VS1: 2 players; 2VS2: 4 players; 2TEAMS: 6 players)
@@ -1317,10 +1322,12 @@ function switchMatchMode(mode, shouldBroadcast = true) {
     const btn1v1 = document.getElementById('modeBtn1v1');
     const btn2v2 = document.getElementById('modeBtn2v2');
     const btn2 = document.getElementById('modeBtn2');
+    const btn3 = document.getElementById('modeBtn3');
     const btn4 = document.getElementById('modeBtn4');
     if (btn1v1) btn1v1.classList.toggle('active', mode === '1VS1');
     if (btn2v2) btn2v2.classList.toggle('active', mode === '2VS2');
     if (btn2) btn2.classList.toggle('active', mode === '2TEAMS');
+    if (btn3) btn3.classList.toggle('active', mode === '3TEAMS');
     if (btn4) btn4.classList.toggle('active', mode === '4TEAMS');
 
     initMapState(false);
@@ -1333,6 +1340,7 @@ function switchMatchMode(mode, shouldBroadcast = true) {
     if (mode === '1VS1') modeDesc = '1對1 模式 (2隊 · 各1人單挑 · 2座島嶼 · 2人同場)';
     else if (mode === '2VS2') modeDesc = '2對2 模式 (2隊 · 各2人同心 · 4座島嶼 · 4人同場)';
     else if (mode === '2TEAMS') modeDesc = '雙隊對決 (2隊 · 各3人標準 · 6座島嶼 · 6人同場)';
+    else if (mode === '3TEAMS') modeDesc = '三隊爭鋒 (3隊 · 各3人 · 9座島嶼 · 9人同場)';
     else modeDesc = '四隊爭霸 (4隊 · 各3人共鬥 · 12座島嶼 · 12人同場)';
 
     logBattle(`⚙️ 賽制切換為：【${modeDesc}】，每位選手能量 600 點，初始總積分皆為 0 分！`);
@@ -1399,7 +1407,6 @@ function renderTeamSelectorBar() {
     const bar = document.getElementById('teamSelectorBar');
     if (!bar) return;
 
-    const is4 = Game.matchMode === '4TEAMS';
     const activeIds = Game.activeTeamIds;
 
     let html = `
@@ -1407,7 +1414,53 @@ function renderTeamSelectorBar() {
             <span style="font-weight:bold; color:#5c381e; font-size:13px;">🚩 出戰隊伍選擇：</span>
     `;
 
-    if (!is4) {
+    if (Game.matchMode === '3TEAMS') {
+        // 3 Teams picker (隊伍 A vs 隊伍 B vs 隊伍 C)
+        const teamLetters = ['A', 'B', 'C'];
+        html += `
+            <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                ${[0, 1, 2].map(i => {
+                    const tid = activeIds[i] || (i === 0 ? 'T1' : (i === 1 ? 'T3' : 'T5'));
+                    const t = Game.teams[tid] || Game.teams['T1'];
+                    return `
+                        <div style="display:flex; align-items:center; gap:4px;">
+                            <span style="font-size:12px; font-weight:bold; color:${t.color};">隊伍 ${teamLetters[i]}：</span>
+                            <select class="team-picker-select" onchange="changeActiveTeam(${i}, this.value)">
+                                ${ALL_TEAMS_ORDER.map(optId => {
+                                    const optTeam = Game.teams[optId];
+                                    return `<option value="${optId}" ${optId === tid ? 'selected' : ''}>${optTeam.icon} ${optTeam.name}</option>`;
+                                }).join('')}
+                            </select>
+                        </div>
+                        ${i < 2 ? '<span style="font-weight:bold; color:#d35400; font-size:12px;">VS</span>' : ''}
+                    `;
+                }).join('')}
+            </div>
+            <span style="font-size:11px; color:#7f5539; margin-left:auto;">（自由選3隊，選同隊自動對調）</span>
+        `;
+    } else if (Game.matchMode === '4TEAMS') {
+        // 4 Teams picker (隊伍 1 ~ 4)
+        html += `
+            <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                ${[0, 1, 2, 3].map(i => {
+                    const tid = activeIds[i] || ALL_TEAMS_ORDER[i];
+                    const t = Game.teams[tid];
+                    return `
+                        <div style="display:flex; align-items:center; gap:4px;">
+                            <span style="font-size:12px; font-weight:bold; color:${t.color};">隊伍${i + 1}：</span>
+                            <select class="team-picker-select" onchange="changeActiveTeam(${i}, this.value)">
+                                ${ALL_TEAMS_ORDER.map(optId => {
+                                    const optTeam = Game.teams[optId];
+                                    return `<option value="${optId}" ${optId === tid ? 'selected' : ''}>${optTeam.icon} ${optTeam.name}</option>`;
+                                }).join('')}
+                            </select>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+            <span style="font-size:11px; color:#7f5539; margin-left:auto;">（選同隊自動對調）</span>
+        `;
+    } else {
         // 2 Teams picker (隊伍 A vs 隊伍 B)
         const teamA = Game.teams[activeIds[0]] || Game.teams['T1'];
         const teamB = Game.teams[activeIds[1]] || Game.teams['T5'];
@@ -1434,28 +1487,6 @@ function renderTeamSelectorBar() {
             </div>
             <span style="font-size:11px; color:#7f5539; margin-left:auto;">（自由選6隊，選同隊自動對調）</span>
         `;
-    } else {
-        // 4 Teams picker (隊伍 1 ~ 4)
-        html += `
-            <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-                ${[0, 1, 2, 3].map(i => {
-                    const tid = activeIds[i] || ALL_TEAMS_ORDER[i];
-                    const t = Game.teams[tid];
-                    return `
-                        <div style="display:flex; align-items:center; gap:4px;">
-                            <span style="font-size:12px; font-weight:bold; color:${t.color};">隊伍${i + 1}：</span>
-                            <select class="team-picker-select" onchange="changeActiveTeam(${i}, this.value)">
-                                ${ALL_TEAMS_ORDER.map(optId => {
-                                    const optTeam = Game.teams[optId];
-                                    return `<option value="${optId}" ${optId === tid ? 'selected' : ''}>${optTeam.icon} ${optTeam.name}</option>`;
-                                }).join('')}
-                            </select>
-                        </div>
-                    `;
-                }).join('')}
-            </div>
-            <span style="font-size:11px; color:#7f5539; margin-left:auto;">（選同隊自動對調）</span>
-        `;
     }
 
     html += `</div>`;
@@ -1466,11 +1497,44 @@ function renderCfgTeamSelector() {
     const grid = document.getElementById('cfgTeamSelectGrid');
     if (!grid) return;
 
-    const is4 = Game.matchMode === '4TEAMS';
     const activeIds = Game.activeTeamIds;
 
     let html = '';
-    if (!is4) {
+    if (Game.matchMode === '3TEAMS') {
+        const teamLetters = ['A', 'B', 'C'];
+        html = [0, 1, 2].map(i => {
+            const tid = activeIds[i] || (i === 0 ? 'T1' : (i === 1 ? 'T3' : 'T5'));
+            const t = Game.teams[tid] || Game.teams['T1'];
+            return `
+                <div style="display:flex; align-items:center; gap:4px;">
+                    <span style="font-size:12px; font-weight:bold; color:${t.color};">隊伍 ${teamLetters[i]}：</span>
+                    <select class="team-picker-select" onchange="changeActiveTeam(${i}, this.value)">
+                        ${ALL_TEAMS_ORDER.map(optId => {
+                            const optTeam = Game.teams[optId];
+                            return `<option value="${optId}" ${optId === tid ? 'selected' : ''}>${optTeam.icon} ${optTeam.name}</option>`;
+                        }).join('')}
+                    </select>
+                </div>
+                ${i < 2 ? '<span style="font-weight:bold; color:#d35400; font-size:12px;">VS</span>' : ''}
+            `;
+        }).join('');
+    } else if (Game.matchMode === '4TEAMS') {
+        html = [0, 1, 2, 3].map(i => {
+            const tid = activeIds[i] || ALL_TEAMS_ORDER[i];
+            const t = Game.teams[tid];
+            return `
+                <div style="display:flex; align-items:center; gap:4px;">
+                    <span style="font-size:12px; font-weight:bold; color:${t.color};">隊伍${i + 1}：</span>
+                    <select class="team-picker-select" onchange="changeActiveTeam(${i}, this.value)">
+                        ${ALL_TEAMS_ORDER.map(optId => {
+                            const optTeam = Game.teams[optId];
+                            return `<option value="${optId}" ${optId === tid ? 'selected' : ''}>${optTeam.icon} ${optTeam.name}</option>`;
+                        }).join('')}
+                    </select>
+                </div>
+            `;
+        }).join('');
+    } else {
         const teamA = Game.teams[activeIds[0]] || Game.teams['T1'];
         const teamB = Game.teams[activeIds[1]] || Game.teams['T5'];
         html = `
@@ -1494,22 +1558,6 @@ function renderCfgTeamSelector() {
                 </select>
             </div>
         `;
-    } else {
-        html = [0, 1, 2, 3].map(i => {
-            const tid = activeIds[i] || ALL_TEAMS_ORDER[i];
-            const t = Game.teams[tid];
-            return `
-                <div style="display:flex; align-items:center; gap:4px;">
-                    <span style="font-size:12px; font-weight:bold; color:${t.color};">隊伍${i + 1}：</span>
-                    <select class="team-picker-select" onchange="changeActiveTeam(${i}, this.value)">
-                        ${ALL_TEAMS_ORDER.map(optId => {
-                            const optTeam = Game.teams[optId];
-                            return `<option value="${optId}" ${optId === tid ? 'selected' : ''}>${optTeam.icon} ${optTeam.name}</option>`;
-                        }).join('')}
-                    </select>
-                </div>
-            `;
-        }).join('');
     }
     grid.innerHTML = html;
 }
@@ -1539,10 +1587,17 @@ function initMapState(reroll = false) {
         [-8, 8],   // 8 (西南)
         [-8, 4],   // 9
         [-8, 0],   // 10 (西北/西)
-        [-4, -4]   // 11
+        [-4, -4],  // 11
+        // 3TEAMS specific centers
+        [5, -8],
+        [8, -5],
+        [3, 5],
+        [-3, 8],
+        [-8, 3],
+        [-5, -3]
     ];
 
-    // Clean all 12 potential island centers to water tiles first
+    // Clean all potential island centers to water tiles first
     if (Game.map && Game.map.tiles) {
         allPossibleCenters.forEach(c => {
             hexDirs.forEach(([dq, dr]) => {
@@ -1587,6 +1642,20 @@ function initMapState(reroll = false) {
             { teamIdx: 1, slot: 2, center: [0, 8], locName: '南方海域基地 (南)' },
             { teamIdx: 0, slot: 3, center: [-8, 8], locName: '西南海域基地 (西南)' },
             { teamIdx: 1, slot: 3, center: [-8, 0], locName: '西北海域基地 (西北)' }
+        ];
+    } else if (Game.matchMode === '3TEAMS') {
+        // 三隊爭鋒 (3隊 · 各3人 · 9座島嶼環狀交錯 A-B-C-A-B-C-A-B-C)
+        // 經六角格幾何驗證，相鄰島嶼中心距離皆為 5~6 格，同隊隊員分佔不同島，鄰近島嶼絕非隊友！
+        islandLayout = [
+            { teamIdx: 0, slot: 1, center: [0, -8], locName: '北方海域基地 (北)' },
+            { teamIdx: 1, slot: 1, center: [5, -8], locName: '東北海域基地 (東北)' },
+            { teamIdx: 2, slot: 1, center: [8, -5], locName: '東偏北海域基地' },
+            { teamIdx: 0, slot: 2, center: [8, 0], locName: '東方海域基地 (東)' },
+            { teamIdx: 1, slot: 2, center: [3, 5], locName: '東南海域基地 (東南)' },
+            { teamIdx: 2, slot: 2, center: [-3, 8], locName: '南方海域基地 (南)' },
+            { teamIdx: 0, slot: 3, center: [-8, 8], locName: '西南海域基地 (西南)' },
+            { teamIdx: 1, slot: 3, center: [-8, 3], locName: '西方海域基地 (西)' },
+            { teamIdx: 2, slot: 3, center: [-5, -3], locName: '西北海域基地 (西北)' }
         ];
     } else {
         // 四隊爭霸 (4隊 · 各3人共鬥 · 12座島嶼時鐘交錯 1-2-3-4-1-2-3-4-1-2-3-4)
@@ -1649,8 +1718,9 @@ function initMapState(reroll = false) {
         });
     }
 
-    if (activeTeams[0]) activeTeams[0].islandIdx = 0;
-    if (activeTeams[1]) activeTeams[1].islandIdx = 1;
+    activeTeams.forEach((t, i) => {
+        if (t) t.islandIdx = i;
+    });
 
     logBattle(`🏁 比賽就緒！當前模式共 ${Game.map.islands.length} 座獨立島嶼（相鄰島皆為敵隊，絕非隊友），初始積分皆為 0 分！`);
 }
@@ -2369,17 +2439,13 @@ function centerCameraView() {
     const w = (p && p.clientWidth > 300) ? p.clientWidth : (window.innerWidth || 1200);
     const h = (p && p.clientHeight > 300) ? p.clientHeight : (Math.max(600, window.innerHeight - 48));
     const isSmall = (w < 600 || h < 600);
-    const offsetRight = (w > 900) ? 200 : 0;
-    Game.camera.x = Math.round((w - offsetRight) / 2);
+    Game.camera.x = Math.round(w / 2);
     Game.camera.y = Math.round(h / 2);
-    Game.camera.zoom = isSmall ? 0.75 : 1.0;
+    Game.camera.zoom = isSmall ? 0.72 : (w < 1024 ? 0.85 : 0.95);
+    logBattle(`🏰 視角已置中：中央城堡、碉堡與砲台特殊地形！`);
 }
 
 function resetCamera() {
-    if (!Game.isSpectator && isCurrentUserSeated()) {
-        focusMyIsland();
-        return;
-    }
     centerCameraView();
 }
 
@@ -2614,14 +2680,17 @@ function drawMap() {
         }
     });
 
-    // 5. Draw Central 7 Castles Fortress
+    // 5. Draw Central 7 Castles Fortress (Centered across the 7-hex rosette)
     const { x: cx, y: cy } = hexToWorld(0, 0);
-    const cw = R * 5.8;
-    const ch = R * 6.8;
+    const cw = R * 5.4;
+    const ch = cw * (240 / 250);
     const castleSprite = Game.sprites['castle_cluster'];
 
     if (castleSprite && castleSprite.complete && castleSprite.naturalWidth > 0) {
-        ctx.drawImage(castleSprite, cx - cw / 2, cy - ch / 2 - R * 0.45, cw, ch);
+        const clusterBaseY = cy + Math.sqrt(3) * R + R * 0.18;
+        const drawX = cx - cw * (127.5 / 250.0);
+        const drawY = clusterBaseY - ch * (201.0 / 240.0);
+        ctx.drawImage(castleSprite, drawX, drawY, cw, ch);
     } else {
         // High-Quality Procedural 2.5D Castle Fortress Fallback (Never Missing!)
         drawProceduralCastleFortress(ctx, cx, cy, R);
@@ -2970,20 +3039,31 @@ function drawOwnerFlag(ctx, x, y, owner) {
 
 function drawSpecialSprite(ctx, x, y, R, type) {
     let img = null;
-    let sw = R * 1.5;
+    let sw = R * 1.35;
     let sh = R * 1.6;
-    let offsetY = -R * 0.35;
+    let dxCenter = 0.5;
+    let dyBase = 0.9;
 
-    if (type === 'cannon' && Game.sprites['cannon']) {
+    if (type === 'cannon') {
         img = Game.sprites['cannon'];
-    } else if (type === 'bunker' && Game.sprites['bunker']) {
+        sw = R * 1.35;
+        sh = sw * (80 / 65);
+        dxCenter = 33.0 / 65.0; // visible horizontal center in image
+        dyBase = 67.0 / 80.0;   // visible bottom base in image
+    } else if (type === 'bunker') {
         img = Game.sprites['bunker'];
-        sh = R * 1.8;
-        offsetY = -R * 0.45;
+        sw = R * 1.35;
+        sh = sw * (90 / 70);
+        dxCenter = 38.0 / 70.0; // visible horizontal center in image
+        dyBase = 85.0 / 90.0;   // visible bottom base in image
     }
 
     if (img && img.complete && img.naturalWidth > 0) {
-        ctx.drawImage(img, x - sw / 2, y + offsetY, sw, sh);
+        // Ground contact point on the center of the hexagon top face
+        const baseY = y + R * 0.18;
+        const drawX = x - sw * dxCenter;
+        const drawY = baseY - sh * dyBase;
+        ctx.drawImage(img, drawX, drawY, sw, sh);
     } else {
         // High-Quality Procedural 2.5D Fallback for Bunkers & Cannons (Never Missing!)
         if (type === 'cannon') {
@@ -3408,6 +3488,7 @@ function updateLeaderboard() {
             '1VS1': '(1對1 單挑)',
             '2VS2': '(2對2 雙人)',
             '2TEAMS': '(2隊對決)',
+            '3TEAMS': '(3隊爭鋒)',
             '4TEAMS': '(4隊爭霸)'
         };
         titleEl.textContent = `${prefix} ${modeTitles[Game.matchMode] || '(2隊對決)'}`;
@@ -3429,7 +3510,7 @@ function updateLeaderboard() {
     const scA = document.getElementById('allianceAScore');
     const scB = document.getElementById('allianceBScore');
 
-    if (Game.matchMode !== '4TEAMS') {
+    if (Game.activeTeamIds.length <= 2) {
         const tA = Game.teams[Game.activeTeamIds[0]] || Game.teams['T1'];
         const tB = Game.teams[Game.activeTeamIds[1]] || Game.teams['T5'];
         const statsA = computeTeamStats(tA.id);
@@ -3450,9 +3531,21 @@ function updateLeaderboard() {
             fillB.style.background = tB.color;
         }
     } else {
-        // 4 Teams Comparison
+        // 3 or 4 Teams Comparison
         if (asbA) asbA.innerHTML = `領先: <strong>${activeTeams[0].name}</strong> (${activeTeams[0].stats.totalScore}分)`;
         if (asbB) asbB.innerHTML = `次名: <strong>${activeTeams[1].name}</strong> (${activeTeams[1].stats.totalScore}分)`;
+        const total = (activeTeams[0].stats.totalScore + activeTeams[1].stats.totalScore);
+        const pctA = total > 0 ? Math.round((activeTeams[0].stats.totalScore / total) * 100) : 50;
+        const fillA = document.getElementById('allianceAFill');
+        const fillB = document.getElementById('allianceBFill');
+        if (fillA) {
+            fillA.style.width = `${pctA}%`;
+            fillA.style.background = activeTeams[0].color;
+        }
+        if (fillB) {
+            fillB.style.width = `${100 - pctA}%`;
+            fillB.style.background = activeTeams[1].color;
+        }
     }
 
     // Teams List in Leaderboard
@@ -3503,7 +3596,7 @@ function updateLeaderboard() {
     // Update Nav Banner Pill
     const bannerPill = document.getElementById('matchAlliancePill');
     if (bannerPill) {
-        if (Game.matchMode !== '4TEAMS') {
+        if (Game.activeTeamIds.length <= 2) {
             const teamA = Game.teams[Game.activeTeamIds[0]] || Game.teams['T1'];
             const teamB = Game.teams[Game.activeTeamIds[1]] || Game.teams['T5'];
             bannerPill.innerHTML = `
@@ -3514,7 +3607,7 @@ function updateLeaderboard() {
         } else {
             const badges = Game.activeTeamIds.map(id => {
                 const team = Game.teams[id] || Game.teams['T1'];
-                return `<span class="team-badge ${team.badgeClass}">${team.name} (3人)</span>`;
+                return `<span class="team-badge ${team.badgeClass}">${team.name} (${maxSlots}人)</span>`;
             }).join(' <span style="font-size:11px; font-weight:bold; color:#f1c40f;">VS</span> ');
             bannerPill.innerHTML = badges;
         }
@@ -3642,10 +3735,12 @@ function openTeamLoginModal() {
     const btn1v1 = document.getElementById('modeBtn1v1');
     const btn2v2 = document.getElementById('modeBtn2v2');
     const btn2 = document.getElementById('modeBtn2');
+    const btn3 = document.getElementById('modeBtn3');
     const btn4 = document.getElementById('modeBtn4');
     if (btn1v1) btn1v1.classList.toggle('active', Game.matchMode === '1VS1');
     if (btn2v2) btn2v2.classList.toggle('active', Game.matchMode === '2VS2');
     if (btn2) btn2.classList.toggle('active', Game.matchMode === '2TEAMS');
+    if (btn3) btn3.classList.toggle('active', Game.matchMode === '3TEAMS');
     if (btn4) btn4.classList.toggle('active', Game.matchMode === '4TEAMS');
 
     const roomBtns = document.querySelectorAll('.room-toggle-btn');
@@ -3746,6 +3841,7 @@ function renderTeamSelectCards() {
         '1VS1': '1對1 單挑 · 每隊 1 人 · 共 2 人',
         '2VS2': '2對2 雙人 · 每隊 2 人 · 共 4 人',
         '2TEAMS': '雙隊對決 · 每隊 3 人 · 共 6 人',
+        '3TEAMS': '三隊爭鋒 · 每隊 3 人 · 共 9 人',
         '4TEAMS': '四隊爭霸 · 每隊 3 人 · 共 12 人'
     };
     const titleEl = document.getElementById('teamModalTitle');
@@ -4170,7 +4266,8 @@ function exportResultsCSV() {
     const modeLabel = Game.matchMode === '1VS1' ? '1對1 模式 (2隊 · 2人單挑)'
         : (Game.matchMode === '2VS2' ? '2對2 模式 (2隊 · 4人雙人)'
         : (Game.matchMode === '2TEAMS' ? '雙隊對決 (2隊 · 6人官方規格)'
-        : '四隊爭霸 (4隊 · 12人全場同賽)'));
+        : (Game.matchMode === '3TEAMS' ? '三隊爭鋒 (3隊 · 9人同賽)'
+        : '四隊爭霸 (4隊 · 12人全場同賽)')));
 
     let csv = '\uFEFF';
     csv += 'PaGamO 城堡爭奪賽 - 總決賽中排灣語競賽成績單\n';
@@ -4293,7 +4390,8 @@ function applySettings() {
     const modeDesc = Game.matchMode === '1VS1' ? '1對1 (2人)'
         : (Game.matchMode === '2VS2' ? '2對2 (4人)'
         : (Game.matchMode === '2TEAMS' ? '雙隊對決 (6人)'
-        : '四隊爭霸 (12人)'));
+        : (Game.matchMode === '3TEAMS' ? '三隊爭鋒 (9人)'
+        : '四隊爭霸 (12人)')));
     logBattle(`⚙️ 設定已套用：區域【${getRoomLabel(Game.roomId)}】｜ 模式【${Game.playMode === 'TOURNAMENT' ? '比賽模式' : '練習模式'}】｜ 競賽時長 ${durationMins} 分鐘 ｜ 賽制: ${modeDesc}`);
     updateUI();
 }

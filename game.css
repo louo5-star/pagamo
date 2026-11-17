@@ -1201,6 +1201,22 @@ body, html {
   }
 }
 
+.mode-grid-5 {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr) !important;
+  gap: 6px;
+}
+@media (max-width: 768px) {
+  .mode-grid-5 {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+@media (max-width: 520px) {
+  .mode-grid-5 {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
 .team-selector-bar {
   background: #fdf6e2;
   border: 1px solid #d4c5a0;
