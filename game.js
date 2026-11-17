@@ -705,6 +705,22 @@ function switchRoom(newRoomId) {
     const cfgPlayModeSel = document.getElementById('cfgPlayMode');
     if (cfgPlayModeSel) cfgPlayModeSel.value = Game.playMode;
 
+    const selectEl = document.getElementById('matchModeSelect');
+    if (selectEl) selectEl.value = Game.matchMode;
+    const cfgModeEl = document.getElementById('cfgMatchMode');
+    if (cfgModeEl) cfgModeEl.value = Game.matchMode;
+
+    const btn1v1 = document.getElementById('modeBtn1v1');
+    const btn2v2 = document.getElementById('modeBtn2v2');
+    const btn2 = document.getElementById('modeBtn2');
+    const btn3 = document.getElementById('modeBtn3');
+    const btn4 = document.getElementById('modeBtn4');
+    if (btn1v1) btn1v1.classList.toggle('active', Game.matchMode === '1VS1');
+    if (btn2v2) btn2v2.classList.toggle('active', Game.matchMode === '2VS2');
+    if (btn2) btn2.classList.toggle('active', Game.matchMode === '2TEAMS');
+    if (btn3) btn3.classList.toggle('active', Game.matchMode === '3TEAMS');
+    if (btn4) btn4.classList.toggle('active', Game.matchMode === '4TEAMS');
+
     const roomBtns = document.querySelectorAll('.room-toggle-btn');
     roomBtns.forEach(btn => {
         btn.classList.toggle('active', btn.getAttribute('data-room') === newRoomId);
@@ -1046,6 +1062,9 @@ function handleIncomingSync(data) {
         if (s.playMode && s.playMode !== Game.playMode) {
             switchPlayMode(s.playMode, false);
         }
+        if (s.activeTeamIds && Array.isArray(s.activeTeamIds) && s.activeTeamIds.length > 0) {
+            Game.activeTeamIds = [...s.activeTeamIds];
+        }
         if (s.matchMode && s.matchMode !== Game.matchMode) {
             switchMatchMode(s.matchMode, false);
         }
@@ -1335,6 +1354,11 @@ function switchMatchMode(mode, shouldBroadcast = true) {
     renderTeamSelectorBar();
     renderCfgTeamSelector();
     renderTeamSelectCards();
+    if (isCurrentUserSeated()) {
+        focusMyIsland();
+    } else {
+        resetCamera();
+    }
 
     let modeDesc = '';
     if (mode === '1VS1') modeDesc = '1對1 模式 (2隊 · 各1人單挑 · 2座島嶼 · 2人同場)';
@@ -1392,6 +1416,11 @@ function changeActiveTeam(teamIndex, newTeamId, shouldBroadcast = true) {
     renderTeamSelectorBar();
     renderCfgTeamSelector();
     renderTeamSelectCards();
+    if (isCurrentUserSeated()) {
+        focusMyIsland();
+    } else {
+        resetCamera();
+    }
 
     logBattle(`🚩 出戰隊伍已更新：【${Game.teams[newTeamId].name}】已就位出戰！`);
 
@@ -1502,22 +1531,25 @@ function renderCfgTeamSelector() {
     let html = '';
     if (Game.matchMode === '3TEAMS') {
         const teamLetters = ['A', 'B', 'C'];
-        html = [0, 1, 2].map(i => {
-            const tid = activeIds[i] || (i === 0 ? 'T1' : (i === 1 ? 'T3' : 'T5'));
-            const t = Game.teams[tid] || Game.teams['T1'];
-            return `
-                <div style="display:flex; align-items:center; gap:4px;">
-                    <span style="font-size:12px; font-weight:bold; color:${t.color};">隊伍 ${teamLetters[i]}：</span>
-                    <select class="team-picker-select" onchange="changeActiveTeam(${i}, this.value)">
-                        ${ALL_TEAMS_ORDER.map(optId => {
-                            const optTeam = Game.teams[optId];
-                            return `<option value="${optId}" ${optId === tid ? 'selected' : ''}>${optTeam.icon} ${optTeam.name}</option>`;
-                        }).join('')}
-                    </select>
-                </div>
-                ${i < 2 ? '<span style="font-weight:bold; color:#d35400; font-size:12px;">VS</span>' : ''}
-            `;
-        }).join('');
+        html = `
+            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:6px; width:100%;">
+                ${[0, 1, 2].map(i => {
+                    const tid = activeIds[i] || (i === 0 ? 'T1' : (i === 1 ? 'T3' : 'T5'));
+                    const t = Game.teams[tid] || Game.teams['T1'];
+                    return `
+                        <div style="display:flex; flex-direction:column; gap:2px; background:#fff; padding:6px; border-radius:6px; border:1px solid #d4c5a0;">
+                            <span style="font-size:11px; font-weight:bold; color:${t.color};">隊伍 ${teamLetters[i]}：</span>
+                            <select class="team-picker-select" style="width:100%; font-size:12px; padding:3px 2px;" onchange="changeActiveTeam(${i}, this.value)">
+                                ${ALL_TEAMS_ORDER.map(optId => {
+                                    const optTeam = Game.teams[optId];
+                                    return `<option value="${optId}" ${optId === tid ? 'selected' : ''}>${optTeam.icon} ${optTeam.name}</option>`;
+                                }).join('')}
+                            </select>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
     } else if (Game.matchMode === '4TEAMS') {
         html = [0, 1, 2, 3].map(i => {
             const tid = activeIds[i] || ALL_TEAMS_ORDER[i];
@@ -1807,8 +1839,8 @@ function computeTeamStats(teamId) {
 
     // Official Formula (Starting score is strictly 0):
     // 團隊總積分 = 特殊地形積分加總 + Σ [ (答對數 × 7) + (新佔領地數 × 3) ]
-    // Each team member starts on their own 7-hex island (3 members = 21 initial hexes per team)
-    const startingTerritories = 21;
+    // Each team member starts on their own 7-hex island (maxSlots members = maxSlots * 7 initial hexes per team)
+    const startingTerritories = getModeMaxSlots() * 7;
     const newTerritories = Math.max(0, territories - startingTerritories);
     const correctScore = t.correctCount * Game.config.correctAnswerPoints;
     const territoryScore = newTerritories * Game.config.territoryPoints;
@@ -3505,46 +3537,54 @@ function updateLeaderboard() {
     }
 
     // Top Comparison Bar
-    const asbA = document.getElementById('asbTitleA');
-    const asbB = document.getElementById('asbTitleB');
-    const scA = document.getElementById('allianceAScore');
-    const scB = document.getElementById('allianceBScore');
+    const bar = document.getElementById('allianceScoreBar');
+    if (bar) {
+        if (Game.activeTeamIds.length <= 2) {
+            const tA = Game.teams[Game.activeTeamIds[0]] || Game.teams['T1'];
+            const tB = Game.teams[Game.activeTeamIds[1]] || Game.teams['T5'];
+            const statsA = computeTeamStats(tA.id);
+            const statsB = computeTeamStats(tB.id);
+            const total = (statsA.totalScore + statsB.totalScore);
+            const pctA = total > 0 ? Math.round((statsA.totalScore / total) * 100) : 50;
 
-    if (Game.activeTeamIds.length <= 2) {
-        const tA = Game.teams[Game.activeTeamIds[0]] || Game.teams['T1'];
-        const tB = Game.teams[Game.activeTeamIds[1]] || Game.teams['T5'];
-        const statsA = computeTeamStats(tA.id);
-        const statsB = computeTeamStats(tB.id);
-        if (asbA) asbA.innerHTML = `<span style="color:${tA.color}">●</span> ${tA.name}: <strong id="allianceAScore">${statsA.totalScore}</strong> 分`;
-        if (asbB) asbB.innerHTML = `<span style="color:${tB.color}">●</span> ${tB.name}: <strong id="allianceBScore">${statsB.totalScore}</strong> 分`;
+            bar.innerHTML = `
+                <div class="asb-row">
+                    <span id="asbTitleA" style="color:${tA.lightColor || tA.color}"><span style="color:${tA.color}">●</span> ${tA.name}: <strong id="allianceAScore">${statsA.totalScore}</strong> 分</span>
+                    <span id="asbTitleB" style="color:${tB.lightColor || tB.color}"><span style="color:${tB.color}">●</span> ${tB.name}: <strong id="allianceBScore">${statsB.totalScore}</strong> 分</span>
+                </div>
+                <div class="asb-progress-wrap">
+                    <div id="allianceAFill" class="asb-fill-a" style="width:${pctA}%; background:${tA.color};"></div>
+                    <div id="allianceBFill" class="asb-fill-b" style="width:${100 - pctA}%; background:${tB.color};"></div>
+                </div>
+            `;
+        } else {
+            // 3 or 4 Teams Comparison: Dynamically show ALL teams in score bar
+            const teamsWithStats = Game.activeTeamIds.map(id => ({
+                ...Game.teams[id],
+                stats: computeTeamStats(id)
+            }));
+            const totalScoreAll = teamsWithStats.reduce((sum, t) => sum + t.stats.totalScore, 0);
 
-        const total = (statsA.totalScore + statsB.totalScore);
-        const pctA = total > 0 ? Math.round((statsA.totalScore / total) * 100) : 50;
-        const fillA = document.getElementById('allianceAFill');
-        const fillB = document.getElementById('allianceBFill');
-        if (fillA) {
-            fillA.style.width = `${pctA}%`;
-            fillA.style.background = tA.color;
-        }
-        if (fillB) {
-            fillB.style.width = `${100 - pctA}%`;
-            fillB.style.background = tB.color;
-        }
-    } else {
-        // 3 or 4 Teams Comparison
-        if (asbA) asbA.innerHTML = `領先: <strong>${activeTeams[0].name}</strong> (${activeTeams[0].stats.totalScore}分)`;
-        if (asbB) asbB.innerHTML = `次名: <strong>${activeTeams[1].name}</strong> (${activeTeams[1].stats.totalScore}分)`;
-        const total = (activeTeams[0].stats.totalScore + activeTeams[1].stats.totalScore);
-        const pctA = total > 0 ? Math.round((activeTeams[0].stats.totalScore / total) * 100) : 50;
-        const fillA = document.getElementById('allianceAFill');
-        const fillB = document.getElementById('allianceBFill');
-        if (fillA) {
-            fillA.style.width = `${pctA}%`;
-            fillA.style.background = activeTeams[0].color;
-        }
-        if (fillB) {
-            fillB.style.width = `${100 - pctA}%`;
-            fillB.style.background = activeTeams[1].color;
+            let rowHtml = '<div class="asb-row" style="display:flex; justify-content:space-between; gap:4px; font-size:11px; flex-wrap:wrap;">';
+            let barHtml = '<div class="asb-progress-wrap" style="display:flex; width:100%; height:8px; border-radius:4px; overflow:hidden; background:rgba(0,0,0,0.3);">';
+
+            teamsWithStats.forEach((t, i) => {
+                const letter = Game.matchMode === '3TEAMS' ? ['A', 'B', 'C'][i] : (i + 1);
+                rowHtml += `
+                    <span style="color:${t.lightColor || t.color}; display:inline-flex; align-items:center; gap:2px;">
+                        <span style="color:${t.color}; font-size:10px;">●</span>
+                        <strong style="color:#f1c40f;">${letter}:</strong>${t.name.slice(0, 4)}: <strong>${t.stats.totalScore}</strong>分
+                    </span>
+                `;
+                barHtml += `
+                    <div style="flex:${totalScoreAll > 0 ? (t.stats.totalScore || 1) : 1}; background:${t.color}; height:100%; transition: flex 0.3s ease;" title="${t.name}: ${t.stats.totalScore}分"></div>
+                `;
+            });
+
+            rowHtml += '</div>';
+            barHtml += '</div>';
+
+            bar.innerHTML = rowHtml + barHtml;
         }
     }
 
@@ -3830,6 +3870,7 @@ function renderTeamSelectCards() {
     const container = document.getElementById('teamSelectCards');
     if (!container) return;
     container.innerHTML = '';
+    container.className = 'team-select-grid' + (Game.matchMode === '3TEAMS' ? ' grid-3teams' : (Game.matchMode === '4TEAMS' ? ' grid-4teams' : ''));
 
     const nameInput = document.getElementById('playerNameInput');
     if (nameInput) nameInput.value = (Game.myPlayer.name === '選手' || Game.myPlayer.name === '選手 1') ? '' : Game.myPlayer.name;
@@ -3891,18 +3932,28 @@ function renderTeamSelectCards() {
     const slotsArray = Array.from({ length: maxSlots }, (_, i) => i + 1);
     const initialTerritories = maxSlots * 7;
 
-    displayTeamIds.forEach(tId => {
+    displayTeamIds.forEach((tId, teamIdx) => {
         const t = Game.teams[tId];
         if (!t) return;
         const stats = computeTeamStats(t.id);
         const isMyTeam = isCurrentUserSeated() && (t.id === Game.currentTeamId);
+
+        let teamRoleBadge = '';
+        if (Game.matchMode === '3TEAMS') {
+            const letter = ['A', 'B', 'C'][teamIdx] || 'A';
+            teamRoleBadge = `<span class="tsc-alliance" style="background:${t.color}; color:#fff; font-weight:bold;">隊伍 ${letter}</span>`;
+        } else if (Game.matchMode === '4TEAMS') {
+            teamRoleBadge = `<span class="tsc-alliance" style="background:${t.color}; color:#fff; font-weight:bold;">隊伍 ${teamIdx + 1}</span>`;
+        } else {
+            teamRoleBadge = `<span class="tsc-alliance ${t.allianceId === 'ALLIANCE_A' ? 'badge-alliance-a' : 'badge-alliance-b'}">${t.alliance}</span>`;
+        }
 
         const card = document.createElement('div');
         card.className = `team-select-card ${isMyTeam ? 'active-login' : ''}`;
 
         card.innerHTML = `
             <div class="tsc-header">
-                <span class="tsc-alliance ${t.allianceId === 'ALLIANCE_A' ? 'badge-alliance-a' : 'badge-alliance-b'}">${t.alliance}</span>
+                ${teamRoleBadge}
                 <span class="tsc-status-badge" style="color:${isMyTeam ? '#27ae60' : '#888'};">
                     ${isMyTeam ? '🟢 您在此隊' : '參賽隊伍'}
                 </span>
@@ -4186,17 +4237,34 @@ function endMatch(shouldBroadcast = true) {
     activeTeams.forEach((t, idx) => {
         const energiesStr = t.members.slice(0, maxSlots).map((m, i) => `P${i + 1}:${typeof m.energy === 'number' ? m.energy : 600}`).join(' ｜ ');
         const tr = document.createElement('tr');
+
+        let rankTitle = `${idx + 1}`;
+        if (idx === 0) rankTitle = '👑 總冠軍';
+        else if (idx === 1) rankTitle = '🥈 亞軍';
+        else if (idx === 2) rankTitle = '🥉 季軍';
+
+        let teamRoleBadge = '';
+        if (Game.matchMode === '3TEAMS') {
+            const letter = ['A', 'B', 'C'][Game.activeTeamIds.indexOf(t.id)] || '';
+            teamRoleBadge = `<span class="team-badge" style="background:${t.color}; color:#fff; font-weight:bold;">隊伍 ${letter}</span>`;
+        } else if (Game.matchMode === '4TEAMS') {
+            const num = (Game.activeTeamIds.indexOf(t.id) + 1) || '';
+            teamRoleBadge = `<span class="team-badge" style="background:${t.color}; color:#fff; font-weight:bold;">隊伍 ${num}</span>`;
+        } else {
+            teamRoleBadge = `<span class="team-badge ${t.allianceId === 'ALLIANCE_A' ? 'badge-alliance-a' : 'badge-alliance-b'}">${t.alliance}</span>`;
+        }
+
         tr.innerHTML = `
-            <td>${idx === 0 ? '👑 總冠軍' : idx + 1}</td>
-            <td><strong style="color:${t.color}">${t.name} (${maxSlots}人)</strong></td>
-            <td><span class="team-badge ${t.allianceId === 'ALLIANCE_A' ? 'badge-alliance-a' : 'badge-alliance-b'}">${t.alliance}</span></td>
+            <td><strong>${rankTitle}</strong></td>
+            <td><strong style="color:${t.color}; white-space:nowrap;">${t.icon || ''} ${t.name} (${maxSlots}人)</strong></td>
+            <td>${teamRoleBadge}</td>
             <td><strong style="color:#b87b00; font-size:16px">${t.stats.totalScore}</strong></td>
             <td>${t.stats.castles} 座 (${t.stats.castles * 100}分)</td>
             <td>${t.stats.bunkers} 座 (${t.stats.bunkers * 80}分)</td>
             <td>${t.stats.cannons} 座 (${t.stats.cannons * 50}分)</td>
             <td>${t.correctCount} 題 (${t.correctCount * 7}分)</td>
             <td>${t.stats.newTerritories} 塊 (${t.stats.newTerritories * 3}分)</td>
-            <td>⚡ ${energiesStr}</td>
+            <td style="white-space:nowrap; font-size:12px;">⚡ ${energiesStr}</td>
         `;
         teamTableBody.appendChild(tr);
     });
@@ -4274,7 +4342,7 @@ function exportResultsCSV() {
     csv += `競賽時長,${Math.round(Game.config.totalDuration / 60)} 分鐘\n`;
     csv += `賽制模式,${modeLabel} (每隊${maxSlots}人 · 每人600能量)\n`;
     csv += `團隊總積分採計公式,特殊地形積分加總 + Σ [ (答對數 × 7) + (新佔領地數 × 3) ] (初始積分為0)\n\n`;
-    csv += `名次,隊伍名稱,所屬陣營,總積分,城堡數,碉堡數,砲台數,答對數,答錯數,新佔領地數,隊員剩餘能量\n`;
+    csv += `名次,隊伍名稱,賽事身分,總積分,城堡數,碉堡數,砲台數,答對數,答錯數,新佔領地數,隊員剩餘能量\n`;
 
     const activeTeams = Game.activeTeamIds.map(id => ({
         ...Game.teams[id],
@@ -4283,7 +4351,10 @@ function exportResultsCSV() {
 
     activeTeams.forEach((t, idx) => {
         const memEnergies = t.members.slice(0, maxSlots).map((m, i) => `隊員${i + 1}:${m.energy || 600}`).join(';');
-        csv += `${idx + 1},${t.name},${t.alliance},${t.stats.totalScore},${t.stats.castles},${t.stats.bunkers},${t.stats.cannons},${t.correctCount},${t.wrongCount},${t.stats.newTerritories},"${memEnergies}"\n`;
+        const roleLabel = Game.matchMode === '3TEAMS'
+            ? `隊伍 ${['A', 'B', 'C'][Game.activeTeamIds.indexOf(t.id)] || ''}`
+            : (Game.matchMode === '4TEAMS' ? `隊伍 ${Game.activeTeamIds.indexOf(t.id) + 1}` : t.alliance);
+        csv += `${idx + 1},${t.name},${roleLabel},${t.stats.totalScore},${t.stats.castles},${t.stats.bunkers},${t.stats.cannons},${t.correctCount},${t.wrongCount},${t.stats.newTerritories},"${memEnergies}"\n`;
     });
 
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });

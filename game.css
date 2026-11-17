@@ -133,6 +133,13 @@ body, html {
   white-space: nowrap;
 }
 
+.nav-matchup-pill {
+  max-width: 48vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 1;
+}
+
 .room-pill {
   cursor: pointer;
   background: rgba(0, 0, 0, 0.45);
@@ -1010,7 +1017,8 @@ body, html {
 
 /* ==================== Final Results Ceremony Modal ==================== */
 .results-modal {
-  width: 720px;
+  width: 960px !important;
+  max-width: 96vw;
 }
 .results-body {
   padding: 24px 30px;
@@ -1063,9 +1071,11 @@ body, html {
   box-shadow: 0 2px 6px rgba(0,0,0,0.08);
 }
 .team-compare-table th, .team-compare-table td {
-  padding: 10px 12px;
+  padding: 8px 6px;
+  font-size: 12px;
   text-align: center;
   border: 1px solid #e0d5be;
+  white-space: nowrap;
 }
 .team-compare-table th {
   background: #5c381e;
@@ -1266,7 +1276,7 @@ body, html {
 
 /* ==================== Team Login Modal Styles ==================== */
 .team-select-modal {
-  width: 840px !important;
+  width: 1040px !important;
   max-width: 96vw;
 }
 .team-select-grid {
@@ -1274,10 +1284,22 @@ body, html {
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 12px;
   margin-top: 10px;
-  max-height: 52vh;
+  max-height: 54vh;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   padding: 4px;
+}
+.team-select-grid.grid-3teams {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.team-select-grid.grid-4teams {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (max-width: 960px) {
+  .team-select-grid.grid-3teams,
+  .team-select-grid.grid-4teams {
+    grid-template-columns: 1fr;
+  }
 }
 .team-select-card {
   background: linear-gradient(180deg, #fbf7ee 0%, #ede3ca 100%);
