@@ -298,29 +298,53 @@ function addFloatingText(x, y, text, color = '#f1c40f', isBig = false) {
     });
 }
 
-function updateSyncBadge(status, brokerName = '') {
+function updateSyncBadge(status, brokerName = '', seconds = 0) {
     const badge = document.getElementById('syncStatusBadge');
     if (!badge) return;
+    badge.style.cursor = 'pointer';
     if (status === 'connected') {
-        badge.innerHTML = `🟢 雲端競賽中 (${brokerName})`;
-        badge.title = `已連線至雲端競賽伺服器 (${brokerName})，所有裝置即時同步！`;
+        badge.innerHTML = `🟢 雲端同步 (${brokerName || 'EMQX'})`;
+        badge.title = `已連線至雲端競賽伺服器 (${brokerName || 'EMQX'})，跨裝置即時同步中。點擊可手動重新同步`;
         badge.style.background = 'rgba(46, 204, 113, 0.2)';
         badge.style.borderColor = '#2ecc71';
         badge.style.color = '#2ecc71';
     } else if (status === 'connecting') {
-        badge.innerHTML = `🟡 連線伺服器中...`;
-        badge.title = '正在連線雲端競賽伺服器...';
+        badge.innerHTML = `🔄 連線同步中...`;
+        badge.title = '正在連線雲端競賽伺服器...點擊可立即重試';
         badge.style.background = 'rgba(243, 156, 18, 0.2)';
         badge.style.borderColor = '#f39c12';
         badge.style.color = '#f1c40f';
+    } else if (status === 'reconnecting') {
+        badge.innerHTML = `🟡 雲端重連中${seconds > 0 ? ` (${seconds}s)` : ''}`;
+        badge.title = '連線暫時中斷，正在輪詢備援伺服器自動重新連線...點擊可立即重試';
+        badge.style.background = 'rgba(243, 156, 18, 0.2)';
+        badge.style.borderColor = '#f39c12';
+        badge.style.color = '#f1c40f';
+    } else if (status === 'offline') {
+        badge.innerHTML = `🔴 雲端離線 (點擊重試)`;
+        badge.title = '目前網路離線或暫無連線，點擊立即手動重新連線';
+        badge.style.background = 'rgba(231, 76, 60, 0.2)';
+        badge.style.borderColor = '#e74c3c';
+        badge.style.color = '#e74c3c';
     } else {
         badge.innerHTML = `🟠 區域/分頁模式`;
-        badge.title = '目前處於本機/同網域分頁模式';
+        badge.title = '目前處於本機/同網域分頁模式，點擊可嘗試連線雲端';
         badge.style.background = 'rgba(230, 126, 34, 0.2)';
         badge.style.borderColor = '#e67e22';
         badge.style.color = '#f39c12';
     }
 }
+
+const MQTT_BROKERS = [
+    { url: 'wss://broker.emqx.io:8084/mqtt', name: 'EMQX' },
+    { url: 'wss://broker.hivemq.com:8884/mqtt', name: 'HiveMQ' },
+    { url: 'wss://test.mosquitto.org:8081/mqtt', name: 'Mosquitto' }
+];
+if (typeof window !== 'undefined') window.MQTT_BROKERS = MQTT_BROKERS;
+let currentBrokerIdx = 0;
+let mqttReconnectTimeout = null;
+let isMqttConnecting = false;
+let mqttWatchdogInterval = null;
 
 function connectMQTT() {
     if (typeof mqtt === 'undefined') {
@@ -329,79 +353,225 @@ function connectMQTT() {
         return;
     }
 
-    const brokers = [
-        { url: 'wss://broker.emqx.io:8084/mqtt', name: 'EMQX' },
-        { url: 'wss://broker.hivemq.com:8884/mqtt', name: 'HiveMQ' }
-    ];
-    let brokerIdx = 0;
-
-    function tryConnect() {
-        const target = brokers[brokerIdx];
-        updateSyncBadge('connecting');
-
-        try {
-            const client = mqtt.connect(target.url, {
-                clientId: 'pagamo_' + myClientId,
-                clean: true,
-                connectTimeout: 5000,
-                reconnectPeriod: 4000
-            });
-
-            Game.mqttClient = client;
-
-            client.on('connect', () => {
-                console.log('Connected to MQTT Broker:', target.name, target.url);
-                updateSyncBadge('connected', target.name);
-                const topic = `pagamo/room/${Game.roomId}`;
-                client.subscribe(topic, { qos: 0 }, (err) => {
-                    if (!err) {
-                        // Request state from peers in the room
-                        broadcastSync({ type: 'REQUEST_SYNC_STATE' });
-                        if (!Game.isSpectator && Game.myPlayer.slot > 0 && Game.teams[Game.currentTeamId]) {
-                            broadcastSync({
-                                type: 'JOIN_SLOT',
-                                teamId: Game.currentTeamId,
-                                slot: Game.myPlayer.slot,
-                                playerName: Game.myPlayer.name,
-                                clientId: myClientId
-                            });
-                        }
-                    }
-                });
-            });
-
-            client.on('message', (topic, message) => {
-                try {
-                    const payload = JSON.parse(message.toString());
-                    if (payload && payload.senderId !== myClientId) {
-                        handleIncomingSync(payload);
-                    }
-                } catch (e) {
-                    console.error('MQTT message parse error:', e);
-                }
-            });
-
-            client.on('error', (err) => {
-                console.warn(`MQTT error on ${target.name}:`, err);
-                client.end(true);
-                if (brokerIdx < brokers.length - 1) {
-                    brokerIdx++;
-                    setTimeout(tryConnect, 1200);
-                } else {
-                    updateSyncBadge('offline');
-                }
-            });
-
-            client.on('offline', () => {
-                updateSyncBadge('offline');
-            });
-        } catch (e) {
-            console.error('MQTT initialization error:', e);
-            updateSyncBadge('offline');
-        }
+    if (mqttReconnectTimeout) {
+        clearTimeout(mqttReconnectTimeout);
+        mqttReconnectTimeout = null;
     }
 
     tryConnect();
+}
+
+function tryConnect() {
+    if (typeof mqtt === 'undefined') return;
+    const target = MQTT_BROKERS[currentBrokerIdx];
+    updateSyncBadge('connecting', target.name);
+    isMqttConnecting = true;
+
+    // Safely tear down existing client if any
+    if (Game.mqttClient) {
+        try {
+            Game.mqttClient.removeAllListeners();
+            Game.mqttClient.end(true);
+        } catch (e) {}
+        Game.mqttClient = null;
+    }
+
+    try {
+        const client = mqtt.connect(target.url, {
+            clientId: 'pagamo_' + myClientId + '_' + Math.random().toString(36).substring(2, 7),
+            clean: true,
+            connectTimeout: 5000,
+            reconnectPeriod: 0 // Handled explicitly by our broker failover loop
+        });
+
+        Game.mqttClient = client;
+
+        client.on('connect', () => {
+            console.log('Connected to MQTT Broker:', target.name, target.url);
+            isMqttConnecting = false;
+            updateSyncBadge('connected', target.name);
+            const topic = `pagamo/room/${Game.roomId}`;
+            client.subscribe(topic, { qos: 0 }, (err) => {
+                if (!err) {
+                    // Request latest competition state from peers
+                    broadcastSync({ type: 'REQUEST_SYNC_STATE' });
+                    if (!Game.isSpectator && Game.myPlayer.slot > 0 && Game.teams[Game.currentTeamId]) {
+                        broadcastSync({
+                            type: 'JOIN_SLOT',
+                            teamId: Game.currentTeamId,
+                            slot: Game.myPlayer.slot,
+                            playerName: Game.myPlayer.name,
+                            clientId: myClientId
+                        });
+                    }
+                }
+            });
+        });
+
+        client.on('message', (topic, message) => {
+            try {
+                const payload = JSON.parse(message.toString());
+                if (payload && payload.senderId !== myClientId) {
+                    handleIncomingSync(payload);
+                }
+            } catch (e) {
+                console.error('MQTT message parse error:', e);
+            }
+        });
+
+        const handleBrokerFailure = (reason) => {
+            if (Game.mqttClient !== client) return;
+            console.warn(`MQTT connection interrupted on ${target.name} (${reason})`);
+            isMqttConnecting = false;
+            try {
+                client.removeAllListeners();
+                client.end(true);
+            } catch (e) {}
+            if (Game.mqttClient === client) Game.mqttClient = null;
+
+            scheduleNextBrokerReconnect();
+        };
+
+        client.on('error', (err) => handleBrokerFailure(err?.message || 'error'));
+        client.on('close', () => handleBrokerFailure('close'));
+        client.on('offline', () => handleBrokerFailure('offline'));
+    } catch (e) {
+        console.error('MQTT initialization error:', e);
+        isMqttConnecting = false;
+        scheduleNextBrokerReconnect();
+    }
+}
+
+function scheduleNextBrokerReconnect() {
+    if (mqttReconnectTimeout) return;
+
+    currentBrokerIdx++;
+    let delay = 1200;
+    if (currentBrokerIdx >= MQTT_BROKERS.length) {
+        currentBrokerIdx = 0;
+        delay = 4500; // After exhausting broker list, wait 4.5s and continuously loop
+        updateSyncBadge('reconnecting', null, 5);
+    } else {
+        updateSyncBadge('connecting', MQTT_BROKERS[currentBrokerIdx].name);
+    }
+
+    mqttReconnectTimeout = setTimeout(() => {
+        mqttReconnectTimeout = null;
+        tryConnect();
+    }, delay);
+}
+
+// Session Hygiene: check if seat login or state is stale across days
+function checkAndCleanExpiredSession() {
+    try {
+        const savedTs = parseInt(localStorage.getItem('pagamo_logged_in_ts') || '0', 10);
+        if (savedTs > 0) {
+            const now = Date.now();
+            const MAX_SEAT_AGE_MS = 6 * 60 * 60 * 1000; // 6 hours
+            const d1 = new Date(savedTs);
+            const d2 = new Date();
+            const isSameCalendarDay = (
+                d1.getFullYear() === d2.getFullYear() &&
+                d1.getMonth() === d2.getMonth() &&
+                d1.getDate() === d2.getDate()
+            );
+
+            if ((now - savedTs > MAX_SEAT_AGE_MS) || !isSameCalendarDay) {
+                console.log('[Session Watchdog] Expired seat from previous day/session detected. Clearing local seat lock.');
+                localStorage.removeItem('pagamo_logged_in_team');
+                localStorage.removeItem('pagamo_logged_in_slot');
+                localStorage.removeItem('pagamo_logged_in_ts');
+                if (typeof sessionStorage !== 'undefined') {
+                    sessionStorage.removeItem('pagamo_welcomed');
+                }
+                if (!Game.isSpectator && (Game.myPlayer.slot > 0 || Game.currentTeamId)) {
+                    Game.currentTeamId = '';
+                    Game.myPlayer.teamId = '';
+                    Game.myPlayer.slot = 0;
+                }
+            }
+        }
+    } catch (e) {
+        console.warn('Error checking expired session:', e);
+    }
+}
+
+// Device Sleep / Wakeup / Online Re-sync Watchdog
+function handleDeviceWakeOrReconnect(reason = 'wake') {
+    console.log(`[Sync Watchdog] Device active (${reason}). Checking connection health...`);
+    
+    // 1. Clear cross-day stale session
+    checkAndCleanExpiredSession();
+
+    // 2. Re-establish connection if down
+    const isClientConnected = Boolean(Game.mqttClient && Game.mqttClient.connected);
+    if (!isClientConnected) {
+        console.log('[Sync Watchdog] MQTT client is offline. Triggering auto-reconnect...');
+        if (mqttReconnectTimeout) {
+            clearTimeout(mqttReconnectTimeout);
+            mqttReconnectTimeout = null;
+        }
+        currentBrokerIdx = 0;
+        tryConnect();
+    } else {
+        // 3. Already connected: immediately broadcast state request to peers
+        broadcastSync({ type: 'REQUEST_SYNC_STATE' });
+        if (!Game.isSpectator && Game.myPlayer.slot > 0 && Game.teams[Game.currentTeamId]) {
+            broadcastSync({
+                type: 'JOIN_SLOT',
+                teamId: Game.currentTeamId,
+                slot: Game.myPlayer.slot,
+                playerName: Game.myPlayer.name,
+                clientId: myClientId
+            });
+        }
+    }
+}
+
+// Manual One-Click Sync Trigger
+function forceManualReSync() {
+    if (window.soundManager && typeof window.soundManager.playClick === 'function') {
+        window.soundManager.playClick();
+    }
+    logBattle('🔄 手動觸發雲端重新連線與比賽進度同步！');
+    updateSyncBadge('connecting');
+    if (mqttReconnectTimeout) {
+        clearTimeout(mqttReconnectTimeout);
+        mqttReconnectTimeout = null;
+    }
+    currentBrokerIdx = 0;
+    tryConnect();
+    broadcastSync({ type: 'REQUEST_SYNC_STATE' });
+}
+
+function initSyncWatchdog() {
+    if (typeof document !== 'undefined') {
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                handleDeviceWakeOrReconnect('visibilitychange');
+            }
+        });
+    }
+    if (typeof window !== 'undefined') {
+        window.addEventListener('pageshow', () => {
+            handleDeviceWakeOrReconnect('pageshow');
+        });
+        window.addEventListener('online', () => {
+            handleDeviceWakeOrReconnect('online');
+        });
+
+        if (mqttWatchdogInterval) clearInterval(mqttWatchdogInterval);
+        mqttWatchdogInterval = setInterval(() => {
+            if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+                updateSyncBadge('offline');
+                return;
+            }
+            const isConnected = Boolean(Game.mqttClient && Game.mqttClient.connected);
+            if (!isConnected && !isMqttConnecting && !mqttReconnectTimeout) {
+                scheduleNextBrokerReconnect();
+            }
+        }, 12000);
+    }
 }
 
 function initNetworkSync() {
@@ -434,6 +604,9 @@ function initNetworkSync() {
 
     // 3. Connect to MQTT Cloud for cross-device live tournament
     connectMQTT();
+
+    // 4. Initialize device sleep/wake, tab visibility, online listeners & watchdog
+    initSyncWatchdog();
 }
 
 function broadcastSync(data) {
@@ -515,14 +688,38 @@ function saveCurrentRoomState() {
 
 function loadRoomState(roomId) {
     if (!roomId) return null;
+    const isStateExpired = (savedAt) => {
+        if (!savedAt) return true;
+        const age = Date.now() - savedAt;
+        const MAX_STATE_AGE = 4 * 60 * 60 * 1000; // 4 hours
+        const d1 = new Date(savedAt);
+        const d2 = new Date();
+        const isSameDay = (
+            d1.getFullYear() === d2.getFullYear() &&
+            d1.getMonth() === d2.getMonth() &&
+            d1.getDate() === d2.getDate()
+        );
+        return (age > MAX_STATE_AGE || !isSameDay);
+    };
+
     if (Game.roomStates && Game.roomStates[roomId]) {
-        return Game.roomStates[roomId];
+        const cached = Game.roomStates[roomId];
+        if (isStateExpired(cached?.savedAt)) {
+            delete Game.roomStates[roomId];
+        } else {
+            return cached;
+        }
     }
     try {
         if (typeof sessionStorage !== 'undefined') {
             const raw = sessionStorage.getItem('pagamo_room_state_' + roomId);
             if (raw) {
                 const parsed = JSON.parse(raw);
+                if (isStateExpired(parsed?.savedAt)) {
+                    console.log('[RoomState] Discarding expired room state from previous day.');
+                    sessionStorage.removeItem('pagamo_room_state_' + roomId);
+                    return null;
+                }
                 if (!Game.roomStates) Game.roomStates = {};
                 Game.roomStates[roomId] = parsed;
                 return parsed;
@@ -1038,13 +1235,14 @@ function handleIncomingSync(data) {
         refreshGameQuestionBank(true);
         logBattle(`🔄 題庫已依據《25中排灣語_句型練習.pdf》同步重新抽題！全場本局題目已煥然一新！`);
     } else if (data.type === 'END_MATCH') {
-        endMatch(false);
+        endMatch(false, true);
     } else if (data.type === 'REQUEST_SYNC_STATE') {
         const snapshot = {
             playMode: Game.playMode,
             matchMode: Game.matchMode,
             activeTeamIds: Game.activeTeamIds,
             isRunning: Game.isRunning,
+            hasStarted: Game.hasStarted,
             timeRemaining: Game.timeRemaining,
             tileOwners: Game.tileOwners,
             tileHps: Game.tileHps,
@@ -1126,6 +1324,9 @@ function handleIncomingSync(data) {
         if (typeof s.timeRemaining === 'number') {
             Game.timeRemaining = s.timeRemaining;
             updateTimerDisplay();
+        }
+        if (typeof s.hasStarted === 'boolean') {
+            Game.hasStarted = s.hasStarted;
         }
         if (s.isRunning && !Game.isRunning) {
             startMatch(false);
@@ -1945,7 +2146,7 @@ function startMatch(shouldBroadcast = true) {
         if (Game.timeRemaining <= 0) {
             Game.timeRemaining = 0;
             updateTimerDisplay();
-            endMatch(true);
+            endMatch(true, true);
             return;
         }
         updateTimerDisplay();
@@ -4268,6 +4469,7 @@ function selectTeamSlot(teamId, slot) {
     try {
         localStorage.setItem('pagamo_logged_in_team', teamId);
         localStorage.setItem('pagamo_logged_in_slot', slot);
+        localStorage.setItem('pagamo_logged_in_ts', Date.now().toString());
     } catch (e) {}
 
     broadcastSync({
@@ -4305,6 +4507,7 @@ function selectSpectatorMode() {
     try {
         localStorage.setItem('pagamo_logged_in_team', 'SPECTATOR');
         localStorage.setItem('pagamo_logged_in_slot', 0);
+        localStorage.setItem('pagamo_logged_in_ts', Date.now().toString());
     } catch (e) {}
 
     broadcastSync({
@@ -4407,9 +4610,58 @@ function toggleFullscreen() {
     }
 }
 
-// ==================== End Match & Ceremony ====================
-function endMatch(shouldBroadcast = true) {
+// ==================== End Match & Ceremony (With Fail-Safe Confirmation) ====================
+function confirmEndMatch() {
+    // If match is not currently in progress or time is already up, settle immediately
+    if (!Game.hasStarted || Game.timeRemaining <= 0 || !Game.isRunning) {
+        endMatch(true, true);
+        return;
+    }
+
+    const modal = document.getElementById('confirmEndModal');
+    const timeElem = document.getElementById('confirmEndRemainingTime');
+    const m = Math.floor(Game.timeRemaining / 60);
+    const s = Game.timeRemaining % 60;
+    const timeStr = `${m} 分 ${s < 10 ? '0' : ''}${s} 秒`;
+
+    if (timeElem) timeElem.textContent = timeStr;
+
+    if (modal) {
+        modal.style.display = 'flex';
+    } else {
+        const ok = window.confirm(
+            `⚠️ 確定要提早結束比賽並進行最終結算嗎？\n\n` +
+            `目前比賽正在進行中（剩餘時間：${timeStr}）。\n\n` +
+            `按下【確定】：立即停止全場倒數、鎖定領地並揭曉成績名次。\n` +
+            `按下【取消】：返回比賽繼續作答。`
+        );
+        if (ok) {
+            endMatch(true, true);
+        }
+    }
+}
+
+function closeConfirmEndModal() {
+    const modal = document.getElementById('confirmEndModal');
+    if (modal) modal.style.display = 'none';
+}
+
+function executeEndMatchConfirmed() {
+    closeConfirmEndModal();
+    endMatch(true, true);
+}
+
+function endMatch(shouldBroadcast = true, force = false) {
+    // Fail-safe protection: if match is running and not forced, prompt for secondary confirmation
+    if (!force && Game.hasStarted && Game.isRunning && Game.timeRemaining > 0) {
+        confirmEndMatch();
+        return;
+    }
+
+    closeConfirmEndModal();
     pauseMatch(false);
+    Game.isRunning = false;
+    Game.hasStarted = false;
     window.soundManager.playVictory();
 
     const activeTeams = Game.activeTeamIds.map(id => ({
@@ -4662,6 +4914,9 @@ function applySettings() {
 
 // ==================== Bootstrapping ====================
 window.addEventListener('DOMContentLoaded', () => {
+    // 0. Auto-expire yesterday's stale seat session
+    checkAndCleanExpiredSession();
+
     // Restore saved settings
     try {
         const savedName = localStorage.getItem('pagamo_player_name');
@@ -4785,7 +5040,7 @@ window.addEventListener('DOMContentLoaded', () => {
         openQuestionModal('0,-1', true);
     } else if (modalParam === 'results') {
         closeTeamLoginModal(true);
-        endMatch();
+        endMatch(false, true);
     } else if (modalParam === 'qbank') {
         closeTeamLoginModal(true);
         openQBankModal();
