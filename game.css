@@ -1648,6 +1648,17 @@ body, html {
   box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
 }
 
+/* Match-Lock Controls Disabled State */
+.wood-select:disabled,
+.mode-toggle-btn:disabled,
+.team-picker-select:disabled,
+.room-toggle-btn:disabled {
+  opacity: 0.55 !important;
+  cursor: not-allowed !important;
+  filter: grayscale(40%) !important;
+  pointer-events: none;
+}
+
 
 /* Wood Select in Header Nav */
 .wood-select {
