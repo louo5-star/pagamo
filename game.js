@@ -1184,6 +1184,21 @@ function handleIncomingSync(data) {
                 updateTimerDisplay();
             }
         }
+        // Continuous Heartbeat Sync: If incoming timer tick indicates match is actively running
+        if (data.hasStarted || data.isRunning || (typeof data.timeRemaining === 'number' && data.timeRemaining > 0 && data.timeRemaining < Game.config.totalDuration)) {
+            let stateChanged = false;
+            if (!Game.hasStarted) {
+                Game.hasStarted = true;
+                stateChanged = true;
+            }
+            if (!Game.isRunning && (data.isRunning !== false)) {
+                Game.isRunning = true;
+                stateChanged = true;
+            }
+            if (stateChanged) {
+                updateUI();
+            }
+        }
     } else if (data.type === 'JOIN_SLOT') {
         const { teamId, slot, playerName, prevTeamId, prevSlot, clientId } = data;
         const targetTeam = Game.teams[teamId];
@@ -1498,6 +1513,19 @@ function switchPlayMode(mode, shouldBroadcast = true) {
         return;
     }
 
+    // Seated Player Guard: Seated contestants cannot change play mode
+    if (!Game.isSpectator && isCurrentUserSeated()) {
+        console.warn('[Match-Lock] 選手已就座，禁止切換遊玩模式！');
+        if (typeof alert === 'function' && shouldBroadcast) {
+            alert('💡 您已就座參賽，遊玩模式由老師/裁判統一設定，選手無法切換！');
+        }
+        const navSel = document.getElementById('playModeSelect');
+        if (navSel) navSel.value = Game.playMode;
+        const cfgSel = document.getElementById('cfgPlayMode');
+        if (cfgSel) cfgSel.value = Game.playMode;
+        return;
+    }
+
     Game.playMode = mode;
 
     // 同步更新導航列與設定下拉選單
@@ -1634,6 +1662,19 @@ function switchMatchMode(mode, shouldBroadcast = true) {
         console.warn('[Match-Lock] 比賽已開賽，在比賽結束或按下結算前禁止切換賽制！');
         if (typeof alert === 'function' && shouldBroadcast) {
             alert('⚠️ 比賽已開始！\n在比賽結束或按下結算之前，禁止切換隊伍賽制！');
+        }
+        const navSel = document.getElementById('matchModeSelect');
+        if (navSel) navSel.value = Game.matchMode;
+        const cfgSel = document.getElementById('cfgMatchMode');
+        if (cfgSel) cfgSel.value = Game.matchMode;
+        return;
+    }
+
+    // Seated Player Guard: Seated contestants cannot change match mode
+    if (!Game.isSpectator && isCurrentUserSeated()) {
+        console.warn('[Match-Lock] 選手已就座，禁止切換隊伍賽制！');
+        if (typeof alert === 'function' && shouldBroadcast) {
+            alert('💡 您已就座參賽，賽制由老師/裁判統一設定，選手無法切換！');
         }
         const navSel = document.getElementById('matchModeSelect');
         if (navSel) navSel.value = Game.matchMode;
@@ -2329,7 +2370,14 @@ function startMatch(shouldBroadcast = true) {
 
         Game.timeRemaining -= 1;
         if (Game.timeRemaining % 3 === 0) {
-            broadcastSync({ type: 'TIMER_TICK', timeRemaining: Game.timeRemaining });
+            broadcastSync({
+                type: 'TIMER_TICK',
+                timeRemaining: Game.timeRemaining,
+                hasStarted: true,
+                isRunning: true,
+                matchMode: Game.matchMode,
+                playMode: Game.playMode
+            });
         }
 
         if (Game.timeRemaining <= 0) {
@@ -4093,23 +4141,31 @@ function hideTooltip() {
 
 // ==================== UI Updates ====================
 function updateMatchLockUI() {
-    const isLocked = typeof isMatchInProgress === 'function' ? isMatchInProgress() : (Game.hasStarted || Game.isRunning);
+    const isPlayerSeated = !Game.isSpectator && (typeof isCurrentUserSeated === 'function' ? isCurrentUserSeated() : false);
+    const inProgress = typeof isMatchInProgress === 'function' ? isMatchInProgress() : (Game.hasStarted || Game.isRunning);
+    const isLocked = inProgress || isPlayerSeated;
+
+    const lockTip = inProgress
+        ? '🔒 比賽已開賽（在結束或結算前禁止切換）'
+        : (isPlayerSeated ? '💡 您已就座參賽，賽制與模式由老師/裁判統一設定' : '');
 
     // 1. Navigation Selectors
     const matchModeSel = document.getElementById('matchModeSelect');
     if (matchModeSel) {
         matchModeSel.disabled = isLocked;
-        matchModeSel.title = isLocked ? '🔒 比賽進行中（在結束或結算前禁止切換賽制）' : '選擇隊伍賽制';
+        matchModeSel.title = isLocked ? lockTip : '選擇隊伍賽制';
         matchModeSel.style.cursor = isLocked ? 'not-allowed' : 'pointer';
-        matchModeSel.style.opacity = isLocked ? '0.65' : '1';
+        matchModeSel.style.opacity = isLocked ? '0.55' : '1';
+        matchModeSel.style.pointerEvents = isLocked ? 'none' : 'auto';
     }
 
     const playModeSel = document.getElementById('playModeSelect');
     if (playModeSel) {
         playModeSel.disabled = isLocked;
-        playModeSel.title = isLocked ? '🔒 比賽進行中（在結束或結算前禁止切換模式）' : '選擇遊玩模式';
+        playModeSel.title = isLocked ? lockTip : '選擇遊玩模式';
         playModeSel.style.cursor = isLocked ? 'not-allowed' : 'pointer';
-        playModeSel.style.opacity = isLocked ? '0.65' : '1';
+        playModeSel.style.opacity = isLocked ? '0.55' : '1';
+        playModeSel.style.pointerEvents = isLocked ? 'none' : 'auto';
     }
 
     // 2. Lobby Modal Mode Toggle Buttons
@@ -4118,8 +4174,9 @@ function updateMatchLockUI() {
         if (btn) {
             btn.disabled = isLocked;
             btn.style.cursor = isLocked ? 'not-allowed' : 'pointer';
-            btn.style.opacity = isLocked ? '0.65' : '1';
-            if (isLocked) btn.title = '🔒 比賽進行中（在結束或結算前禁止切換模式）';
+            btn.style.opacity = isLocked ? '0.55' : '1';
+            btn.style.pointerEvents = isLocked ? 'none' : 'auto';
+            if (isLocked) btn.title = lockTip;
         }
     });
 
@@ -4128,8 +4185,9 @@ function updateMatchLockUI() {
         if (btn) {
             btn.disabled = isLocked;
             btn.style.cursor = isLocked ? 'not-allowed' : 'pointer';
-            btn.style.opacity = isLocked ? '0.65' : '1';
-            if (isLocked) btn.title = '🔒 比賽進行中（在結束或結算前禁止切換賽制）';
+            btn.style.opacity = isLocked ? '0.55' : '1';
+            btn.style.pointerEvents = isLocked ? 'none' : 'auto';
+            if (isLocked) btn.title = lockTip;
         }
     });
 
@@ -4138,10 +4196,29 @@ function updateMatchLockUI() {
         document.querySelectorAll('.team-picker-select').forEach(sel => {
             sel.disabled = isLocked;
             sel.style.cursor = isLocked ? 'not-allowed' : 'pointer';
-            sel.style.opacity = isLocked ? '0.65' : '1';
+            sel.style.opacity = isLocked ? '0.55' : '1';
+            sel.style.pointerEvents = isLocked ? 'none' : 'auto';
             if (isLocked) sel.title = '🔒 比賽進行中（在結束或結算前禁止更換出戰隊伍）';
         });
     }
+}
+
+function checkLockBeforeNavClick(e, type) {
+    if (typeof isMatchInProgress === 'function' && isMatchInProgress()) {
+        if (e && e.preventDefault) e.preventDefault();
+        if (e && e.stopPropagation) e.stopPropagation();
+        alert('⚠️ 比賽已開始！\n在比賽結束或按下結算之前，禁止切換賽制與模式！');
+        return false;
+    }
+    if (!Game.isSpectator && typeof isCurrentUserSeated === 'function' && isCurrentUserSeated()) {
+        if (e && e.preventDefault) e.preventDefault();
+        if (e && e.stopPropagation) e.stopPropagation();
+        alert('💡 您已就座參賽，賽制與模式由老師/裁判統一設定，選手無法切換！');
+        return false;
+    }
+}
+if (typeof window !== 'undefined') {
+    window.checkLockBeforeNavClick = checkLockBeforeNavClick;
 }
 
 function updateUI() {

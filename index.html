@@ -3,16 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>PaGamO 城堡爭奪戰 - 總決賽 (中排灣語競賽)</title>
-  <link rel="stylesheet" href="game.css">
+  <link rel="stylesheet" href="game.css?v=20261120_v26">
 </head>
 <body>
   <div id="app">
     <!-- Top Navigation Bar -->
     <header class="top-nav">
       <div class="nav-left">
-        <div class="match-dropdown" title="PaGamO 城堡爭奪戰 - 中排灣語決賽">
-          <span>🏰 城堡爭奪戰 ▾</span>
+        <div class="match-dropdown" title="PaGamO 城堡爭奪戰 - 中排灣語決賽 (最新開賽防切換鎖定版 v2.6)">
+          <span>🏰 城堡爭奪戰 <span style="font-size:10px; background:#27ae60; color:#fff; padding:1px 5px; border-radius:4px; margin-left:3px; vertical-align:middle;">v2.6</span> ▾</span>
         </div>
         <div class="nav-pill room-pill" id="navRoomPill" title="選擇競賽區域（不同裝置選擇相同區域即可跨裝置連線同場競賽）">
           <span style="color:#ffd166; font-size:12px; font-weight:bold;">🏟️ 區域:</span>
@@ -24,7 +27,7 @@
             <option value="room5">第 5 區</option>
           </select>
         </div>
-        <div class="nav-pill nav-mode-pill">
+        <div class="nav-pill nav-mode-pill" id="navMatchModePill" onclick="checkLockBeforeNavClick(event, 'matchMode')">
           <span style="color:#ffd166; font-size:12px; font-weight:bold;">賽制:</span>
           <select id="matchModeSelect" class="wood-select" onchange="switchMatchMode(this.value)">
             <option value="1VS1">⚔️ 1對1 (2人)</option>
@@ -34,7 +37,7 @@
             <option value="4TEAMS">🏰 四隊 (12人)</option>
           </select>
         </div>
-        <div class="nav-pill nav-playmode-pill" id="navPlayModePill" title="選擇遊玩模式：比賽模式需按「開始比賽」方可作答計分；練習模式隨時可作答">
+        <div class="nav-pill nav-playmode-pill" id="navPlayModePill" onclick="checkLockBeforeNavClick(event, 'playMode')" title="選擇遊玩模式：比賽模式需按「開始比賽」方可作答計分；練習模式隨時可作答">
           <span style="color:#ffd166; font-size:12px; font-weight:bold;">模式:</span>
           <select id="playModeSelect" class="wood-select" onchange="switchPlayMode(this.value)" style="font-weight:bold; color:#ffeaa7;">
             <option value="TOURNAMENT" selected>🏆 比賽模式</option>
@@ -526,13 +529,13 @@
     </div>
   </div>
 
-  <!-- Scripts -->
-  <script src="mqtt.min.js"></script>
-  <script src="audio.js"></script>
-  <script src="questions_data.js"></script>
-  <script src="map_preset.js"></script>
-  <script src="assets_data.js"></script>
-  <script src="game.js"></script>
+  <!-- Scripts (Cache-Busting for Instant Updates on GitHub Pages & Tablets) -->
+  <script src="mqtt.min.js?v=20261120_v26"></script>
+  <script src="audio.js?v=20261120_v26"></script>
+  <script src="questions_data.js?v=20261120_v26"></script>
+  <script src="map_preset.js?v=20261120_v26"></script>
+  <script src="assets_data.js?v=20261120_v26"></script>
+  <script src="game.js?v=20261120_v26"></script>
 
   <!-- Question Filter Helper Script -->
   <script>
