@@ -847,6 +847,7 @@ function switchRoom(newRoomId) {
         if (Array.isArray(savedState.activeTeamIds) && savedState.activeTeamIds.length > 0) {
             Game.activeTeamIds = [...savedState.activeTeamIds];
         }
+        initMapState(false);
         Game.tileOwners = { ...savedState.tileOwners };
         Game.tileHps = savedState.tileHps ? JSON.parse(JSON.stringify(savedState.tileHps)) : {};
         if (Game.map && Game.map.tiles) {
@@ -867,7 +868,21 @@ function switchRoom(newRoomId) {
             });
         }
         if (savedState.teams) {
-            Game.teams = JSON.parse(JSON.stringify(savedState.teams));
+            Object.entries(savedState.teams).forEach(([id, tData]) => {
+                if (Game.teams[id]) {
+                    if (tData.name) Game.teams[id].name = tData.name;
+                    if (typeof tData.energy === 'number') Game.teams[id].energy = tData.energy;
+                    if (typeof tData.correctCount === 'number') Game.teams[id].correctCount = tData.correctCount;
+                    if (typeof tData.wrongCount === 'number') Game.teams[id].wrongCount = tData.wrongCount;
+                    if (Array.isArray(tData.members) && Game.teams[id].members) {
+                        tData.members.forEach((m, idx) => {
+                            if (Game.teams[id].members[idx]) {
+                                Object.assign(Game.teams[id].members[idx], m);
+                            }
+                        });
+                    }
+                }
+            });
         }
         Game.timeRemaining = typeof savedState.timeRemaining === 'number' ? savedState.timeRemaining : (Game.config.totalDuration || 1200);
         Game.hasStarted = Boolean(savedState.hasStarted);
@@ -1131,6 +1146,34 @@ function handleIncomingSync(data) {
         window.soundManager.playWrong();
         logBattle(`❌【${Game.teams[teamId] ? Game.teams[teamId].name : teamId}】${playerName ? `(${playerName})` : ''} 答錯題目 (-15個人能量)`);
         updateUI();
+    } else if (data.type === 'TRAIN_TILE') {
+        const { teamId, tileKey, memberSlot, memberEnergy, energy, correctCount, wrongCount, playerName, currentHp, maxHp, isCorrect } = data;
+        if (Game.teams[teamId]) {
+            if (typeof memberSlot === 'number' && Game.teams[teamId].members && Game.teams[teamId].members[memberSlot - 1]) {
+                if (typeof memberEnergy === 'number') {
+                    Game.teams[teamId].members[memberSlot - 1].energy = memberEnergy;
+                }
+            }
+            if (typeof energy === 'number') Game.teams[teamId].energy = energy;
+            if (typeof correctCount === 'number') Game.teams[teamId].correctCount = correctCount;
+            if (typeof wrongCount === 'number') Game.teams[teamId].wrongCount = wrongCount;
+        }
+        if (isCorrect && tileKey && typeof currentHp === 'number' && typeof maxHp === 'number') {
+            Game.tileHps[tileKey] = { current: currentHp, max: maxHp };
+            const [tq, tr] = tileKey.split(',').map(Number);
+            const worldPos = hexToWorld(tq, tr);
+            addFloatingText(worldPos.x, worldPos.y - 20, `🛡️ 土地強化 (${currentHp}/${maxHp})`, '#2ecc71', false);
+            logBattle(`🏋️ 【${Game.teams[teamId] ? Game.teams[teamId].name : teamId}】(${playerName || '選手'}) 訓練強化了領地防禦至 ${currentHp}/${maxHp} HP！`);
+            window.soundManager.playCorrect();
+        } else if (!isCorrect) {
+            const [tq, tr] = tileKey.split(',').map(Number);
+            const worldPos = hexToWorld(tq, tr);
+            addFloatingText(worldPos.x, worldPos.y - 15, '⚡ -10 訓練失敗', '#ff7675', false);
+            logBattle(`ℹ️ 【${Game.teams[teamId] ? Game.teams[teamId].name : teamId}】(${playerName || '選手'}) 土地防禦訓練答錯，扣除個人能量 10 點。`);
+            window.soundManager.playWrong();
+        }
+        saveCurrentRoomState();
+        updateUI();
     } else if (data.type === 'START_MATCH') {
         // PROHIBIT RE-STARTING MATCH IN ONGOING ZONE:
         // If match has already started and is in progress, ignore duplicate/re-start timer resets!
@@ -1370,11 +1413,21 @@ function handleIncomingSync(data) {
         if (s.playMode && s.playMode !== Game.playMode) {
             switchPlayMode(s.playMode, false);
         }
-        if (s.activeTeamIds && Array.isArray(s.activeTeamIds) && s.activeTeamIds.length > 0) {
-            Game.activeTeamIds = [...s.activeTeamIds];
-        }
+        let needRebuildMap = false;
         if (s.matchMode && s.matchMode !== Game.matchMode) {
-            switchMatchMode(s.matchMode, false);
+            Game.matchMode = s.matchMode;
+            needRebuildMap = true;
+        }
+        if (s.activeTeamIds && Array.isArray(s.activeTeamIds) && s.activeTeamIds.length > 0) {
+            const isDiff = s.activeTeamIds.length !== Game.activeTeamIds.length ||
+                s.activeTeamIds.some((id, idx) => id !== Game.activeTeamIds[idx]);
+            if (isDiff) {
+                Game.activeTeamIds = [...s.activeTeamIds];
+                needRebuildMap = true;
+            }
+        }
+        if (needRebuildMap) {
+            initMapState(false);
         }
         if (s.tileOwners) {
             Game.tileOwners = { ...s.tileOwners };
@@ -2460,7 +2513,7 @@ function updateTimerDisplay() {
 }
 
 // ==================== Interactive Human Answering ====================
-function openQuestionModal(tileKey, force = false) {
+function openQuestionModal(tileKey, force = false, mode = 'ATTACK') {
     if (Game.isSpectator) {
         if (typeof alert === 'function') alert('🎙️ 您目前是「裁判 / 大螢幕觀戰席」，僅供全場戰況觀看與發令計時。\n如需親自攻佔領地與答題，請點選上方「選隊入座」選擇您的隊伍席位！');
         return;
@@ -2486,26 +2539,48 @@ function openQuestionModal(tileKey, force = false) {
     if (!team) return;
 
     const mySlot = Game.myPlayer.slot || 1;
+    const targetTile = Game.map.tiles[tileKey];
+    if (!targetTile) return;
 
-    // 個人領地開拓檢驗：每位選手只能攻佔自己領地周遭的地，不可越區攻佔隊友周遭的地！
-    if (!force) {
-        const expandable = getExpandableTilesForTeam(team.id, mySlot);
-        if (!expandable.includes(tileKey)) {
-            const teamAll = getExpandableTilesForTeam(team.id, 'ALL');
-            if (teamAll.includes(tileKey)) {
-                if (typeof alert === 'function') alert('⚠️ 無法進攻！\n此地塊僅與隊友領地相鄰，每位選手只能由「自己負責的領地周遭」進行開拓進攻！');
-            } else {
-                if (typeof alert === 'function') alert('⚠️ 無法開拓此地！\n該地塊必須與您個人的現有領地相鄰。');
-            }
+    const prevOwner = Game.tileOwners[tileKey];
+
+    if (mode === 'TRAIN') {
+        // 土地防禦訓練：必須為己方已佔領的土地
+        if (!prevOwner || prevOwner.teamId !== team.id) {
+            if (typeof alert === 'function') alert('⚠️ 只能對己方已佔領的土地進行訓練！');
+            return;
+        }
+        const baseHp = getTileMaxHp(targetTile.type);
+        const maxCap = baseHp * 2;
+        const tileHp = (Game.tileHps && Game.tileHps[tileKey]) || { current: baseHp, max: baseHp };
+        if (tileHp.max >= maxCap && tileHp.current >= maxCap) {
+            if (typeof alert === 'function') alert(`🏆 此土地已達最高訓練上限（${tileHp.current}/${maxCap} HP，已達原本基本血量的 2 倍滿血）！無需再進行訓練。`);
             if (window.soundManager) window.soundManager.playWarning();
             return;
+        }
+    } else {
+        // 個人領地開拓檢驗：每位選手只能攻佔自己領地周遭的地，不可越區攻佔隊友周遭的地！
+        if (!force) {
+            const expandable = getExpandableTilesForTeam(team.id, mySlot);
+            if (!expandable.includes(tileKey)) {
+                const teamAll = getExpandableTilesForTeam(team.id, 'ALL');
+                if (teamAll.includes(tileKey)) {
+                    if (typeof alert === 'function') alert('⚠️ 無法進攻！\n此地塊僅與隊友領地相鄰，每位選手只能由「自己負責的領地周遭」進行開拓進攻！');
+                } else {
+                    if (typeof alert === 'function') alert('⚠️ 無法開拓此地！\n該地塊必須與您個人的現有領地相鄰。');
+                }
+                if (window.soundManager) window.soundManager.playWarning();
+                return;
+            }
         }
     }
 
     const myMember = (team.members && team.members[mySlot - 1]) ? team.members[mySlot - 1] : { energy: 600 };
     let curEnergy = typeof myMember.energy === 'number' ? myMember.energy : 600;
 
-    if (curEnergy < Game.config.correctEnergyCost) {
+    const reqEnergy = mode === 'TRAIN' ? 4 : Game.config.correctEnergyCost;
+
+    if (curEnergy < reqEnergy) {
         if (Game.playMode === 'PRACTICE') {
             // 練習模式：能量用盡時自動補充，保證可隨時繼續練習
             myMember.energy = 600;
@@ -2514,14 +2589,12 @@ function openQuestionModal(tileKey, force = false) {
             updateUI();
             logBattle(`⚡ 練習模式：已為【${team.name}】(${Game.myPlayer.name}) 自動補充能量至 600 點！`);
         } else {
-            if (typeof alert === 'function') alert(`⚡ 個人能量不足！答對一題需消耗 6 點能量，您目前個人能量僅剩 ${curEnergy} 點，無法出征！\n同隊其他隊員有其獨立的 600 點個人能量，可由隊友繼續出題攻佔。`);
+            const actLabel = mode === 'TRAIN' ? `訓練土地需消耗 4 點能量` : `答對一題需消耗 6 點能量`;
+            if (typeof alert === 'function') alert(`⚡ 個人能量不足！${actLabel}，您目前個人能量僅剩 ${curEnergy} 點，無法進行！\n同隊其他隊員有其獨立的 600 點個人能量，可由隊友繼續出題攻佔。`);
             if (window.soundManager) window.soundManager.playWarning();
             return;
         }
     }
-
-    const targetTile = Game.map.tiles[tileKey];
-    if (!targetTile) return;
 
     // 從《25中排灣語_句型練習.pdf》題庫隊列依序抽取不重複題目（保證單局絕不重複）
     if (!Game.questionQueue || Game.questionQueue.length === 0) {
@@ -2534,38 +2607,62 @@ function openQuestionModal(tileKey, force = false) {
 
     const q = Game.questionQueue.pop() || window.QUESTION_BANK[0];
     if (Game.usedQuestionIds) Game.usedQuestionIds.add(q.id);
-    Game.currentQuestion = { ...q, targetKey: tileKey };
+    Game.currentQuestion = { ...q, targetKey: tileKey, mode: mode };
 
     let targetName = '🌊 海域領地';
     let pts = 3;
-    if (targetTile.type === 'castle') { targetName = '👑 核心城堡 (高分核心)'; pts = 100; }
+    if (targetTile.type === 'castle') { targetName = '👑 核心城堡'; pts = 100; }
     else if (targetTile.type === 'bunker') { targetName = '🏯 碉堡要塞'; pts = 80; }
     else if (targetTile.type === 'cannon') { targetName = '🎯 砲台哨站'; pts = 50; }
     else if (targetTile.type === 'island') { targetName = '🏝️ 外圍島嶼'; pts = 3; }
 
-    const prevOwner = Game.tileOwners[tileKey];
+    const baseHp = getTileMaxHp(targetTile.type);
+    const maxCap = baseHp * 2;
+    const tileHp = (Game.tileHps && Game.tileHps[tileKey]) || { current: baseHp, max: baseHp };
+
     let ownerTip = '中立土地';
     if (prevOwner) {
         const prevTeam = Game.teams[prevOwner.teamId];
         ownerTip = `原佔領者: 【${prevTeam ? prevTeam.name : prevOwner.teamId}】`;
     }
 
-    const tileHp = (Game.tileHps && Game.tileHps[tileKey]) || { current: getTileMaxHp(targetTile.type), max: getTileMaxHp(targetTile.type) };
-    const hitsNeeded = Math.ceil(tileHp.current / 50);
-    const hpColor = tileHp.current === tileHp.max ? '#2ecc71' : (tileHp.current <= 50 ? '#ff7675' : '#f39c12');
-
     document.getElementById('qSubjectBadge').textContent = q.subject || '中排灣語';
     const catBadge = document.getElementById('qCategoryBadge');
     if (catBadge) catBadge.textContent = q.category || '情境族語';
 
-    const modeBadge = Game.playMode === 'PRACTICE'
-        ? '<span class="team-badge" style="background:#27ae60; font-size:11px; margin-right:4px;">📖 練習模式</span>'
-        : '<span class="team-badge" style="background:#d35400; font-size:11px; margin-right:4px;">🏆 比賽模式</span>';
+    const modeBadgeEl = document.getElementById('qModeBadge');
 
-    document.getElementById('qTargetBanner').innerHTML = `
-        <span>${modeBadge}目標: <strong>${targetName}</strong> (+${pts}分) ｜ 🛡️ 血量: <strong style="color:${hpColor};">${tileHp.current}/${tileHp.max} HP</strong> (攻擊-50，剩餘 ${hitsNeeded} 次佔領) ｜ ${ownerTip}</span>
-        <span class="q-energy-tip">⚡ 個人能量: ${curEnergy}/600 (答對 -6 ｜ 答錯 -15)</span>
-    `;
+    if (mode === 'TRAIN') {
+        if (modeBadgeEl) {
+            modeBadgeEl.textContent = '🏋️ 土地防禦訓練';
+            modeBadgeEl.style.background = '#2980b9';
+        }
+        const boost = Math.round(baseHp / 3);
+        const nextMax = Math.min(maxCap, tileHp.max + boost);
+        const nextCur = Math.min(nextMax, tileHp.current + boost);
+        const ownerName = prevOwner.memberSlot === mySlot ? '我方個人領地' : `隊友領地 (隊員 ${prevOwner.memberSlot})`;
+        const trainBadge = '<span class="team-badge" style="background:#2980b9; font-size:11px; margin-right:4px;">🏋️ 土地訓練</span>';
+
+        document.getElementById('qTargetBanner').innerHTML = `
+            <span>${trainBadge}目標: <strong>${targetName}</strong> (${ownerName}) ｜ 🛡️ 血量: <strong style="color:#2ecc71;">${tileHp.current}/${tileHp.max} HP</strong> ➔ 答對提升至: <strong style="color:#f1c40f;">${nextCur}/${nextMax} HP</strong> (上限 ${maxCap} HP)</span>
+            <span class="q-energy-tip">⚡ 個人能量: ${curEnergy}/600 (答對 -4 ｜ 答錯 -10，答錯不加血)</span>
+        `;
+    } else {
+        if (modeBadgeEl) {
+            modeBadgeEl.textContent = '⚔️ 領地爭奪答題';
+            modeBadgeEl.style.background = '#e67e22';
+        }
+        const hitsNeeded = Math.ceil(tileHp.current / 50);
+        const hpColor = tileHp.current === tileHp.max ? '#2ecc71' : (tileHp.current <= 50 ? '#ff7675' : '#f39c12');
+        const modeBadge = Game.playMode === 'PRACTICE'
+            ? '<span class="team-badge" style="background:#27ae60; font-size:11px; margin-right:4px;">📖 練習模式</span>'
+            : '<span class="team-badge" style="background:#d35400; font-size:11px; margin-right:4px;">🏆 比賽模式</span>';
+
+        document.getElementById('qTargetBanner').innerHTML = `
+            <span>${modeBadge}目標: <strong>${targetName}</strong> (+${pts}分) ｜ 🛡️ 血量: <strong style="color:${hpColor};">${tileHp.current}/${tileHp.max} HP</strong> (攻擊-50，剩餘 ${hitsNeeded} 次佔領) ｜ ${ownerTip}</span>
+            <span class="q-energy-tip">⚡ 個人能量: ${curEnergy}/600 (答對 -6 ｜ 答錯 -15)</span>
+        `;
+    }
 
     document.getElementById('qText').innerHTML = q.question.replace(/\n/g, '<br>');
 
@@ -2614,6 +2711,95 @@ function submitPlayerAnswer(selectedIdx) {
 
     const mySlot = Game.myPlayer.slot || 1;
     const myMember = (team.members && team.members[mySlot - 1]) ? team.members[mySlot - 1] : null;
+
+    if (q.mode === 'TRAIN') {
+        if (isCorrect) {
+            if (optionBtns[selectedIdx]) optionBtns[selectedIdx].classList.add('selected-correct');
+            window.soundManager.playCorrect();
+
+            if (myMember) {
+                myMember.energy = Math.max(0, (myMember.energy || 600) - 4);
+            }
+            team.energy = team.members ? team.members.reduce((sum, m) => sum + (m.energy || 0), 0) : 600;
+            team.correctCount++;
+
+            const baseHp = getTileMaxHp(targetTile.type);
+            const maxCap = baseHp * 2;
+            const boost = Math.round(baseHp / 3);
+            if (!Game.tileHps[targetKey]) {
+                Game.tileHps[targetKey] = { current: baseHp, max: baseHp };
+            }
+            const tileHp = Game.tileHps[targetKey];
+            tileHp.max = Math.min(maxCap, (tileHp.max || baseHp) + boost);
+            tileHp.current = Math.min(tileHp.max, (tileHp.current || baseHp) + boost);
+
+            saveCurrentRoomState();
+
+            const [tq, tr] = targetKey.split(',').map(Number);
+            const worldPos = hexToWorld(tq, tr);
+            addFloatingText(worldPos.x, worldPos.y - 20, `🛡️ +${boost} HP (${tileHp.current}/${tileHp.max})`, '#2ecc71', false);
+
+            let typeName = '領地';
+            if (targetTile.type === 'castle') typeName = '👑 核心城堡';
+            else if (targetTile.type === 'bunker') typeName = '🏯 碉堡';
+            else if (targetTile.type === 'cannon') typeName = '🎯 砲台';
+
+            logBattle(`🏋️ 【${team.name}】(${Game.myPlayer.name}) 答對題目，成功訓練強化${typeName}！防禦血量提升至 ${tileHp.current} / ${tileHp.max} HP (扣除個人能量 4 點)`);
+
+            broadcastSync({
+                type: 'TRAIN_TILE',
+                teamId: team.id,
+                tileKey: targetKey,
+                memberSlot: mySlot,
+                memberEnergy: myMember ? myMember.energy : 600,
+                energy: team.energy,
+                correctCount: team.correctCount,
+                playerName: Game.myPlayer.name,
+                currentHp: tileHp.current,
+                maxHp: tileHp.max,
+                isCorrect: true
+            });
+
+            setTimeout(() => {
+                closeQuestionModal();
+            }, 1600);
+        } else {
+            if (optionBtns[selectedIdx]) optionBtns[selectedIdx].classList.add('selected-wrong');
+            if (optionBtns[q.answer]) optionBtns[q.answer].classList.add('selected-correct');
+            window.soundManager.playWrong();
+
+            if (myMember) {
+                myMember.energy = Math.max(0, (myMember.energy || 600) - 10);
+            }
+            team.energy = team.members ? team.members.reduce((sum, m) => sum + (m.energy || 0), 0) : 600;
+            team.wrongCount++;
+
+            const remEnergy = myMember ? myMember.energy : 600;
+            const [tq, tr] = targetKey.split(',').map(Number);
+            const worldPos = hexToWorld(tq, tr);
+            addFloatingText(worldPos.x, worldPos.y - 15, '⚡ -10 訓練失敗', '#ff7675', false);
+
+            logBattle(`❌ 【${team.name}】(${Game.myPlayer.name}) 土地訓練答錯！防禦血量未提升，扣除個人能量 10 點 (剩餘 ${remEnergy} 點)`);
+
+            broadcastSync({
+                type: 'TRAIN_TILE',
+                teamId: team.id,
+                tileKey: targetKey,
+                memberSlot: mySlot,
+                memberEnergy: remEnergy,
+                energy: team.energy,
+                wrongCount: team.wrongCount,
+                playerName: Game.myPlayer.name,
+                isCorrect: false
+            });
+
+            setTimeout(() => {
+                closeQuestionModal();
+            }, 2600);
+        }
+        updateUI();
+        return;
+    }
 
     if (isCorrect) {
         if (optionBtns[selectedIdx]) optionBtns[selectedIdx].classList.add('selected-correct');
@@ -3130,15 +3316,24 @@ function handleTileAction(mouseX, mouseY) {
     if (expandable.includes(k)) {
         Game.selectedTargetKey = k;
         window.soundManager.playClick();
-        openQuestionModal(k);
+        openQuestionModal(k, false, 'ATTACK');
     } else {
         const owner = Game.tileOwners[k];
         if (owner && owner.teamId === team.id) {
-            if (owner.memberSlot === mySlot) {
-                logBattle(`ℹ️ 此地塊為您個人現有領地，防線安全無虞！`);
-            } else {
-                logBattle(`🤝 此地塊為隊友（隊員 ${owner.memberSlot}）所有，隊友之間不可互相進攻！`);
+            // 己方已佔領土地：啟動土地防禦訓練 (訓練可增加 1/3 基本血量，最高 2 倍)
+            const baseHp = getTileMaxHp(tile.type);
+            const maxCap = baseHp * 2;
+            const tileHp = (Game.tileHps && Game.tileHps[k]) || { current: baseHp, max: baseHp };
+            if (tileHp.max >= maxCap && tileHp.current >= maxCap) {
+                const msg = `🏆 此土地已達最高訓練防禦上限（${tileHp.current}/${maxCap} HP，已達原本基本血量的 2 倍滿血）！無需再進行訓練。`;
+                if (typeof alert === 'function') alert(msg);
+                if (window.soundManager) window.soundManager.playWarning();
+                logBattle(msg);
+                return;
             }
+            Game.selectedTargetKey = k;
+            window.soundManager.playClick();
+            openQuestionModal(k, false, 'TRAIN');
         } else {
             // Check if it is adjacent to a teammate's territory
             const teamAllExpandable = getExpandableTilesForTeam(team.id, 'ALL');
@@ -3303,7 +3498,7 @@ function drawMap() {
             }
         }
         const castleHp = Game.tileHps && Game.tileHps[ck];
-        if (castleHp && (castleHp.current < castleHp.max || ck === Game.hoveredTileKey || expandableTiles.has(ck))) {
+        if (castleHp && (castleHp.current < castleHp.max || ck === Game.hoveredTileKey || expandableTiles.has(ck) || castleHp.max > getTileMaxHp('castle'))) {
             const { x, y } = hexToWorld(cq, cr);
             drawTileHpBar(ctx, x, y - R * 0.1, R, castleHp.current, castleHp.max);
         }
@@ -3572,8 +3767,9 @@ function drawHexTile(ctx, x, y, R, tile, owner, isHovered, isExpandable) {
         drawOwnerFlag(ctx, x, y - R * 0.3, owner);
     }
 
-    // 6. Draw HP bar if damaged, hovered, or expandable
-    if (tile.type !== 'castle' && (isDamaged || isHovered || isExpandable)) {
+    // 6. Draw HP bar if damaged, hovered, expandable, or trained
+    const isTrained = tileHp.max > getTileMaxHp(tile.type);
+    if (tile.type !== 'castle' && (isDamaged || isHovered || isExpandable || isTrained)) {
         drawTileHpBar(ctx, x, y, R, tileHp.current, tileHp.max);
     }
 
@@ -4078,13 +4274,17 @@ function updateTooltip(screenX, screenY, hit) {
     document.getElementById('ttCoord').textContent = `(${hit.q}, ${hit.r})`;
     document.getElementById('ttPoints').textContent = `+${pts} 分`;
 
-    const tileHp = (Game.tileHps && Game.tileHps[k]) || { current: getTileMaxHp(tile.type), max: getTileMaxHp(tile.type) };
+    const baseHp = getTileMaxHp(tile.type);
+    const maxCap = baseHp * 2;
+    const tileHp = (Game.tileHps && Game.tileHps[k]) || { current: baseHp, max: baseHp };
     const hitsNeeded = Math.ceil(tileHp.current / 50);
     const ttHpEl = document.getElementById('ttHp');
     if (ttHpEl) {
         const hpColor = tileHp.current === tileHp.max ? '#2ecc71' : (tileHp.current <= 50 ? '#e74c3c' : '#f39c12');
         ttHpEl.style.color = hpColor;
-        ttHpEl.textContent = `🛡️ ${tileHp.current} / ${tileHp.max} HP (需再攻擊 ${hitsNeeded} 次)`;
+        const isTrained = tileHp.max > baseHp;
+        const trainText = isTrained ? ` (已強化 +${Math.round((tileHp.max - baseHp) / baseHp * 100)}%)` : '';
+        ttHpEl.textContent = `🛡️ ${tileHp.current} / ${tileHp.max} HP${trainText} (需再攻擊 ${hitsNeeded} 次)`;
     }
 
     let ownerText = '中立 (未佔領)';
@@ -4112,12 +4312,14 @@ function updateTooltip(screenX, screenY, hit) {
             actionHint.className = 'tooltip-action-hint hint-attack';
         }
     } else if (owner && owner.teamId === currentTeam.id) {
-        if (mySlot && owner.memberSlot === mySlot) {
-            actionHint.textContent = '🛡️ 我方個人領地（安全防線）';
+        const curMax = tileHp.max || baseHp;
+        const isMaxTrained = curMax >= maxCap && tileHp.current >= maxCap;
+        if (isMaxTrained) {
+            actionHint.textContent = `🏆 我方領地（已達最高防禦 2倍血量滿級：${tileHp.current}/${maxCap} HP）`;
             actionHint.className = 'tooltip-action-hint hint-defend';
         } else {
-            actionHint.textContent = `🤝 隊友領地 (隊員 ${owner.memberSlot}) · 不可進攻`;
-            actionHint.className = 'tooltip-action-hint hint-neutral';
+            actionHint.textContent = '🏋️ 點擊進行土地防禦訓練！(答對 +1/3 血量 [-4⚡] ｜ 答錯 [-10⚡])';
+            actionHint.className = 'tooltip-action-hint hint-attack';
         }
     } else {
         const teamAllExpandable = currentTeam ? getExpandableTilesForTeam(currentTeam.id, 'ALL') : [];
@@ -5352,16 +5554,39 @@ window.addEventListener('DOMContentLoaded', () => {
     // Connect to MQTT & Local Network Sync
     initNetworkSync();
 
-    // Initialize Map, Canvas, Question Pool, and UI synchronously
+    // Restore saved room state if exists for this roomId (captures, HP, and scores)
+    const savedRoom = loadRoomState(Game.roomId);
+    if (savedRoom) {
+        if (savedRoom.matchMode) Game.matchMode = savedRoom.matchMode;
+        if (Array.isArray(savedRoom.activeTeamIds) && savedRoom.activeTeamIds.length > 0) {
+            Game.activeTeamIds = [...savedRoom.activeTeamIds];
+        }
+    }
+
+    // Initialize Map, Canvas, Question Pool, and UI synchronously with room's activeTeamIds and matchMode
     initMapState(false);
     refreshGameQuestionBank(true);
 
-    // Restore saved room state if exists for this roomId (captures, HP, and scores)
-    const savedRoom = loadRoomState(Game.roomId);
     if (savedRoom && savedRoom.tileOwners && Object.keys(savedRoom.tileOwners).length > 0) {
         Game.tileOwners = { ...savedRoom.tileOwners };
         if (savedRoom.tileHps) Game.tileHps = JSON.parse(JSON.stringify(savedRoom.tileHps));
-        if (savedRoom.teams) Game.teams = JSON.parse(JSON.stringify(savedRoom.teams));
+        if (savedRoom.teams) {
+            Object.entries(savedRoom.teams).forEach(([id, tData]) => {
+                if (Game.teams[id]) {
+                    if (tData.name) Game.teams[id].name = tData.name;
+                    if (typeof tData.energy === 'number') Game.teams[id].energy = tData.energy;
+                    if (typeof tData.correctCount === 'number') Game.teams[id].correctCount = tData.correctCount;
+                    if (typeof tData.wrongCount === 'number') Game.teams[id].wrongCount = tData.wrongCount;
+                    if (Array.isArray(tData.members) && Game.teams[id].members) {
+                        tData.members.forEach((m, idx) => {
+                            if (Game.teams[id].members[idx]) {
+                                Object.assign(Game.teams[id].members[idx], m);
+                            }
+                        });
+                    }
+                }
+            });
+        }
         if (savedRoom.playMode) Game.playMode = savedRoom.playMode;
         if (typeof savedRoom.timeRemaining === 'number') Game.timeRemaining = savedRoom.timeRemaining;
         if (typeof savedRoom.hasStarted === 'boolean') Game.hasStarted = savedRoom.hasStarted;
